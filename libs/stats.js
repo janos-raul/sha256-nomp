@@ -391,6 +391,16 @@ module.exports = function(logger, portalConfig, poolConfigs){
                 });
             });
 
+			function getLastBlock(blocks) {
+			  if (!Array.isArray(blocks) || blocks.length === 0) return null;
+
+			  return blocks.reduce((latest, block) => {
+				const latestTimestamp = parseInt(latest.split(':')[4], 10);
+				const currentTimestamp = parseInt(block.split(':')[4], 10);
+				return currentTimestamp > latestTimestamp ? block : latest;
+			  });
+			}
+			
             client.client.multi(redisCommands).exec(function(err, replies){
                 if (err){
                     logger.error(logSystem, 'Global', 'error with getting global stats ' + JSON.stringify(err));
@@ -407,9 +417,11 @@ module.exports = function(logger, portalConfig, poolConfigs){
                         }
                         var coinStats = {
                             name: coinName,
-			    blockTime: poolConfigs[coinName].coin.blockTime,
+			    			blockTime: poolConfigs[coinName].coin.blockTime,
                             symbol: poolConfigs[coinName].coin.symbol.toUpperCase(),
                             algorithm: poolConfigs[coinName].coin.algorithm,
+							paymentMode: poolConfigs[coinName]?.paymentProcessing?.paymentMode || 0,
+                            minimumPayment: poolConfigs[coinName]?.paymentProcessing?.minimumPayment || 0,
                             hashrates: replies[i + 1],
                             poolStats: {
                                 validShares: replies[i + 2] ? (replies[i + 2].validShares || 0) : 0,
@@ -427,6 +439,8 @@ module.exports = function(logger, portalConfig, poolConfigs){
                             marketStats: marketStats,
                             /* block stat counts */
                             blocks: {
+								lastblock: (Array.isArray(replies[i + 6]) && Array.isArray(replies[i + 7])) ? parseInt(getLastBlock([...replies[i + 7], ...replies[i + 6]]).split(':')[2], 10) : null,
+								lastblock_time: (Array.isArray(replies[i + 6]) && Array.isArray(replies[i + 7])) ? parseInt(getLastBlock([...replies[i + 7], ...replies[i + 6]]).split(':')[4], 10) : null,
                                 pending: replies[i + 3],
                                 confirmed: replies[i + 4],
                                 orphaned: replies[i + 5]
