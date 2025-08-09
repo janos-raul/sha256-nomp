@@ -8,7 +8,7 @@
     },
 	  "poolConfigs": [
     		"pool_configs/myth.json",
-		"pool_configs/btcs.json"
+			"pool_configs/btcs.json"
   ],
     "defaultPoolConfigs": {
         "blockRefreshInterval": 1000,
