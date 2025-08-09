@@ -36,7 +36,7 @@
         "port": 80,
         "stratumHost": "myhost.go.ro",
         "stats": {
-            "updateInterval": 100,
+            "updateInterval": 15,
             "historicalRetention": 28800,
             "hashrateWindow": 300
         },
