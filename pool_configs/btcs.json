@@ -1,7 +1,8 @@
 {
   "enabled": true,
   "coin": "btcs.json",
-
+  "blockIdentifier":"",
+  "walletInterval": 1,
   "address": "",
 
     "rewardRecipients": {
@@ -10,12 +11,13 @@
     },
 
     "paymentProcessing": {
-	"minConf": 201,
+		"minConf": 201,
         "enabled": true,
+		"poolFee": 1,
         "paymentMode": "prop",
         "_comment_paymentMode": "prop, pplnt",
-        "paymentInterval": 3600,
-        "minimumPayment": 1,
+        "paymentInterval": 600,
+        "minimumPayment": 100,
         "maxBlocksPerPayment": 100,
         "daemon": {
       "host": "127.0.0.1",
