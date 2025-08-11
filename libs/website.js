@@ -52,6 +52,18 @@ module.exports = function (logger) {
 
     var keyScriptTemplate = '';
     var keyScriptProcessed = '';
+	
+	function getReadableDifficultyString(difficulty) {
+		  if (difficulty >= 1e24) return (difficulty / 1e24).toFixed(2) + ' Y';
+		  if (difficulty >= 1e21) return (difficulty / 1e21).toFixed(2) + ' Z';
+		  if (difficulty >= 1e18) return (difficulty / 1e18).toFixed(2) + ' E';
+		  if (difficulty >= 1e15) return (difficulty / 1e15).toFixed(2) + ' P';
+		  if (difficulty >= 1e12) return (difficulty / 1e12).toFixed(2) + ' T';
+		  if (difficulty >= 1e9)  return (difficulty / 1e9).toFixed(2) + ' G';
+		  if (difficulty >= 1e6)  return (difficulty / 1e6).toFixed(2) + ' M';
+		  if (difficulty >= 1e3)  return (difficulty / 1e3).toFixed(2) + ' k';
+	return difficulty.toFixed(2);
+	}
 
     var processTemplates = function () {
 
@@ -60,14 +72,16 @@ module.exports = function (logger) {
             pageProcessed[pageName] = pageTemplates[pageName]({
                 poolsConfigs: poolConfigs,
                 stats: portalStats.stats,
-                portalConfig: portalConfig
+                portalConfig: portalConfig,
+				getReadableDifficultyString: getReadableDifficultyString
             });
             indexesProcessed[pageName] = pageTemplates.index({
                 page: pageProcessed[pageName],
                 selected: pageName,
                 stats: portalStats.stats,
                 poolConfigs: poolConfigs,
-                portalConfig: portalConfig
+                portalConfig: portalConfig,
+				getReadableDifficultyString: getReadableDifficultyString
             });
         }
 
@@ -279,8 +293,8 @@ module.exports = function (logger) {
 
         if (acceptLanguage) {
             const supportedLanguages = [
-                'en', 'en-US', 'ja', 'zh', 'zh-TW', 'zh-HK', 'fr', 'es', 'de', 'ru',
-                'hi', 'ar', 'pt', 'it', 'tl', 'id', 'ms', 'ko', 'vi', 'tr'
+                'en', 'en-US', 'ja', 'zh', 'zh-TW', 'zh-HK', 'fr', 'es', 'de', 'ro', 'ru',
+                'hi', 'ar', 'pt', 'it', 'tl', 'id', 'ms', 'ko', 'vi', 'tr', 'hu'
             ];
             const languages = acceptLanguage.split(',').map(lang => lang.split(';')[0].trim());
 
