@@ -140,16 +140,31 @@ d.toString().match(/GMT([+-]\d{4})/)[0].replace('GMT', 'UTC') + ' ' +
                             id="statsHashrate{{=pool}}">{{=it.stats.pools[pool].hashrateString}}</span> (Now)</div>
                     <div><i class="fas fa-gauge-simple-high fa-fw"></i> <span id="statsHashrateAvg{{=pool}}">...</span>
                         (Avg)</div>
-                    <div><i class="fas fa-clock fa-fw"></i>&nbsp;Luck: <span id="statsLuckDays{=pool}}">
-                            {{
-                            function getReadableLuckTime(lucktime){
-                            var luck = lucktime;
-                            var timeUnits = [ ' Days', ' Hours', ' Minutes' ];
-                            if (luck < 1) { luck=luck * 24; if (luck < 1) { luck=luck * 60; return luck.toFixed(2) +
-                                timeUnits[2]; } else { return luck.toFixed(2) + timeUnits[1]; } } return luck +
-                                timeUnits[0]; } _luckTime=getReadableLuckTime(it.stats.pools[pool].luckDays); }}
-                                {{=_luckTime}}</span>
-                    </div>
+							<div><i class="fas fa-clock fa-fw"></i>&nbsp;Luck: 
+								<span id="statsLuckDays{{=pool}}">
+								  {{ 
+									var rawLuck = it.stats.pools[pool].luckDays || 0;
+									var luck = parseFloat(rawLuck);
+									var timeUnits = [ ' Days', ' Hours', ' Minutes' ];
+									var _luckTime = 'N/A';
+
+									if (!isNaN(luck)) {
+									  if (luck < 1) { 
+										luck *= 24; 
+										if (luck < 1) { 
+										  luck *= 60; 
+										  _luckTime = luck < 0.01 ? '< 1 Minute' : luck.toFixed(2) + timeUnits[2]; 
+										} else { 
+										  _luckTime = luck.toFixed(2) + timeUnits[1]; 
+										} 
+									  } else { 
+										_luckTime = luck.toFixed(2) + timeUnits[0]; 
+									  }
+									}
+								  }}
+								  {{= _luckTime }}
+								</span>
+							</div>
                     <div>
                         <i class="fas fa-chart-bar fa-fw"></i> Share: <span id="statsHashPercent{{=pool}}">
                             {{
@@ -179,7 +194,7 @@ d.toString().match(/GMT([+-]\d{4})/)[0].replace('GMT', 'UTC') + ' ' +
                             id="statsnetworkHash{{=pool}}">{{=it.stats.pools[pool].poolStats.networkHashString}}</span>
                     </div>
                     <div><i class="fas fa-unlock fa-fw"></i> <small>Difficulty:</small> <span
-                            id="statsNetworkDiff{{=pool}}">{{=(parseFloat(it.stats.pools[pool].poolStats.networkDiff)).toFixed(8)}}</span>
+                            id="statsNetworkDiff{{=pool}}">{{= it.getReadableDifficultyString(it.stats.pools[pool].poolStats.networkDiff) }}</span>
                     </div>
                     <div><i class="fas fa-signal fa-fw"></i> <small>Node Connections:</small> <span
                             id="statsNetworkConnections{{=pool}}">{{=it.stats.pools[pool].poolStats.networkConnections}}</span>
@@ -254,7 +269,7 @@ d.toString().match(/GMT([+-]\d{4})/)[0].replace('GMT', 'UTC') + ' ' +
                     {{if (it.stats.pools[pool].pending.confirms) { }}
                     {{if (it.stats.pools[pool].pending.confirms[block[0]]) { }}
                     <span style="float:right; color: red;"><small>{{=it.stats.pools[pool].pending.confirms[block[0]]}}
-                            of 100</small></span>
+                            conf.</small></span>
                     {{ } else { }}
                     <span style="float:right; color: red;"><small>*PENDING*</small></span>
                     {{ } }}

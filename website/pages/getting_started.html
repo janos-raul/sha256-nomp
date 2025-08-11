@@ -68,10 +68,12 @@
     }
 
     .miningOption:first-child{
-        background-color: #0eafc7;
+        background-color: #1f2434;
+		 border-radius: 10px;
     }
     .miningOption:last-child{
-        background-color: #b064e1;
+        background-color: #1f2434;
+		 border-radius: 10px;
     }
     .miningOptionNum{
         font-size: 6em;
@@ -129,6 +131,7 @@
         margin-left: -375px;
         position: absolute;
         background-color: #f06350;
+		 border-radius: 10px;
     }
     #coinInfo .coinInfoName{
         text-transform: capitalize;
@@ -230,8 +233,10 @@
         <a href="#" class="miningOption" id="nompAppDownload">
             <div class="miningOptionNum">1.</div>
             <div class="miningOptionInstructions">
-                <div>Download NOMP App</div>
-                <div>Our preconfigured app makes mining that easy</div>
+                <div>Point your miner here to mine sha coins</div>
+		<div style="background-color: #1f2434; display: inline-block; padding: 5px;">...or just rent one...
+  			<img src="/static/mrr-logo2.png" width="200" height="100" alt="MininRigRentals" />
+		</div>
             </div>
         </a>
         <div id="orHolder">
@@ -242,7 +247,8 @@
             <div class="miningOptionNum">2.</div>
             <div class="miningOptionInstructions">
                 <div>Select a coin for connection details</div>
-                <div>Configurations for each coin are available for advanced miners</div>
+		<div>ASICBoost miners curently NOT supported !</div>
+                <div>Happy mining !</div>
             </div>
         </a>
     </div>
@@ -260,7 +266,7 @@
         </div>
         <div id="coinInfoRowValues">
             <div id="coinInfoUsername"></div>
-            <div>anything</div>
+            <div>anything ( usually x )</div>
         </div>
     </div>
 </div>
@@ -278,7 +284,7 @@
         }
 
         if (info.coin)
-            $('#coinInfoUsername').text('your ' + info.coin.name + ' wallet address');
+            $('#coinInfoUsername').text('[ your ' + info.coin.name + ' wallet address ] . [ worker name ]');
         else
             $('#coinInfoUsername').text('your public key');
         $('.coinInfoData').remove();
@@ -312,7 +318,8 @@
 
     $('#nompAppDownload').click(function(event){
         event.preventDefault();
-        alert('NOMP App development still in progress...');
+        alert('Happy mining !');
+    window.open('https://www.miningrigrentals.com/', '_blank');
         return false;
     });
 </script>

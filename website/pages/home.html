@@ -1,38 +1,52 @@
 <style>
-    #boxWelcome {
-        background-color: #0eafc7;
-        color: white;
-        margin: 18px;
-    }
+	#boxWelcome {
+	  background-color: #1f2434;
+	  color: white;
+	  margin: 18px;
+	  padding: 24px;
+	  border-radius: 10px;
+	  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	}
 
-    #logoImg {
-        width: 60%;
-        height: auto;
-        margin: 55px 0 0 55px;
-    }
+	#logoImg {
+	  width: 48%;
+	  height: auto;
+	  margin: 40px auto 0 auto;
+	  display: block;
+	}
 
-    #welcomeText {
-        font-size: 2.7em;
-        margin: 50px 18px 10px 18px;
-    }
+	#welcomeText {
+	  font-size: 2.5em;
+	  margin: 40px 18px 20px 18px;
+	  font-weight: 600;
+	  letter-spacing: 0.5px;
+	}
 
-    #welcomeItems {
-        list-style-type: none;
-        font-size: 1.3em;
-        padding: 0 !important;
-        margin: 0 0 0 18px !important;
-    }
+	#welcomeItems {
+	  list-style: none;
+	  font-size: 1.2em;
+	  padding-left: 0;
+	  margin-left: 18px;
+	}
 
-    #welcomeItems>li {
-        margin: 30px !important;
+	#welcomeItems > li {
+	  margin: 20px 0;
+	  line-height: 1.6;
+	}
+	
+	#boxgecko {
+        margin: 0 9px;
+		border-radius: 10px;
     }
 
     #boxesLower {
         margin: 0 9px;
+			   border-radius: 10px;
     }
 
     #boxesLower>div {
         display: flex;
+				border-radius: 10px;
     }
 
     #boxesLower>div>div {
@@ -50,15 +64,18 @@
 
 
     #boxStatsLeft {
-        background-color: #b064e1;
+        background-color: #1f2434;
+			   border-radius: 10px;
     }
 
     #boxStatsRight {
-        background-color: #10bb9c;
+        background-color: #1f2434;
+			   border-radius: 10px;
     }
 
     .boxStats {
         color: white;
+			   border-radius: 10px;
     }
 
     .boxStatsList {
@@ -84,27 +101,76 @@
     .boxStatsList>div>div {
         padding: 3px;
     }
+
+  .marketRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    border-bottom: 1px solid #ccc;
+    font-family: Arial, sans-serif;
+    color: #eee;
+  }
+  
+    .marketRowLive {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .marketCoin {
+    font-weight: bold;
+	display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 12px;
+    border-bottom: 1px solid #ccc;
+    font-family: Arial, sans-serif;
+    color: #eee;
+  }
+  
+  .market-name {
+    font-weight: bold;
+  }
+
+  .market-link a {
+	font-weight: bold;
+    color: #00bfff;
+    text-decoration: none;
+  }
+
+  .market-link a:hover {
+    text-decoration: underline;
+  }
+
 </style>
 {{ function capitalizeFirstLetter(t){return t.charAt(0).toUpperCase()+t.slice(1)} }}
 {{ function readableDate(a){ return new Date(parseInt(a)).toString(); } }}
+<div id="boxgecko">
+<script src="https://widgets.coingecko.com/gecko-coin-price-marquee-widget.js"></script>
+<gecko-coin-price-marquee-widget locale="en" outlined="true" transparent-background="true" coin-ids="bitcoin,ethereum,bitcoin-cash,binancecoin,litecoin,tether,usd-coin,digibyte,dogecoin,floki,bonk,shiba-inu,pepe" initial-currency="usd"></gecko-coin-price-marquee-widget>
+</div>
 <div class="pure-g" id="boxWelcome">
-    <div class="pure-u-1-3">
-        <img id="logoImg" src="/static/logo.svg" alt="logo">
-    </div>
-    <div class="pure-u-2-3">
-        <div id="welcomeText">Welcome to the future of mining</div>
-        <ul id="welcomeItems">
-            <li>Low fees</li>
-            <li>High performance Node.js backend</li>
-            <li>User friendly mining client</li>
-            <li>Multi-coin / multi-pool</li>
-        </ul>
-    </div>
+  <!-- Logo Section -->
+  <div class="pure-u-1-3">
+    <img id="logoImg" src="/static/logo.gif" alt="SHA256 Mining Logo">
+  </div>
+
+  <!-- Welcome Text and Info -->
+  <div class="pure-u-2-3">
+    <div id="welcomeText">Welcome to <strong>sha256-mining.go.ro</strong></div>
+    <ul id="welcomeItems">
+      <li><strong>Pool fees:</strong> 1%</li>
+      <li><strong>Payment interval:</strong> 10 minutes</li>
+      <li><strong>Minimum payout:</strong> 100</li>
+      <li><strong>Payment method:</strong> PROP</li>
+    </ul>
+  </div>
 </div>
 <div class="pure-g" id="boxesLower">
     <div class="pure-u-1-2">
         <div class="boxStats" id="boxStatsLeft">
-            <div class="boxLowerHeader">Global Stats</div>
+            <div class="boxLowerHeader">Pool Stats</div>
             <div class="boxStatsList">
                 {{ for(var algo in it.stats.algos) { }}
                 <div>
@@ -129,26 +195,135 @@
                             id="statsMiners{{=pool}}">{{=it.stats.pools[pool].workerCount}}</span> Miners</div>
                     <div><i class="fas fa-gauge-simple-high fa-fw"></i>&nbsp;<span
                             id="statsHashrate{{=pool}}">{{=it.stats.pools[pool].hashrateString}}</span></div>
+					<div><i class="fas fa-donate fa-lg"></i>&nbsp;Pool Fee: 1%</div>
+
                 </div>
                 {{ } }}
             </div>
         </div>
     </div>
+<div class="pure-u-1-2">
+ <div class="boxStats" id="boxStatsLeft">
+		<div class="boxLowerHeader">
+			<div class="market-link">
+				<a href="https://bitcoin-silver.github.io/" target="_blank">
+				{{=capitalizeFirstLetter(it.stats.pools['bitcoinsilver'].name)}}</a> Network Stats
+			</div>
+		</div>
+    <div class="boxStatsList">
+      <div>
+        <div><i class="fas fa-bars fa-fw"></i> <small>Block Height:</small> <span id="statsNetworkBlocks_bitcoinsilver">{{=it.stats.pools['bitcoinsilver'].poolStats.networkBlocks}}</span></div>
+        <div><i class="fas fa-gauge-simple-high fa-fw"></i> <small>Network H/s:</small> <span id="statsnetworkHash_bitcoinsilver">{{=it.stats.pools['bitcoinsilver'].poolStats.networkHashString}}</span></div>
+        <div><i class="fas fa-unlock fa-fw"></i> <small>Difficulty:</small> <span id="statsNetworkDiff_bitcoinsilver">{{= it.getReadableDifficultyString(it.stats.pools['bitcoinsilver'].poolStats.networkDiff) }}</span></div>
+        <div><i class="fas fa-signal fa-fw"></i> <small>Node Connections:</small> <span id="statsNetworkConnections_bitcoinsilver">{{=it.stats.pools['bitcoinsilver'].poolStats.networkConnections}}</span></div>
+        <div><i class="fas fa-code-fork fa-fw"></i> <small>Daemon:</small> <span id="statsNetworkVersion_bitcoinsilver">{{=it.stats.pools['bitcoinsilver'].poolStats.networkVersion}}</span></div>
+        <div><i class="fas fa-flask fa-fw"></i> <small>Algorithm:</small> <span>{{=capitalizeFirstLetter(it.stats.pools['bitcoinsilver'].algorithm)}}</span></div>
+      </div>
+    </div>
+			<div class="marketCoin">
+			  {{=capitalizeFirstLetter(it.stats.pools['bitcoinsilver'].name)}} Markets
+			</div>
+
+			<div class="marketRow">
+			  <div class="market-name">EXBITRON</div>
+			  <div class="market-link">
+				<a href="https://app.exbitron.com/exchange/?market=BTCS-USDT" target="_blank">BTCS / USDT</a>
+			  </div>
+			</div>
+
+			<div class="marketRow">
+			  <div class="market-name">BITSTORAGE</div>
+			  <div class="market-link">
+				<a href="https://bitstorage.finance/spot/trading/BTCSUSDT?interface=classic" target="_blank">BTCS / USDT</a>
+			  </div>
+			</div>
+
+			<div class="marketRow">
+			  <div class="market-name">NESTEX</div>
+			  <div class="market-link">
+				<a href="https://trade.nestex.one/spot/BTCS_USDT" target="_blank">BTCS / USDT</a>
+			  </div>
+			</div>
+
+			<div class="marketRowLive">
+			  <script defer src="https://www.livecoinwatch.com/static/lcw-widget.js"></script>
+			  <div
+				class="livecoinwatch-widget-6"
+				lcw-coin="____BTCS"
+				lcw-base="USD"
+				lcw-period="d"
+				lcw-color-tx="#abb8c3"
+				lcw-color-bg="#1f2434"
+				lcw-border-w="0"
+			  ></div>
+			</div>
+  </div>
+</div>
+
+<div class="pure-u-1-2">
+  <div class="boxStats" id="boxStatsRight">
+  		<div class="boxLowerHeader">
+			<div class="market-link">
+				<a href="https://www.mytherrablockchain.org/" target="_blank">
+				{{=capitalizeFirstLetter(it.stats.pools['mytherra'].name)}}</a> Network Stats
+			</div>
+		</div>
+    <div class="boxStatsList">
+      <div>
+        <div><i class="fas fa-bars fa-fw"></i> <small>Block Height:</small> <span id="statsNetworkBlocks_mytherra">{{=it.stats.pools['mytherra'].poolStats.networkBlocks}}</span></div>
+        <div><i class="fas fa-gauge-simple-high fa-fw"></i> <small>Network H/s:</small> <span id="statsnetworkHash_mytherra">{{=it.stats.pools['mytherra'].poolStats.networkHashString}}</span></div>
+        <div><i class="fas fa-unlock fa-fw"></i> <small>Difficulty:</small> <span id="statsNetworkDiff_mytherra">{{= it.getReadableDifficultyString(it.stats.pools['mytherra'].poolStats.networkDiff) }}</span></div>
+        <div><i class="fas fa-signal fa-fw"></i> <small>Node Connections:</small> <span id="statsNetworkConnections_mytherra">{{=it.stats.pools['mytherra'].poolStats.networkConnections}}</span></div>
+        <div><i class="fas fa-code-fork fa-fw"></i> <small>Daemon:</small> <span id="statsNetworkVersion_mytherra">{{=it.stats.pools['mytherra'].poolStats.networkVersion}}</span></div>
+        <div><i class="fas fa-flask fa-fw"></i> <small>Algorithm:</small> <span>{{=capitalizeFirstLetter(it.stats.pools['mytherra'].algorithm)}}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 <script>
-    $(function () {
-        statsSource.addEventListener('message', function (e) {
-            if (document.hidden) return;
+  function getReadableHashRateString(hashrate) {
+    if (hashrate >= 1e12) return (hashrate / 1e12).toFixed(2) + ' TH/s';
+    if (hashrate >= 1e9)  return (hashrate / 1e9).toFixed(2) + ' GH/s';
+    if (hashrate >= 1e6)  return (hashrate / 1e6).toFixed(2) + ' MH/s';
+    if (hashrate >= 1e3)  return (hashrate / 1e3).toFixed(2) + ' kH/s';
+    return hashrate + ' H/s';
+  }
+  
+  function capitalizeFirstLetter(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
 
-            var stats = JSON.parse(e.data);
-            for (algo in stats.algos) {
-                $('#statsMiners' + algo).text(stats.algos[algo].workers);
-                $('#statsHashrate' + algo).text(stats.algos[algo].hashrateString);
-            }
-            for (var pool in stats.pools) {
-                $('#statsMiners' + pool).text(stats.pools[pool].workerCount);
-                $('#statsHashrate' + pool).text(stats.pools[pool].hashrateString);
-            }
-        });
+  function updateNetworkStats(idPrefix, poolData) {
+    $('#networkBlocks_' + idPrefix).text(poolData.poolStats.networkBlocks);
+    $('#networkHash_' + idPrefix).text(getReadableHashRateString(poolData.poolStats.networkHash));
+    //$('#networkDiff_' + idPrefix).text(parseFloat(poolData.poolStats.networkDiff).toFixed(8));
+	$('#networkDiff_' + idPrefix).text(getReadableDifficultyString(poolData.poolStats.networkDiff));
+    $('#networkConnections_' + idPrefix).text(poolData.poolStats.networkConnections);
+    $('#networkVersion_' + idPrefix).text(poolData.poolStats.networkVersion);
+    $('#algorithm_' + idPrefix).text(capitalizeFirstLetter(poolData.algorithm));
+  }
+
+  $(function () {
+    window.statsSource = new EventSource("/api/live_stats");
+
+    statsSource.addEventListener('message', function (e) {
+      if (document.hidden) return;
+
+      const stats = JSON.parse(e.data);
+
+      for (let algo in stats.algos) {
+        $('#statsMiners' + algo).text(stats.algos[algo].workers);
+        $('#statsHashrate' + algo).text(stats.algos[algo].hashrateString);
+      }
+
+      for (let pool in stats.pools) {
+        $('#statsMiners' + pool).text(stats.pools[pool].workerCount);
+        $('#statsHashrate' + pool).text(stats.pools[pool].hashrateString);
+
+        updateNetworkStats(pool, stats.pools[pool]);
+      }
     });
+  });
 </script>
