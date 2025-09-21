@@ -18,6 +18,11 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 * ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
 * ✅ **Dual Mining** - Support pool and solo mining simultaneously
 
+### Recent Updates (v1.4.2)
+
+* **UPDATE**: Updated package.json dependencies
+* **FIXED**: Logging and added log rotation, log archive 
+
 ### Recent Updates (v1.4.1)
 
 * **FIXED**: Double fee deduction bug in solo mining payment processing
