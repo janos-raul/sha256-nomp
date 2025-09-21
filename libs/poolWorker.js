@@ -191,99 +191,191 @@ module.exports = function(logger){
             logger.info(logSystem, logComponent, logSubCat, 'Using internal payment processing');
             var shareProcessor = new ShareProcessor(logger, poolOptions);
             
-            handlers.auth = function (port, workerName, password, authCallback) {
-                var authStart = Date.now();
-                const [wallet, worker] = (workerName || '').split('.', 2);
-
-                // Common SHA256 wallet formats (Bitcoin-style)
-                const isLegacy = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(wallet);
-                // Bech32/Bech32m for your coins
-                const isBech32 = /^(bc1|bs1|myt1)[ac-hj-np-z02-9]{11,71}$/.test(wallet);
-
-                // If validation is disabled, accept all
-                if (poolOptions.validateWorkerUsername !== true) {
-                    logger.debug(logSystem, logComponent, logSubCat, 
-                        '[Auth] Validation disabled, auto-accepting: ' + workerName);
-                    return authCallback(true);
-                }
-
-                // Accept known valid formats without daemon check
-                if (isLegacy || isBech32) {
-                    var authTime = Date.now() - authStart;
-                    logger.debug(logSystem, logComponent, logSubCat, 
-                        '[Auth] Valid address format detected for ' + workerName + ' (Legacy: ' + isLegacy + 
-                        ', Bech32: ' + isBech32 + ') - Time: ' + authTime + 'ms');
-                    return authCallback(true);
-                }
-
-                // Fallback: validate via coin daemon
-                logger.debug(logSystem, logComponent, logSubCat, 
-                    '[Auth] Validating address via daemon: ' + wallet);
-                    
-                pool.daemon.cmd('validateaddress', [wallet], function (results) {
-                    var authTime = Date.now() - authStart;
-                    const isValid = results.some(r => r.response && r.response.isvalid);
-
-                    if (!isValid) {
-                        logger.warning(logSystem, logComponent, logSubCat, 
-                            '[Auth] Rejected invalid wallet: ' + wallet + ' - Time: ' + authTime + 'ms');
-                    } else {
-                        logger.debug(logSystem, logComponent, logSubCat, 
-                            '[Auth] Daemon validated wallet: ' + wallet + ' - Time: ' + authTime + 'ms');
-                    }
-
-                    authCallback(isValid);
-                });
-            };
+			handlers.auth = function (port, workerName, password, authCallback) {
+				var authStart = Date.now();
+				const [wallet, worker] = (workerName || '').split('.', 2);
+				
+				// If validation is disabled, accept all
+				if (poolOptions.validateWorkerUsername !== true) {
+					logger.debug(logSystem, logComponent, logSubCat, 
+						'[Auth] Validation disabled, auto-accepting: ' + workerName);
+					return authCallback(true);
+				}
+				
+				// Get expected address format from coin config
+				const addressValidation = poolOptions.coin.addressValidation;
+				
+				if (addressValidation && addressValidation.addressPrefix) {
+					const expectedPrefix = addressValidation.addressPrefix;
+					const minLength = addressValidation.minLength || 20;
+					const maxLength = addressValidation.maxLength || 100;
+					
+					// Build the expected address pattern based on prefix
+					// Support both bech32 (prefix + '1') and other formats
+					const expectedStart = expectedPrefix + '1';
+					const walletLower = wallet.toLowerCase();
+					
+					// Check if address starts with expected prefix
+					if (!walletLower.startsWith(expectedStart)) {
+						// Log what we got vs what we expected
+						const actualPrefix = wallet.substring(0, Math.min(4, wallet.length));
+						
+						// Detect common wrong coin types for better logging
+						let wrongCoinType = null;
+						if (wallet.match(/^bc1/i)) wrongCoinType = 'Bitcoin Bech32';
+						else if (wallet.match(/^tb1/i)) wrongCoinType = 'Bitcoin Testnet';
+						else if (wallet.match(/^[13]/)) wrongCoinType = 'Bitcoin Legacy';
+						else if (wallet.match(/^ltc1/i)) wrongCoinType = 'Litecoin Bech32';
+						else if (wallet.match(/^[LM]/)) wrongCoinType = 'Litecoin Legacy';
+						
+						if (wrongCoinType) {
+							logger.warning(logSystem, logComponent, logSubCat, 
+								`[Auth] REJECTED ${wrongCoinType} address on ${poolOptions.coin.name} pool: ${wallet} - Expected prefix: ${expectedStart}`);
+						} else {
+							logger.warning(logSystem, logComponent, logSubCat, 
+								`[Auth] Invalid address prefix for ${poolOptions.coin.name}: ${actualPrefix}... - Expected: ${expectedStart}`);
+						}
+						return authCallback(false);
+					}
+					
+					// Check length constraints
+					if (wallet.length < minLength) {
+						logger.warning(logSystem, logComponent, logSubCat, 
+							`[Auth] Address too short for ${poolOptions.coin.name}: ${wallet.length} < ${minLength}`);
+						return authCallback(false);
+					}
+					
+					if (wallet.length > maxLength) {
+						logger.warning(logSystem, logComponent, logSubCat, 
+							`[Auth] Address too long for ${poolOptions.coin.name}: ${wallet.length} > ${maxLength}`);
+						return authCallback(false);
+					}
+					
+					// Additional bech32 character validation if it's a bech32 address
+					if (walletLower.startsWith(expectedPrefix + '1')) {
+						// Bech32 can only contain specific characters after the separator
+						const bech32Regex = new RegExp(`^${expectedPrefix}1[ac-hj-np-z02-9]+$`);
+						if (!bech32Regex.test(walletLower)) {
+							logger.warning(logSystem, logComponent, logSubCat, 
+								`[Auth] Invalid bech32 characters in ${poolOptions.coin.name} address: ${wallet}`);
+							return authCallback(false);
+						}
+					}
+					
+					// Valid address format for this pool
+					var authTime = Date.now() - authStart;
+					logger.debug(logSystem, logComponent, logSubCat, 
+						`[Auth] Valid ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`);
+					return authCallback(true);
+					
+				} else if (addressValidation && addressValidation.validateWorkerUsername === true) {
+					// Has validation enabled but no specific prefix - use daemon validation
+					logger.debug(logSystem, logComponent, logSubCat, 
+						`[Auth] No address prefix configured for ${poolOptions.coin.name}, using daemon validation: ${wallet}`);
+						
+					pool.daemon.cmd('validateaddress', [wallet], function (results) {
+						var authTime = Date.now() - authStart;
+						const isValid = results.some(r => r.response && r.response.isvalid);
+						
+						if (!isValid) {
+							logger.warning(logSystem, logComponent, logSubCat, 
+								`[Auth] Daemon rejected ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`);
+						} else {
+							logger.debug(logSystem, logComponent, logSubCat, 
+								`[Auth] Daemon validated ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`);
+						}
+						
+						authCallback(isValid);
+					});
+					return; // Important: return here to wait for daemon response
+					
+				} else {
+					// No validation configured - accept common formats but warn
+					logger.debug(logSystem, logComponent, logSubCat, 
+						`[Auth] No address validation configured for ${poolOptions.coin.name}, using generic validation`);
+					
+					// Accept common cryptocurrency address formats
+					const commonFormats = [
+						/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/,     // Legacy P2PKH/P2SH
+						/^[a-z0-9]{2,}1[ac-hj-np-z02-9]{11,71}$/i // Generic Bech32
+					];
+					
+					const isValidFormat = commonFormats.some(regex => regex.test(wallet));
+					
+					if (isValidFormat) {
+						var authTime = Date.now() - authStart;
+						logger.debug(logSystem, logComponent, logSubCat, 
+							`[Auth] Generic format accepted for ${poolOptions.coin.name}: ${wallet} - Time: ${authTime}ms`);
+						return authCallback(true);
+					}
+					
+					// Invalid format
+					logger.warning(logSystem, logComponent, logSubCat, 
+						`[Auth] Invalid address format for ${poolOptions.coin.name}: ${wallet}`);
+					return authCallback(false);
+				}
+			};
 
             handlers.share = function(isValidShare, isValidBlock, data){
                 shareProcessor.handleShare(isValidShare, isValidBlock, data);
-            };
-        }
+		   };
+		}
         
-        var authorizeFN = function(ip, port, workerName, password, callback) {
-            var authStart = Date.now();
-            
-            logger.info(logSystem, logComponent, logSubCat, 
-                '[Connection] New miner connecting from ' + ip + ':' + port + ' as ' + workerName);
+	var authorizeFN = function(ip, port, workerName, password, callback) {
+		var authStart = Date.now();
+		
+		logger.info(logSystem, logComponent, logSubCat, 
+			'[Connection] New miner connecting from ' + ip + ':' + port + ' as ' + workerName);
 
-            // Store password for this worker to use in share detection
-            if (password) {
-                workerPasswords[workerName] = password;
-                
-                // Log solo mining detection
-                var passwordLower = password.toLowerCase();
-                if (passwordLower === 'solo' || passwordLower.includes('m=solo') || passwordLower.includes('solo=true')) {
-                    logger.info(logSystem, logComponent, logSubCat, 
-                        '[Solo Mining] Worker ' + workerName + ' identified as SOLO miner');
-                }
-            }
+		// Store password for this worker
+		if (password) {
+			workerPasswords[workerName] = password;
+			
+			var passwordLower = password.toLowerCase();
+			if (passwordLower === 'solo' || passwordLower.includes('m=solo') || passwordLower.includes('solo=true')) {
+				logger.info(logSystem, logComponent, logSubCat, 
+					'[Solo Mining] Worker ' + workerName + ' identified as SOLO miner');
+			}
+		}
 
-            // Update connection stats
-            performanceStats.connections[coin].total++;
-            performanceStats.connections[coin].current++;
+		performanceStats.connections[coin].total++;
+		performanceStats.connections[coin].current++;
 
-            handlers.auth(port, workerName, password, function(authorized) {
-                var authTime = Date.now() - authStart;
-                
-                if (authorized) {
-                    logger.success(logSystem, logComponent, logSubCat, 
-                        '[Auth] Authorized ' + workerName + ' from ' + ip + ' - Time: ' + authTime + 'ms');
-                } else {
-                    logger.warning(logSystem, logComponent, logSubCat, 
-                        '[Auth] Unauthorized ' + workerName + ' from ' + ip + ' - Time: ' + authTime + 'ms');
-                    performanceStats.connections[coin].current--;
-                }
+		handlers.auth(port, workerName, password, function(authorized) {
+			var authTime = Date.now() - authStart;
+			
+			if (authorized) {
+				logger.success(logSystem, logComponent, logSubCat, 
+					'[Auth] Authorized ' + workerName + ' from ' + ip + ' - Time: ' + authTime + 'ms');
+				callback({
+					error: null,
+					authorized: authorized,
+					disconnect: false
+				});
+			} else {
+				logger.warning(logSystem, logComponent, logSubCat, 
+					'[Auth] Unauthorized ' + workerName + ' from ' + ip + ' - Time: ' + authTime + 'ms');
+				performanceStats.connections[coin].current--;
+				
+				// Build a helpful message based on what's configured
+				let errorMessage = "check address ! check pool !";
+				
+				// If we have addressValidation config, provide more specific help
+				if (poolOptions.coin && poolOptions.coin.addressValidation && poolOptions.coin.addressValidation.addressPrefix) {
+					const prefix = poolOptions.coin.addressValidation.addressPrefix;
+					errorMessage = `check address ! check pool ! ${poolOptions.coin.name} addresses must start with '${prefix}1'`;
+				}
+				
+				callback({
+					error: [24, errorMessage, null],
+					authorized: false,
+					disconnect: true
+				});
+			}
+		});
+	};		
 
-                callback({
-                    error: null,
-                    authorized: authorized,
-                    disconnect: !authorized
-                });
-            });
-        };
-
-        var pool = Stratum.createPool(poolOptions, authorizeFN, logger);
+    var pool = Stratum.createPool(poolOptions, authorizeFN, logger);
         
         // Pool event handlers with comprehensive logging
         pool.on('started', function(){
