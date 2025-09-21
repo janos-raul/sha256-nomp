@@ -396,59 +396,6 @@
         </div>
     </div>
 </div>
-<div class="pure-u-1-2">
- <div class="boxStats" id="boxStatsLeft">
-		<div class="boxLowerHeader">
-			<div class="market-link">
-				<a href="https://bitcoin-silver.github.io/" target="_blank">
-				{{=capitalizeFirstLetter(it.stats.pools['bitcoinsilver'].name)}}</a> Network Stats
-			</div>
-		</div>
-    <div class="boxStatsList">
-      <div>
-	  	<div id="orHolder">
-            <div id="orLine"></div>
-        </div>
-        <div><i class="fas fa-bars fa-fw"></i> <small>Block Height:</small> <span id="statsNetworkBlocks_bitcoinsilver">{{=it.stats.pools['bitcoinsilver'].poolStats.networkBlocks}}</span></div>
-        <div><i class="fas fa-gauge-simple-high fa-fw"></i> <small>Network H/s:</small> <span id="statsnetworkHash_bitcoinsilver">{{=it.stats.pools['bitcoinsilver'].poolStats.networkHashString}}</span></div>
-        <div><i class="fas fa-unlock fa-fw"></i> <small>Difficulty:</small> <span id="statsNetworkDiff_bitcoinsilver">{{= it.getReadableDifficultyString(it.stats.pools['bitcoinsilver'].poolStats.networkDiff) }}</span></div>
-        <div><i class="fas fa-signal fa-fw"></i> <small>Node Connections:</small> <span id="statsNetworkConnections_bitcoinsilver">{{=it.stats.pools['bitcoinsilver'].poolStats.networkConnections}}</span></div>
-        <div><i class="fas fa-code-fork fa-fw"></i> <small>Daemon:</small> <span id="statsNetworkVersion_bitcoinsilver">{{=it.stats.pools['bitcoinsilver'].poolStats.networkVersion}}</span></div>
-        <div><i class="fas fa-flask fa-fw"></i> <small>Algorithm:</small> <span>{{=capitalizeFirstLetter(it.stats.pools['bitcoinsilver'].algorithm)}}</span></div>
-		<div id="orHolder">
-            <div id="orLine"></div>
-        </div>
-	  </div>
-    </div>
-  </div>
-</div>
-
-<div class="pure-u-1-2">
-  <div class="boxStats" id="boxStatsRight">
-  		<div class="boxLowerHeader">
-			<div class="market-link">
-				<a href="https://www.mytherrablockchain.org/" target="_blank">
-				{{=capitalizeFirstLetter(it.stats.pools['mytherra'].name)}}</a> Network Stats
-			</div>
-		</div>
-    <div class="boxStatsList">
-      <div>
-	  	<div id="orHolder">
-            <div id="orLine"></div>
-        </div>
-        <div><i class="fas fa-bars fa-fw"></i> <small>Block Height:</small> <span id="statsNetworkBlocks_mytherra">{{=it.stats.pools['mytherra'].poolStats.networkBlocks}}</span></div>
-        <div><i class="fas fa-gauge-simple-high fa-fw"></i> <small>Network H/s:</small> <span id="statsnetworkHash_mytherra">{{=it.stats.pools['mytherra'].poolStats.networkHashString}}</span></div>
-        <div><i class="fas fa-unlock fa-fw"></i> <small>Difficulty:</small> <span id="statsNetworkDiff_mytherra">{{= it.getReadableDifficultyString(it.stats.pools['mytherra'].poolStats.networkDiff) }}</span></div>
-        <div><i class="fas fa-signal fa-fw"></i> <small>Node Connections:</small> <span id="statsNetworkConnections_mytherra">{{=it.stats.pools['mytherra'].poolStats.networkConnections}}</span></div>
-        <div><i class="fas fa-code-fork fa-fw"></i> <small>Daemon:</small> <span id="statsNetworkVersion_mytherra">{{=it.stats.pools['mytherra'].poolStats.networkVersion}}</span></div>
-        <div><i class="fas fa-flask fa-fw"></i> <small>Algorithm:</small> <span>{{=capitalizeFirstLetter(it.stats.pools['mytherra'].algorithm)}}</span></div>
-		<div id="orHolder">
-            <div id="orLine"></div>
-        </div>
-	  </div>
-    </div>
-  </div>
-</div>
 
 </div>
 <script>
