@@ -50,6 +50,13 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 
     var opidCount = 0;
     var opids = [];
+	
+	    var paymentStats = {
+        cycleCount: 0,
+        lastCycleTime: 0,
+        totalBlocksProcessed: 0,
+        totalPaymentsSent: 0
+    };
 
     // zcash team recommends 10 confirmations for safety from orphaned blocks
     var minConfShield = Math.max((processingConfig.minConf || 10), 1); // Don't allow 0 conf transactions.
@@ -297,6 +304,8 @@ function SetupForPool(logger, poolOptions, setupFinished) {
     var processPayments = function () {
 
         var startPaymentProcess = Date.now();
+		
+		logger.info(logSystem, logComponent, '=== Payment cycle #' + (++paymentStats.cycleCount) + ' starting ===');
 
         var timeSpentRPC = 0;
         var timeSpentRedis = 0;
@@ -329,7 +338,23 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 										callback(true);
 										return;
 									}
-									// build workers object from :balances
+					        if (results[0] && Object.keys(results[0]).length > 0) {
+									logger.debug(logSystem, logComponent, 'Found ' + Object.keys(results[0]).length + ' pool workers with balances');
+								}
+								if (results[1] && Object.keys(results[1]).length > 0) {
+									logger.debug(logSystem, logComponent, 'Found ' + Object.keys(results[1]).length + ' solo workers with balances');
+								}
+								if (results[2] && results[2].length > 0) {
+									logger.debug(logSystem, logComponent, 'Found ' + results[2].length + ' pending pool blocks');
+								}
+								if (results[3] && results[3].length > 0) {
+									logger.debug(logSystem, logComponent, 'Found ' + results[3].length + ' pending solo blocks');
+									results[3].forEach(function(r) {
+										var details = r.split(':');
+										logger.debug(logSystem, logComponent, 'Solo block height=' + details[2] + ' by ' + details[3]);
+									});
+								}
+				// build workers object from :balances
 				// build workers object from :balances (pool miners)
 				var workers = {};
 				for (var w in results[0]) {
@@ -595,6 +620,17 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 								'Block ' + round.height + ' processed reward: ' + round.reward);
 						}
                     });
+					
+					var generateCount = 0;
+					var immatureCount = 0;
+					var kickedCount = 0;
+					rounds.forEach(function(r) {
+						if (r.category === 'generate') generateCount++;
+						else if (r.category === 'immature') immatureCount++;
+						else if (r.category === 'kicked' || r.category === 'orphan') kickedCount++;
+					});
+					logger.debug(logSystem, logComponent, 
+						'Block status - Generate: ' + generateCount + ', Immature: ' + immatureCount + ', Kicked/Orphan: ' + kickedCount);
 
                     var canDeleteShares = function (r) {
                         for (var i = 0; i < rounds.length; i++) {
@@ -718,14 +754,16 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                                 logger.error(logSystem, logComponent, 'Error checking pool balance before processing payments.');
                                 return callback(true);
                             } else if (tBalance < totalOwed) {
-                              //  logger.error(logSystem, logComponent, 'Insufficient funds (' + satoshisToCoins(tBalance) + ') to process payments (' + satoshisToCoins(totalOwed) + '); possibly waiting for txs.');
-                                logger.error(logSystem, logComponent, 
-																	'Insufficient funds (' + satoshisToCoins(tBalance) + 
-																	') to process payments. Pool owed: ' + satoshisToCoins(poolOwed) + 
-																	', Solo owed: ' + satoshisToCoins(soloOwed) + 
-																	', Total: ' + satoshisToCoins(totalOwed));
+									logger.error(logSystem, logComponent, 
+											'Insufficient funds (' + satoshisToCoins(tBalance) + 
+											') to process payments. Pool owed: ' + satoshisToCoins(poolOwed) + 
+											', Solo owed: ' + satoshisToCoins(soloOwed) + 
+											', Total: ' + satoshisToCoins(totalOwed));
 								performPayment = false;
                             } else if (tBalance > totalOwed) {
+									logger.debug(logSystem, logComponent, 
+											'Sufficient funds. Have: ' + satoshisToCoins(tBalance) + 
+											', Need: ' + satoshisToCoins(totalOwed));
                                 performPayment = true;
                             }
                             // just in case...
@@ -782,9 +820,9 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 						var soloFeeAmount = Math.round(blockReward * (additionalFeePercent / 100));
 						var soloReward = blockReward - soloFeeAmount;
 						var soloMinerAddress = round.minedby;
-						
+												
 						logger.special(logSystem, logComponent, 
-							'Solo block ' + round.height + ' found by ' + soloMinerAddress + 
+							'Processing SOLO block payment - Height: ' + round.height + ' found by ' + soloMinerAddress + 
 							'. Reward: ' + satoshisToCoins(blockReward) + ' coins, ' +
 							'Fee: ' + satoshisToCoins(soloFeeAmount) + ' coins, ' +
 							'Payout: ' + satoshisToCoins(soloReward) + ' coins'
@@ -1200,6 +1238,9 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                     // perform the sendmany operation .. addressAccount
                     var rpccallTracking = 'sendmany "" ' + JSON.stringify(addressAmounts);
                     //console.log(rpccallTracking);
+					    logger.info(logSystem, logComponent, 
+							'Attempting to send ' + satoshisToCoins(totalSent) + 
+							' coins to ' + Object.keys(addressAmounts).length + ' addresses');
 
                     daemon.cmd('sendmany', ["", addressAmounts, minConfPayout], function (result) {
                         // check for failed payments, there are many reasons
@@ -1262,6 +1303,19 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                                 // it worked, congrats on your pools payout ;)
                                 logger.special(logSystem, logComponent, 'Sent ' + satoshisToCoins(totalSent)
                                     + ' to ' + Object.keys(addressAmounts).length + ' miners; txid: ' + txid);
+									
+								var soloPaymentCount = 0;
+									for (var w in soloWorkers) {
+										if (soloWorkers[w].sent > 0) {
+											logger.special(logSystem, logComponent, 
+												'Solo payment: ' + soloWorkers[w].sent + ' coins to ' + w);
+											soloPaymentCount++;
+										}
+									}
+									if (soloPaymentCount > 0) {
+										logger.info(logSystem, logComponent, 'Sent ' + soloPaymentCount + ' solo payments');
+									}
+									paymentStats.totalPaymentsSent++;
 
                                 if (withholdPercent > 0) {
                                     logger.warning(logSystem, logComponent, 'Had to withhold ' + (withholdPercent * 100)
@@ -1403,6 +1457,8 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 					switch (r.category) {
 						case 'kicked':
 						case 'orphan':
+						    logger.warning(logSystem, logComponent, 
+								(r.isSolo ? '[SOLO] ' : '[POOL] ') + 'Block ' + r.height + ' was ' + r.category);
 							confirmsToDelete.push(['hdel', coin + ':blocksPendingConfirms', r.blockHash]);
 							var sourceKey = r.isSolo ? coin + ':blocksPending:solo' : coin + ':blocksPending';
 							var targetKey = r.isSolo ? coin + ':blocksKicked:solo' : coin + ':blocksKicked';
@@ -1417,6 +1473,9 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 							confirmsUpdate.push(['hset', coin + ':blocksPendingConfirms', r.blockHash, (r.confirmations || 0)]);
 							return;
 						case 'generate':
+						    logger.debug(logSystem, logComponent, 
+								(r.isSolo ? '[SOLO] ' : '[POOL] ') + 'Block ' + r.height + ' confirmed and paid');
+							paymentStats.totalBlocksProcessed++;
 							confirmsToDelete.push(['hdel', coin + ':blocksPendingConfirms', r.blockHash]);
 							var sourceKey = r.isSolo ? coin + ':blocksPending:solo' : coin + ':blocksPending';
 							var targetKey = r.isSolo ? coin + ':blocksConfirmed:solo' : coin + ':blocksConfirmed';
@@ -1504,6 +1563,20 @@ function SetupForPool(logger, poolOptions, setupFinished) {
             }
 
             var paymentProcessTime = Date.now() - startPaymentProcess;
+			
+			        paymentStats.lastCycleTime = paymentProcessTime;
+					logger.info(logSystem, logComponent, 
+						'=== Payment cycle #' + paymentStats.cycleCount + ' complete - ' + 
+						paymentProcessTime + 'ms ===');
+					
+					// Log summary every 10 cycles
+					if (paymentStats.cycleCount % 10 === 0) {
+						logger.special(logSystem, logComponent, 
+							'Payment summary - Cycles: ' + paymentStats.cycleCount + 
+							', Blocks processed: ' + paymentStats.totalBlocksProcessed + 
+							', Payments sent: ' + paymentStats.totalPaymentsSent);
+					}
+		
             logger.debug(logSystem, logComponent, 'Finished interval - time spent: '
                 + paymentProcessTime + 'ms total, ' + timeSpentRedis + 'ms redis, '
                 + timeSpentRPC + 'ms daemon RPC');

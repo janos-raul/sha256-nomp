@@ -52,6 +52,7 @@ module.exports = function(logger, portalConfig, poolConfigs){
     var _this = this;
 
     var logSystem = 'Stats';
+	logger.info(logSystem, 'Init', 'Initializing stats module...');
 
     var redisClients = [];
     var redisStats;
@@ -64,6 +65,19 @@ module.exports = function(logger, portalConfig, poolConfigs){
 
     setupStatsRedis();
     gatherStatHistory();
+	
+	setInterval(function() {
+    if (_this.stats) {
+        var poolCount = Object.keys(_this.stats.pools || {}).length;
+        var totalWorkers = _this.stats.global ? _this.stats.global.workers : 0;
+        var totalHashrate = _this.stats.global ? _this.stats.global.hashrateString : '0 H/s';
+        
+        logger.info(logSystem, 'Summary', 
+            'Stats: ' + poolCount + ' pools, ' + 
+            totalWorkers + ' workers, ' + 
+            'Hashrate: ' + totalHashrate);
+    }
+}, 300000);
 
     var canDoStats = true;
 
@@ -72,23 +86,28 @@ module.exports = function(logger, portalConfig, poolConfigs){
 
         var poolConfig = poolConfigs[coin];
         var redisConfig = poolConfig.redis;
+		logger.debug(logSystem, 'Redis', 'Setting up Redis client for ' + coin);
 
         for (var i = 0; i < redisClients.length; i++){
             var client = redisClients[i];
             if (client.client.port === redisConfig.port && client.client.host === redisConfig.host){
                 client.coins.push(coin);
+				logger.debug(logSystem, 'Redis', 'Reusing existing Redis client for ' + coin);
                 return;
             }
         }
-        redisClients.push({
-            coins: [coin],
-            client: rediscreateClient(redisConfig.port, redisConfig.host, redisConfig.password)
-        });
-    });
+		var newClient = rediscreateClient(redisConfig.port, redisConfig.host, redisConfig.password);
+		redisClients.push({
+			coins: [coin],
+			client: newClient
+		});
+		logger.info(logSystem, 'Redis', 'Created new Redis client for ' + coin + ' at ' + redisConfig.host + ':' + redisConfig.port);
+	});
 
     function setupStatsRedis(){
         redisStats = redis.createClient(portalConfig.redis.port, portalConfig.redis.host);
         redisStats.on('error', function(err){
+			logger.error(logSystem, 'Redis', 'Stats Redis error: ' + err.message);
         redisStats.auth(portalConfig.redis.password);
         });
     }
@@ -340,6 +359,8 @@ this.getBlocks = function (cback) {
 	};
 
 	this.getBalanceByAddress = function(address, cback){
+		logger.debug(logSystem, 'Balance', 'Getting balance for address: ' + address);
+		var fetchStart = Date.now();
 		var a = address.split(".")[0];
 		var client = redisClients[0].client,
 			coins = redisClients[0].coins,
@@ -467,11 +488,15 @@ this.getBlocks = function (cback) {
 
 			_this.stats.balances = balances;
 			_this.stats.address = address;
+			    var fetchTime = Date.now() - fetchStart;
+				logger.debug(logSystem, 'Balance', 'Balance retrieved in ' + fetchTime + 'ms for ' + address);
 			cback({totalHeld:coinsRound(totalHeld), totalPaid:coinsRound(totalPaid), totalImmature:satoshisToCoins(totalImmature), balances});
 		});
 	};
 
     this.getGlobalStats = function(callback){
+		var statsStart = Date.now();
+		logger.debug(logSystem, 'Global', 'Starting global stats collection...');
 
         var statGatherTime = Date.now() / 1000 | 0;
 
@@ -533,10 +558,11 @@ this.getBlocks = function (cback) {
 		
 			client.client.multi(redisCommands).exec(function(err, replies){
 				if (err){
-					logger.error(logSystem, 'Global', 'error with getting global stats ' + JSON.stringify(err));
+					logger.error(logSystem, 'Global', 'Redis error getting stats for ' + client.coins.join(', ') + ': ' + JSON.stringify(err));
 					callback(err);
 				}
 				else{
+					logger.debug(logSystem, 'Global', 'Retrieved stats for ' + client.coins.length + ' coins (' + replies.length + ' replies)');
 					//console.log('=== DEBUG: Processing coins ===');
 					//console.log('Coins to process:', client.coins);
 					//console.log('Total replies length:', replies.length);
@@ -582,7 +608,8 @@ this.getBlocks = function (cback) {
 							confirmed: (replies[i + 4] || 0) + (replies[i + 15] || 0),    // Pool confirmed + Solo confirmed  
 							orphaned: (replies[i + 5] || 0) + (replies[i + 16] || 0),     // Pool orphaned + Solo orphaned
 							lastblock: lastBlockStr ? parseInt(lastBlockStr.split(':')[2], 10) : null,
-							lastblock_time: lastBlockStr ? parseInt(lastBlockStr.split(':')[4], 10) : null
+							//lastblock_time: lastBlockStr ? parseInt(lastBlockStr.split(':')[4], 10) : null 	// in miliseconds
+							lastblock_time: lastBlockStr ? Math.floor(parseInt(lastBlockStr.split(':')[4], 10) / 1000) : null	// in second
 						};
 
 						// Separate counts for display purposes
@@ -591,7 +618,8 @@ this.getBlocks = function (cback) {
 							confirmed: replies[i + 4] || 0,
 							orphaned: replies[i + 5] || 0,
 							lastblock: lastPoolBlockStr ? parseInt(lastPoolBlockStr.split(':')[2], 10) : null,
-							lastblock_time: lastPoolBlockStr ? parseInt(lastPoolBlockStr.split(':')[4], 10) : null
+							//lastblock_time: lastPoolBlockStr ? parseInt(lastPoolBlockStr.split(':')[4], 10) : null	// in miliseconds
+							lastblock_time: lastPoolBlockStr ? Math.floor(parseInt(lastPoolBlockStr.split(':')[4], 10) / 1000) : null	// in seconds
 						};
 
 						const soloBlocks = {
@@ -599,7 +627,8 @@ this.getBlocks = function (cback) {
 							confirmed: replies[i + 15] || 0,
 							orphaned: replies[i + 16] || 0,
 							lastblock: lastSoloBlockStr ? parseInt(lastSoloBlockStr.split(':')[2], 10) : null,
-							lastblock_time: lastSoloBlockStr ? parseInt(lastSoloBlockStr.split(':')[4], 10) : null
+							//lastblock_time: lastSoloBlockStr ? parseInt(lastSoloBlockStr.split(':')[4], 10) : null	// in miliseconds
+							lastblock_time: lastSoloBlockStr ? Math.floor(parseInt(lastSoloBlockStr.split(':')[4], 10) / 1000) : null	// in seconds
 						};
 
 						var coinStats = {
@@ -619,9 +648,8 @@ this.getBlocks = function (cback) {
 							poolStats: {
 								blockheight: replies[i + 2] ? (replies[i + 2].networkBlocks || 0) : 0,	// Current blockchain height
 								lastblock: blocks.lastblock || null,        							// Last found block number
-								lastblock_time: blocks.lastblock_time || null, 							// Last block timestamp	
-								//lastBlock_time: Math.floor(blocks.lastblock_time / 1000) || null,  // Seconds
-								timesincelast: blocks.lastblock_time ? Math.floor(Date.now() / 1000) - Math.floor(blocks.lastblock_time / 1000) : null,  // Time since last block in seconds							
+								lastblock_time: blocks.lastblock_time || null, 							// Last block timestamp	in seconds
+								timesincelast: blocks.lastblock_time ? Math.floor(Date.now() / 1000) - blocks.lastblock_time : null,  // Time since last block in seconds							
 								validBlocks: replies[i + 2] ? (replies[i + 2].validBlocks || 0) : 0,
 								validShares: replies[i + 2] ? (replies[i + 2].validShares || 0) : 0,
 								invalidShares: replies[i + 2] ? (replies[i + 2].invalidShares || 0) : 0,
@@ -669,6 +697,7 @@ this.getBlocks = function (cback) {
 						var paymentsData = replies[i + 12];
 
 						if (paymentsData && Array.isArray(paymentsData)) {
+							var validPayments = 0;
 							// Process payments, ensuring we handle them correctly
 							for (var j = 0; j < paymentsData.length && j < 100; j++) {
 								try {
@@ -676,6 +705,7 @@ this.getBlocks = function (cback) {
 									
 									// Validate payment object has required fields
 									if (payment && payment.time) {
+										validPayments++;
 										// Ensure all required fields exist with defaults
 										payment.blocks = payment.blocks || '';
 										payment.miners = payment.miners || 0;
@@ -688,9 +718,12 @@ this.getBlocks = function (cback) {
 										coinStats.payments.push(payment);
 									}
 								} catch(e) {
-									// Silent error handling - invalid payment data is skipped
+									logger.warning(logSystem, coinName, 'Invalid payment data skipped');
 								}
 							}
+							    if (validPayments > 0) {
+									logger.debug(logSystem, coinName, 'Processed ' + validPayments + ' payment records');
+								}
 							
 							// Sort payments by time (newest first)
 							coinStats.payments.sort(function(a, b) {
@@ -1069,6 +1102,12 @@ this.getBlocks = function (cback) {
 				
 				coinStats.hashrate = coinStats.hashrate + coinStats.soloHashrate;  // Combined total
 				coinStats.hashrateString = _this.getReadableHashRateString(coinStats.hashrate);
+				
+					logger.debug(logSystem, coin, 
+					'Active counts - Pool miners: ' + coinStats.poolMinerCount + 
+					', Solo miners: ' + coinStats.soloMinerCount + 
+					', Pool workers: ' + coinStats.workerCount + 
+					', Solo workers: ' + coinStats.soloWorkerCount);
 								
 				for (var miner in coinStats.miners) {
 					var _workerRate = shareMultiplier * coinStats.miners[miner].shares / portalConfig.website.stats.hashrateWindow;
@@ -1135,7 +1174,7 @@ this.getBlocks = function (cback) {
 					blocktime: coinStats.blockTime,
 					blockheight: coinStats.poolStats.networkBlocks || 0,  // Current blockchain height
 					lastblock: coinStats.blocks.lastblock || null,        // Last found block number
-					lastblock_time: coinStats.blocks.lastblock_time || null, // Last block timestamp
+					lastblock_time: coinStats.blocks.lastblock_time || null, // Last block timestamp in seconds
 					timesincelast: coinStats.poolStats.timesincelast || null,
 					
 					payout_system: coinStats.payout_system,
@@ -1321,9 +1360,17 @@ this.getBlocks = function (cback) {
                 ['zadd', 'statHistory', statGatherTime, _this.statsString],
                 ['zremrangebyscore', 'statHistory', '-inf', '(' + retentionTime]
             ]).exec(function(err, replies){
-                if (err)
-                    logger.error(logSystem, 'Historics', 'Error adding stats to historics ' + JSON.stringify(err));
+			if (err) {
+				logger.error(logSystem, 'Historics', 'Error saving stats history: ' + JSON.stringify(err));
+				} else {
+				logger.debug(logSystem, 'Historics', 'Stats history saved, retained from ' + new Date(retentionTime * 1000).toISOString());
+				}
             });
+			var statsTime = Date.now() - statsStart;
+			logger.info(logSystem, 'Global', 'Stats collection completed in ' + statsTime + 'ms');
+			if (statsTime > 1000) {
+				logger.warning(logSystem, 'Global', 'Slow stats collection detected: ' + statsTime + 'ms');
+			}
             callback();
         });
 
@@ -1400,7 +1447,6 @@ this.getBlocks = function (cback) {
 		return hashrate.toFixed(2) + byteUnits[i];
 	}
 };
-
 
 const { exec } = require('child_process');
 

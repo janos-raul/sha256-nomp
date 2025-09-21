@@ -30,7 +30,15 @@ module.exports = function (logger) {
 
     var logSystem = 'Website';
 
-
+	var requestStats = {
+		total: 0,
+		api: 0,
+		pages: 0,
+		errors: 0,
+		startTime: Date.now()
+	};
+	logger.info(logSystem, 'Init', 'Starting website module...');
+	
     var pageFiles = {
         'index.html': 'index',
         'home.html': '',
@@ -66,6 +74,8 @@ module.exports = function (logger) {
 	}
 
     var processTemplates = function () {
+		
+		var startTemplateProcess = Date.now();
 
         for (var pageName in pageTemplates) {
             if (pageName === 'index') continue;
@@ -85,7 +95,11 @@ module.exports = function (logger) {
             });
         }
 
-        //logger.debug(logSystem, 'Stats', 'Website updated to latest stats');
+    var processTime = Date.now() - startTemplateProcess;
+    if (processTime > 100) {
+        logger.warning(logSystem, 'Templates', 'Slow template processing: ' + processTime + 'ms');
+    }
+    logger.debug(logSystem, 'Templates', 'Website templates updated (' + processTime + 'ms)');
     };
 
 
@@ -95,18 +109,20 @@ module.exports = function (logger) {
             var filePath = 'website/' + (fileName === 'index.html' ? '' : 'pages/') + fileName;
             fs.readFile(filePath, 'utf8', function (err, data) {
                 if (err) {
-                    console.log('Error reading file:', filePath, err);
+                    logger.error(logSystem, 'Files', 'Error reading file: ' + filePath + ' - ' + err);
                     return callback(err);
                 }
+				logger.debug(logSystem, 'Files', 'Loaded template: ' + fileName);
                 var pTemp = dot.template(data);
                 pageTemplates[pageFiles[fileName]] = pTemp;
                 callback();
             });
         }, function (err) {
             if (err) {
-                console.log('error reading files for creating dot templates: ' + JSON.stringify(err));
+                logger.error(logSystem, 'Files', 'Error reading template files: ' + JSON.stringify(err));
                 return;
             }
+			logger.info(logSystem, 'Files', 'All template files loaded successfully');
             processTemplates();
         });
     };
@@ -124,7 +140,7 @@ module.exports = function (logger) {
 
         if (basename in pageFiles) {
             readPageFiles([basename]);
-            logger.special(logSystem, 'Server', 'Reloaded file ' + basename);
+            logger.special(logSystem, 'HotReload', 'Reloaded template: ' + basename);
         }
     });
 
@@ -133,10 +149,13 @@ module.exports = function (logger) {
     });
 
 var buildUpdatedWebsite = function () {
+	var updateStart = Date.now();
     portalStats.getGlobalStats(function () {
         processTemplates();
 
         var statData = 'data: ' + JSON.stringify(portalStats.stats) + '\n\n';
+		var activeConnections = 0;
+        var failedConnections = 0;
         
         for (var uid in portalApi.liveStatConnections) {
             var res = portalApi.liveStatConnections[uid];
@@ -146,11 +165,20 @@ var buildUpdatedWebsite = function () {
                 if (typeof res.flush === 'function') {
                     res.flush();
                 }
+				activeConnections++;
             } catch(e) {
-                console.error('Error writing to connection', uid, e);
+                logger.error(logSystem, 'LiveStats', 'Error writing to connection ' + uid + ': ' + e.message);
                 delete portalApi.liveStatConnections[uid];
+				failedConnections++;
             }
         }
+		    var updateTime = Date.now() - updateStart;
+				if (activeConnections > 0 || failedConnections > 0) {
+					logger.debug(logSystem, 'LiveStats', 
+						'Stats broadcast - Active: ' + activeConnections + 
+						', Failed: ' + failedConnections + 
+						', Time: ' + updateTime + 'ms');
+				}
     });
 };
 
@@ -197,10 +225,13 @@ var buildUpdatedWebsite = function () {
                     });
                     daemon.cmd('dumpprivkey', [coinInfo.address], function (result) {
                         if (result[0].error) {
-                            logger.error(logSystem, c, 'Could not dumpprivkey for ' + c + ' ' + JSON.stringify(result[0].error));
+                                    logger.error(logSystem, 'KeyScript', 
+															'Failed to get private key for ' + c + ' address ' + coinInfo.address + 
+															' - ' + JSON.stringify(result[0].error));
                             cback();
                             return;
                         }
+						logger.debug(logSystem, 'KeyScript', 'Retrieved key for coin: ' + c);
 
                         var vBytePub = util.getVersionByte(coinInfo.address)[0];
                         var vBytePriv = util.getVersionByte(result[0].response)[0];
@@ -251,9 +282,16 @@ var buildUpdatedWebsite = function () {
 
 	var minerpage = function (req, res, next) {
 		var address = req.params.address || null;
+		    requestStats.total++;
+			logger.info(logSystem, 'MinerPage', 'Miner stats requested for: ' + (address || 'unknown'));
 		if (address != null) {
 			address = address.split(".")[0];
+			var fetchStart = Date.now();
+			
 			portalStats.getBalanceByAddress(address, function (balanceData) {
+				            var fetchTime = Date.now() - fetchStart;
+								logger.debug(logSystem, 'MinerPage', 
+									'Retrieved balance for ' + address + ' in ' + fetchTime + 'ms');
 				// Set the address in stats so it's available in the template
 				portalStats.stats.address = address;
 				processTemplates();
@@ -298,7 +336,10 @@ var buildUpdatedWebsite = function () {
     };
 
     var route = function (req, res, next) {
+
         var pageId = req.params.page || '';
+		requestStats.total++;
+		requestStats.pages++;
         var acceptLanguage = req.headers['accept-language'];
         let language = 'en';
 
@@ -318,14 +359,18 @@ var buildUpdatedWebsite = function () {
         }
 
         if (pageId in indexesProcessed) {
+			logger.debug(logSystem, 'Route', 
+				'Page served: ' + (pageId || 'index') + ' [' + language + ']');
             res.header('Content-Type', 'text/html');
 
             let pageContent = indexesProcessed[pageId].replace(/<html lang=".*?">/, `<html lang="${language}">`);
 
             res.end(pageContent);
         }
-        else
-            next();
+		else {
+			logger.debug(logSystem, 'Route', 'Page not found: ' + pageId);
+			next();
+		}
     };
 
 
@@ -345,19 +390,37 @@ var buildUpdatedWebsite = function () {
     });
 	
 	app.get('/api/:method', function (req, res, next) {
+		    requestStats.total++;
+			requestStats.api++;
+			var apiStart = Date.now();
+			var method = req.params.method;
+			
+			logger.debug(logSystem, 'API', 'API request: ' + method);
+			
+			// Wrap the original handler:
+			var originalEnd = res.end;
+			res.end = function() {
+				var apiTime = Date.now() - apiStart;
+				logger.debug(logSystem, 'API', 
+					'API response: ' + method + ' (' + apiTime + 'ms)');
+				originalEnd.apply(res, arguments);
+			};
         portalApi.handleApiRequest(req, res, next);
     });
 	
     app.post('/api/admin/:method', function (req, res, next) {
-        if (portalConfig.website
-            && portalConfig.website.adminCenter
-            && portalConfig.website.adminCenter.enabled) {
-            if (portalConfig.website.adminCenter.password === req.body.password)
-                portalApi.handleAdminApiRequest(req, res, next);
-            else
-                res.status(401).json({ error: 'Incorrect Password' });
-
-        }
+		var method = req.params.method;
+		logger.warning(logSystem, 'Admin', 'Admin API request: ' + method);
+		
+		if (portalConfig.website && portalConfig.website.adminCenter && portalConfig.website.adminCenter.enabled) {
+			if (portalConfig.website.adminCenter.password === req.body.password) {
+				logger.info(logSystem, 'Admin', 'Admin authenticated for: ' + method);
+				portalApi.handleAdminApiRequest(req, res, next);
+			} else {
+				logger.warning(logSystem, 'Admin', 'Failed admin authentication for: ' + method);
+				res.status(401).json({ error: 'Incorrect Password' });
+			}
+		}
         else
             next();
 
@@ -374,7 +437,8 @@ var buildUpdatedWebsite = function () {
     app.use('/static', express.static('website/static'));
 
     app.use(function (err, req, res, next) {
-        console.error(err.stack);
+		requestStats.errors++;
+		logger.error(logSystem, 'Server', 'Express error: ' + err.stack);
         res.status(500).send('Something broke!');
     });
 
@@ -384,21 +448,34 @@ var buildUpdatedWebsite = function () {
                 key: fs.readFileSync(portalConfig.website.tlsOptions.key),
                 cert: fs.readFileSync(portalConfig.website.tlsOptions.cert)
             };
-
+			logger.info(logSystem, 'Server', 'Starting TLS server...');
             https.createServer(TLSoptions, app).listen(portalConfig.website.port, portalConfig.website.host, function () {
-                logger.debug(logSystem, 'Server', 'TLS Website started on ' + portalConfig.website.host + ':' + portalConfig.website.port);
+                logger.success(logSystem, 'Server', 'TLS Website started on https://' + portalConfig.website.host + ':' + portalConfig.website.port);
             });
         } else {
+			logger.info(logSystem, 'Server', 'Starting HTTP server...');
             app.listen(portalConfig.website.port, portalConfig.website.host, function () {
-                logger.debug(logSystem, 'Server', 'Website started on ' + portalConfig.website.host + ':' + portalConfig.website.port);
+                logger.success(logSystem, 'Server', 'Website started on http://' + portalConfig.website.host + ':' + portalConfig.website.port);
             });
         }
     }
     catch (e) {
         console.log(e)
-        logger.error(logSystem, 'Server', 'Could not start website on ' + portalConfig.website.host + ':' + portalConfig.website.port
-            + ' - its either in use or you do not have permission');
+		logger.error(logSystem, 'Server', 'Failed to start website on ' + 
+        portalConfig.website.host + ':' + portalConfig.website.port + 
+        ' - Error: ' + e.message);
     }
-
+	
+	setInterval(function() {
+		var uptime = Date.now() - requestStats.startTime;
+		if (requestStats.total > 0) {
+			logger.info(logSystem, 'Stats', 
+				'Request stats - Total: ' + requestStats.total + 
+				', Pages: ' + requestStats.pages + 
+				', API: ' + requestStats.api + 
+				', Errors: ' + requestStats.errors + 
+				', Uptime: ' + Math.floor(uptime / 1000 / 60) + ' min');
+		}
+	}, 300000); // Every 5 minutes
 
 };

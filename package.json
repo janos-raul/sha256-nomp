@@ -1,6 +1,6 @@
 {
     "name": "sha256-nomp",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "description": "SHA256 (Bitcoin) mining pool with solo mining and ASICBoost support, based on NOMP",
     "keywords": [
         "stratum",
@@ -21,7 +21,7 @@
     "license": "MIT",
     "author": "JANOS-RAUL",
     "contributors": [
-		"Janos-Raul",
+        "Janos-Raul",
         "Joshua Yabut",
         "aayanl",
         "sennevb",
@@ -43,6 +43,7 @@
         "url": "git+https://github.com/janos-raul/sha256-nomp.git"
     },
     "dependencies": {
+        "archiver": "^7.0.1",
         "async": "^3.2.6",
         "axios": "^1.7.9",
         "colors": "^1.4.0",
@@ -56,7 +57,7 @@
         "node-watch": "^0.7.4",
         "nonce": "^1.0.4",
         "redis": "^3.1.2",
-         "stratum-pool": "https://github.com/janos-raul/node-stratum-pool.git#sha256-nomp-node-stratum-pool"
+        "stratum-pool": "https://github.com/janos-raul/node-stratum-pool.git#sha256-nomp-node-stratum-pool"
     },
     "engines": {
         "node": ">=16",
