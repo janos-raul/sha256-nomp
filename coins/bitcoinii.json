@@ -1,0 +1,43 @@
+{
+  "name": "bitcoinii",
+  "symbol": "BC2",
+  "algorithm": "sha256",
+  "reward": "POW",
+  "asicboost": true,
+  "versionMask": "0x3fffe000",
+  "enforcePoolVersionMask": true,
+  "versionRollingMinBits": 16,
+  "asicboostMinDifficulty": 1000,
+  "asicboostMaxClients": 1000,
+  "coinbase": "yourpool.com",
+  "txMessages": false,
+  "segwit": true,
+  "taproot": true,
+  "coinbaseTxVersion": 2,
+  "hasBlockReward": true,
+  "blockVersion": 536870912,
+  "default_witness_commitment": true,
+  "shareDifficultyTarget": "target",
+  "rpcTimeout": 5000,
+  "blockTime": 600,
+  "minConf": 101,
+  
+  "addressValidation": {
+		"validateWorkerUsername": true,
+		"addressPrefix": "bc",
+		"minLength": 26,
+		"maxLength": 46
+  },
+  
+  "explorer": {
+		"txURL": "https://bitcoinii.ddns.net/explorer/tx/",
+		"blockURL": "https://bitcoinii.ddns.net/explorer/block/"
+  },
+  
+  "rpc": {
+		"host": "127.0.0.1",
+		"port": 18388,
+		"user": "rpcuser",
+		"password": "rpcpassword"
+  }
+}
