@@ -9,7 +9,7 @@
   "versionRollingMinBits": 16,        									
   "asicboostMinDifficulty": 1000,      
   "asicboostMaxClients": 1000,         
-  "coinbase": "sha256-mining.go.ro",
+  "coinbase": "yourpool.com",
   "txMessages": false,
   "segwit": true,
   "taproot": true,
@@ -22,23 +22,23 @@
   "blockTime": 300,
   "minConf": 201,
   
-"addressValidation": {
+  "addressValidation": {
 		"validateWorkerUsername": true,
 		"addressPrefix": "bs",
-		"minLength": 30,
-		"maxLength": 42
+		"minLength": 26,
+		"maxLength": 46
   },
 
-"explorer": {
+  "explorer": {
         "txURL": "http://explorer.btcs.pools4mining.com:3001/tx/",
         "blockURL": "http://explorer.btcs.pools4mining.com:3001/block/"
-    },
+  },
 	
-"rpc": {
-		"host": "192.168.188.2",
+  "rpc": {
+		"host": "127.0.0.1",
 		"port": 10013,
-		"user": "",
-		"password": ""
+		"user": "rpcuser",
+		"password": "rpcpassword"
   }
 }
 

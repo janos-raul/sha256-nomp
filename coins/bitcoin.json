@@ -9,7 +9,7 @@
   "versionRollingMinBits": 16,         										
   "asicboostMinDifficulty": 1000,      
   "asicboostMaxClients": 1000,         
-  "coinbase": "sha256-mining.go.ro",
+  "coinbase": "yourpool.com",
   "txMessages": false,
   "segwit": true,
   "taproot": true,
@@ -19,26 +19,26 @@
   "default_witness_commitment": true,
   "shareDifficultyTarget": "target",
   "rpcTimeout": 5000,
-  "blockTime": 300,
+  "blockTime": 600,
   "minConf": 101,
   
-"addressValidation": {
+  "addressValidation": {
 		"validateWorkerUsername": true,
 		"addressPrefix": "bc",
-		"minLength": 30,
-		"maxLength": 42
+		"minLength": 26,
+		"maxLength": 46
   },
 
-"explorer": {
-        "txURL": "https://bitcoinexplorer.org/tx/",
-        "blockURL": "https://bitcoinexplorer.org/block/"
-    },
+  "explorer": {
+		"txURL": "https://blockstream.info/tx/",
+		"blockURL": "https://blockstream.info/block/"
+  },
 	
-"rpc": {
-		"host": "192.168.188.2",
-		"port": 50010,
-		"user": "",
-		"password": ""
+  "rpc": {
+		"host": "127.0.0.1",
+		"port": 8332,
+		"user": "rpcuser",
+		"password": "rpcpassword"
   }
 }
 

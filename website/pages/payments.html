@@ -1,219 +1,670 @@
 <style>
-    #topPool {
-        padding: 18px 18px 0px 18px;
-    }
-	
-	#menu{
-        background-color: #3d3d3d;
-        min-width: 170px;
+    /* Payments Page Specific Styles */
+    .payments-header {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
     }
 
-    #menu > .menuHeader{
-        color: #e3f7ff;
-        border-bottom: 1px solid #7f878b;
-        font-size: 1.2em;
-        padding: 16px 16px 4px 15px;
-    }
-	
-    .poolWrapper {
-        background: #ddd;
-        border: solid 1px #c7c7c7;
-        border-radius: 5px;
-        padding: 5px;
-        margin-bottom: 18px;
-    }
-    .poolLabel {
-        font-size: 1.2em;
-        text-align: center;
-        padding: 4px;
-    }
-    table {
-        background: #ddd;
+    .payments-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        border-collapse: collapse;
+        height: 4px;
+        background: var(--gradient);
     }
-    table th {
-        background: #c7c7c7;
-        padding: 8px;
+
+    .payments-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .payments-subtitle {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
+
+    /* Pool Payment Card */
+    .pool-payment-card {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        border: 1px solid var(--border);
+        box-shadow: var(--card-shadow);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .pool-payment-header {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .pool-payment-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .pool-name {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .pool-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(59, 130, 246, 0.2);
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+    }
+
+    .payment-mode-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .payment-mode-badge.prop {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .payment-mode-badge.pplnt {
+        background: rgba(59, 130, 246, 0.2);
+        color: var(--accent);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .payment-mode-badge.solo {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* Pool Stats */
+    .pool-stats {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .pool-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .pool-stat i {
+        color: var(--accent);
+    }
+
+    .pool-stat-value {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    /* Payment Info Box */
+    .payment-info-box {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 1.5rem;
+        text-align: center;
+        color: var(--text-secondary);
+    }
+
+    .payment-info-box strong {
+        color: var(--text-primary);
+    }
+
+    /* Payments Table */
+    .payments-table-container {
+        padding: 1.5rem;
+        overflow-x: auto;
+    }
+
+    .payments-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .payments-table thead {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+    }
+
+    .payments-table th {
+        padding: 1rem;
         text-align: left;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
     }
-    table td {
-        padding: 6px 8px;
-        border-bottom: 1px solid #e0e0e0;
+
+    .payments-table td {
+        padding: 1rem;
+        color: var(--text-secondary);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        transition: all 0.2s ease;
     }
-    .block-cell {
-        max-width: 400px;
-        word-break: break-all;
+
+    .payments-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .payments-table tbody tr:hover {
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    .payments-table tbody tr:hover td {
+        color: var(--text-primary);
+    }
+
+    /* Payment Type Badges */
+    .type-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .type-badge.solo {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .type-badge.pool {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* Payment Amount */
+    .payment-amount {
+        font-weight: 700;
+        font-family: 'Monaco', 'Courier New', monospace;
+        background: linear-gradient(135deg, var(--success), #10d992);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Transaction Link */
+    .tx-link {
+        color: var(--accent);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        transition: all 0.2s ease;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+    }
+
+    .tx-link:hover {
+        background: rgba(59, 130, 246, 0.1);
+        transform: translateX(2px);
+    }
+
+    .tx-pending {
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
+    /* Blocks Cell */
+    .blocks-cell {
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        max-width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-    .payment-info {
-        font-size: 0.9em;
-        color: #666;
-        text-align: center;
-        padding: 10px;
-        background: #f0f0f0;
-        margin: 10px 0;
-        border-radius: 3px;
-    }
-    .no-payments {
-        text-align: center;
-        padding: 30px;
-        color: #666;
-        font-style: italic;
-        background: #f9f9f9;
-        border-radius: 3px;
-    }
-    .address-truncated {
-        font-family: monospace;
-        font-size: 0.9em;
-    }
-    .payment-amount {
-        color: #d9534f;
-        font-weight: bold;
-    }
-    .tx-link {
-        color: #337ab7;
-        text-decoration: none;
-    }
-    .tx-link:hover {
-        text-decoration: underline;
-    }
-    .solo-badge {
-        color: #f0ad4e;
-        font-weight: bold;
-        font-size: 0.85em;
-        padding: 2px 4px;
-        background: #fff3cd;
-        border-radius: 3px;
-        margin-right: 5px;
+        white-space: nowrap;
     }
 
+    /* No Payments State */
+    .no-payments {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+        border: 2px dashed var(--border);
+        border-radius: 1rem;
+        padding: 3rem;
+        margin: 1.5rem;
+        text-align: center;
+        color: var(--text-secondary);
+    }
+
+    .no-payments-icon {
+        font-size: 3rem;
+        color: var(--accent);
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .no-payments-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .no-payments-text {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+    }
+
+    /* Time Display */
+    .time-display {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+    }
+
+    .time-display i {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    /* Pagination Info */
+    .pagination-info {
+        text-align: center;
+        padding: 1rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        border-top: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Summary Stats Grid */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
+        border-color: var(--accent);
+    }
+
+    .summary-label {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .payments-title {
+            font-size: 1.5rem;
+        }
+        
+        .pool-payment-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .pool-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .payments-table {
+            font-size: 0.85rem;
+        }
+        
+        .payments-table th,
+        .payments-table td {
+            padding: 0.75rem 0.5rem;
+        }
+        
+        /* Hide columns on mobile */
+        .payments-table th:nth-child(3),
+        .payments-table td:nth-child(3),
+        .payments-table th:nth-child(5),
+        .payments-table td:nth-child(5) {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 {{ function capitalizeFirstLetter(t){return t.charAt(0).toUpperCase()+t.slice(1)} }}
 {{ function readableDate(a) {
-  if (!a) return 'N/A';
-  var d = new Date(parseInt(a));
-  return d.toLocaleString();
+    if (!a) return 'N/A';
+    var d = new Date(parseInt(a));
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
 } }}
 {{ function truncateAddress(addr) {
-  if (!addr) return 'N/A';
-  if (addr.length <= 12) return addr;
-  return addr.substr(0, 6) + '...' + addr.substr(-4);
+    if (!addr) return 'N/A';
+    if (addr.length <= 12) return addr;
+    return addr.substr(0, 6) + '...' + addr.substr(-4);
 } }}
 
+<!-- Payments Header -->
+<div class="payments-header">
+    <h1 class="payments-title">
+        <i class="fas fa-money-bill-wave"></i>
+        Payment History
+    </h1>
+    <p class="payments-subtitle">Track all pool and solo mining payments</p>
+</div>
+
+<!-- Global Summary Cards -->
+<div class="summary-grid">
+    <div class="summary-card">
+        <div class="summary-label">
+            <i class="fas fa-coins"></i>
+            Active Pools
+        </div>
+        <div class="summary-value" id="activePools">-</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-label">
+            <i class="fas fa-cubes"></i>
+            Total Blocks
+        </div>
+        <div class="summary-value" id="totalBlocks">-</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-label">
+            <i class="fas fa-check-circle"></i>
+            Total Payments
+        </div>
+        <div class="summary-value" id="totalPayments">-</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-label">
+            <i class="fas fa-wallet"></i>
+            Total Paid Out
+        </div>
+        <div class="summary-value" id="totalPaidOut">-</div>
+    </div>
+</div>
+
+<!-- Pool Payment Cards -->
 {{ for(var pool in it.stats.pools) { }}
 {{ var poolData = it.stats.pools[pool]; }}
-<div id="topPool">
-    <div class="poolWrapper">
-        <div class="poolLabel">
-            {{=capitalizeFirstLetter(poolData.name)}} Payments 
-            {{ if (poolData.paymentMode === 'prop') { }}
-                <span style="color: #5cb85c; font-size: 0.8em;">[PROP Mode]</span>
-            {{ } else if (poolData.paymentMode === 'pplnt') { }}
-                <span style="color: #5bc0de; font-size: 0.8em;">[PPLNT Mode]</span>
-            {{ } }}
-            &nbsp;&nbsp;
-            <span style="float:right;">
-                <small>
-                    <i class="fas fa-cubes fa-fw"></i> 
-                    <span id="statsValidBlocks{{=pool}}">{{=poolData.poolStats.validBlocks || 0}}</span> Blocks
-                    &nbsp;&nbsp;
-                    <i class="fas fa-money-bill fa-fw"></i> Total Paid: 
-                    <span id="statsTotalPaid{{=pool}}">{{=(parseFloat(poolData.poolStats.totalPaid || 0)).toFixed(8)}}</span>
-                    {{=poolData.symbol}}
-                </small>&nbsp;&nbsp;
-            </span>
-        </div>
-        
-        {{ var payments = poolData.displayPayments || poolData.payments || []; }}
-        {{ var totalPayments = poolData.payments ? poolData.payments.length : 0; }}
-        
-        {{ if (payments && payments.length > 0) { }}
-        
-        <div class="payment-info">
-            <strong>Showing {{=payments.length}} most recent payments</strong>
-            {{ if (totalPayments > 25) { }}
-            (Total: {{=totalPayments}} payments)
-            {{ } }}
-            {{ if (poolData.soloMining) { }}
-            <br><small>Solo mining enabled with {{=poolData.soloFee || 0}}% fee</small>
-            {{ } }}
-        </div>
-        
-        <div class="poolMinerTable">
-            <table class="pure-table pure-table-horizontal">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Type</th>
-                        <th>Blocks</th>
-                        <th>Miners</th>
-                        <th>Shares</th>
-                        <th>Total Amount</th>
-                        <th>TX</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {{ for(var p = 0; p < payments.length && p < 25; p++) { }}
-                {{ var payment = payments[p]; }}
-                <tr class="{{= p % 2 === 0 ? 'pure-table-even' : 'pure-table-odd' }}">
-                    <td>{{=readableDate(payment.time)}}</td>
-                    <td>
-                        {{ if (payment.isSolo) { }}
-                            <span class="solo-badge">SOLO</span>
-                        {{ } else { }}
-                            <span style="color: #5cb85c; font-weight: bold;">POOL</span>
-                        {{ } }}
-                    </td>
-                    <td class="block-cell">
-                        {{=payment.blocks || 'N/A'}}
-                    </td>
-                    <td>{{=payment.miners || 0}}</td>
-                    <td>{{=payment.shares ? Math.round(payment.shares) : 0}}</td>
-                    <td>
-                        <span class="payment-amount">
-                            {{=parseFloat(payment.paid || 0).toFixed(8)}} {{=poolData.symbol}}
+<div class="pool-payment-card" data-pool="{{=pool}}">
+    <div class="pool-payment-header">
+        <div class="pool-payment-title">
+            <div class="pool-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div>
+                <div class="pool-name">
+                    {{=capitalizeFirstLetter(poolData.name)}}
+                    {{ if (poolData.paymentMode === 'prop') { }}
+                        <span class="payment-mode-badge prop">
+                            <i class="fas fa-chart-pie"></i> PROP
                         </span>
-                    </td>
-                    <td>
-                        {{ if (payment.txid) { }}
-                            {{ if (it.poolsConfigs[pool] && it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.txURL) { }}
-                            <a href="{{=it.poolsConfigs[pool].coin.explorer.txURL + payment.txid}}"
-                                title="View transaction" target="_blank" class="tx-link">
-                                <i class="fas fa-external-link-alt"></i> View
-                            </a>
-                            {{ } else { }}
-                            <span class="address-truncated" title="{{=payment.txid}}">
-                                {{=truncateAddress(payment.txid)}}
-                            </span>
-                            {{ } }}
-                        {{ } else { }}
-                        <span style="color: #999;">Pending</span>
-                        {{ } }}
-                    </td>
-                </tr>
-                {{ } }}
-                </tbody>
-            </table>
-            
-            {{ if (totalPayments > 25) { }}
-            <div style="text-align: center; padding: 10px; color: #666; font-size: 0.9em;">
-                Showing 25 of {{=totalPayments}} total payments
+                    {{ } else if (poolData.paymentMode === 'pplnt') { }}
+                        <span class="payment-mode-badge pplnt">
+                            <i class="fas fa-clock"></i> PPLNT
+                        </span>
+                    {{ } }}
+                    {{ if (poolData.soloMining) { }}
+                        <span class="payment-mode-badge solo">
+                            <i class="fas fa-user"></i> SOLO
+                        </span>
+                    {{ } }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="pool-stats">
+            <div class="pool-stat">
+                <i class="fas fa-cubes"></i>
+                <span class="pool-stat-value stats-blocks">{{=poolData.poolStats.validBlocks || 0}}</span>
+                Blocks
+            </div>
+            <div class="pool-stat">
+                <i class="fas fa-money-bill"></i>
+                Total Paid:
+                <span class="pool-stat-value stats-paid">{{=(parseFloat(poolData.poolStats.totalPaid || 0)).toFixed(8)}}</span>
+                {{=poolData.symbol}}
+            </div>
+            {{ if (poolData.soloMining) { }}
+            <div class="pool-stat">
+                <i class="fas fa-percentage"></i>
+                Solo Fee:
+                <span class="pool-stat-value">{{=poolData.soloFee || 0}}%</span>
             </div>
             {{ } }}
         </div>
+    </div>
+    
+    {{ var payments = poolData.displayPayments || poolData.payments || []; }}
+    {{ var totalPayments = poolData.payments ? poolData.payments.length : 0; }}
+    
+    {{ if (payments && payments.length > 0) { }}
+    
+    {{ if (totalPayments > 25) { }}
+    <div class="payment-info-box">
+        <strong>Showing {{=payments.length}} most recent payments</strong> 
+        (Total: {{=totalPayments}} payments)
+    </div>
+    {{ } }}
+    
+    <div class="payments-table-container">
+        <table class="payments-table">
+            <thead>
+                <tr>
+                    <th><i class="fas fa-clock"></i> Time</th>
+                    <th><i class="fas fa-tag"></i> Type</th>
+                    <th><i class="fas fa-cubes"></i> Blocks</th>
+                    <th><i class="fas fa-users"></i> Miners</th>
+                    <th><i class="fas fa-coins"></i> Amount</th>
+                    <th><i class="fas fa-link"></i> Transaction</th>
+                </tr>
+            </thead>
+            <tbody>
+            {{ for(var p = 0; p < payments.length && p < 25; p++) { }}
+            {{ var payment = payments[p]; }}
+            <tr>
+                <td>
+                    <div class="time-display">
+                        <i class="far fa-clock"></i>
+                        {{=readableDate(payment.time)}}
+                    </div>
+                </td>
+                <td>
+                    {{ if (payment.isSolo) { }}
+                        <span class="type-badge solo">
+                            <i class="fas fa-user"></i> SOLO
+                        </span>
+                    {{ } else { }}
+                        <span class="type-badge pool">
+                            <i class="fas fa-users"></i> POOL
+                        </span>
+                    {{ } }}
+                </td>
+                <td class="blocks-cell" title="{{=payment.blocks}}">
+                    {{=payment.blocks || 'N/A'}}
+                </td>
+                <td>
+                    <span style="font-weight: 600;">{{=payment.miners || 0}}</span>
+                </td>
+                <td>
+                    <span class="payment-amount">
+                        {{=parseFloat(payment.paid || 0).toFixed(8)}} {{=poolData.symbol}}
+                    </span>
+                </td>
+                <td>
+                    {{ if (payment.txid) { }}
+                        {{ if (it.poolsConfigs && it.poolsConfigs[pool] && it.poolsConfigs[pool].coin && it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.txURL) { }}
+                        <a href="{{=it.poolsConfigs[pool].coin.explorer.txURL + payment.txid}}"
+                            title="View transaction on explorer" target="_blank" class="tx-link">
+                            <i class="fas fa-external-link-alt"></i> View
+                        </a>
+                        {{ } else { }}
+                        <span style="font-family: monospace; font-size: 0.85rem;" title="{{=payment.txid}}">
+                            {{=truncateAddress(payment.txid)}}
+                        </span>
+                        {{ } }}
+                    {{ } else { }}
+                        <span class="tx-pending">
+                            <i class="fas fa-spinner fa-pulse"></i> Pending
+                        </span>
+                    {{ } }}
+                </td>
+            </tr>
+            {{ } }}
+            </tbody>
+        </table>
         
-        {{ } else { }}
-        <div class="no-payments">
-            <i class="fas fa-info-circle" style="font-size: 2em; color: #5bc0de;"></i>
-            <br><br>
-            No payments have been processed yet.
-            <br><small>Payments will appear here once blocks are found and confirmed.</small>
+        {{ if (totalPayments > 25) { }}
+        <div class="pagination-info">
+            <i class="fas fa-info-circle"></i> Showing 25 of {{=totalPayments}} total payments
         </div>
         {{ } }}
-        
     </div>
+    
+    {{ } else { }}
+    <div class="no-payments">
+        <div class="no-payments-icon">
+            <i class="fas fa-inbox"></i>
+        </div>
+        <div class="no-payments-title">No Payments Yet</div>
+        <div class="no-payments-text">
+            Payments will appear here once blocks are found and confirmed.
+            <br>Keep mining to earn rewards!
+        </div>
+    </div>
+    {{ } }}
 </div>
 {{ } }}
+
+<script>
+    // Function to update summary cards
+    function updatePaymentsSummary() {
+        // Count pools and calculate totals
+        var poolCards = document.querySelectorAll('.pool-payment-card');
+        var totalBlocks = 0;
+        var totalPaid = 0;
+        var totalPaymentCount = 0;
+        
+        poolCards.forEach(function(card) {
+            // Get blocks count
+            var blocksEl = card.querySelector('.stats-blocks');
+            if (blocksEl) {
+                totalBlocks += parseInt(blocksEl.textContent) || 0;
+            }
+            
+            // Get total paid
+            var paidEl = card.querySelector('.stats-paid');
+            if (paidEl) {
+                totalPaid += parseFloat(paidEl.textContent) || 0;
+            }
+            
+            // Count payments in table
+            var rows = card.querySelectorAll('.payments-table tbody tr');
+            totalPaymentCount += rows.length;
+        });
+        
+        // Update summary cards
+        var activePoolsEl = document.getElementById('activePools');
+        var totalBlocksEl = document.getElementById('totalBlocks');
+        var totalPaymentsEl = document.getElementById('totalPayments');
+        var totalPaidOutEl = document.getElementById('totalPaidOut');
+        
+        if (activePoolsEl) activePoolsEl.textContent = poolCards.length;
+        if (totalBlocksEl) totalBlocksEl.textContent = totalBlocks;
+        if (totalPaymentsEl) totalPaymentsEl.textContent = totalPaymentCount;
+        
+        // Format total paid
+        if (totalPaidOutEl) {
+            if (totalPaid > 1000) {
+                totalPaidOutEl.textContent = (totalPaid / 1000).toFixed(2) + 'k';
+            } else {
+                totalPaidOutEl.textContent = totalPaid.toFixed(2);
+            }
+        }
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updatePaymentsSummary);
+    } else {
+        // DOM is already loaded (happens with hot-swap)
+        updatePaymentsSummary();
+    }
+    
+    // Also update after a small delay to handle any async rendering
+    setTimeout(updatePaymentsSummary, 100);
+    
+    // Auto-refresh
+	// Live updates are handled automatically by the backend SSE system
+	// No need for manual refresh - data updates continuously via EventSource
+    
+    // Define initPageScripts for hot-swap compatibility
+    window.initPaymentsScripts = updatePaymentsSummary;
+</script>

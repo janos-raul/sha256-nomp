@@ -1,249 +1,556 @@
 <style>
-    #holder{
-        display: flex;
-        flex-direction: row;
+    /* Getting Started Specific Styles */
+    .getting-started-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
     }
 
-    .glow{
-        box-shadow: inset 0 0 12px 4px #ff6c00;
-    }
-
-    .hidden{
-        display: none !important;
-    }
-
-    #menu{
-        background-color: #3d3d3d;
-        min-width: 170px;
-    }
-
-    #menu > .menuHeader{
-        color: #e3f7ff;
-        border-bottom: 1px solid #7f878b;
-        font-size: 1.2em;
-        padding: 16px 16px 4px 15px;
-    }
-
-    .menuList{
-        transition-duration: 200ms;
-    }
-
-    .menuList > a:first-child{
-        margin-top: 10px;
-    }
-
-    .menuList > a{
-        display: block;
-        color: #e3f7ff;
-        text-decoration: none;
-        padding: 7px;
-        padding-left: 25px;
-        text-transform: capitalize;
-    }
-
-    .menuList > a:hover{
-        color: #f69b3a;
-    }
-
-    #main{
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-        margin: 18px;
-    }
-    .miningOption{
-        color: white;
-        display: flex;
-        flex: 1 1 auto;
-        flex-direction: row;
-        flex-wrap: wrap;
-        min-height: 215px;
-        justify-content: center;
-        align-items: center;
-        text-decoration: none;
-    }
-
-    a.miningOption:hover{
-        color: #f69b3a;
-    }
-
-    #coinGlowTrigger{
-        background-color: #1f2434;
-		 border-radius: 10px;
-    }
-    #nompAppDownload{
-        background-color: #1f2434;
-		 border-radius: 10px;
-    }
-	#connectionDetails{
-        background-color: #1f2434;
-		 border-radius: 10px;
-    }
-	#miningConfigGuide {
-	  display: flex;
-	  flex-direction: column;
-	  align-items: center;
-	  text-align: left;
-	  padding: 25px;
-	  max-width: 850px;
-	  margin: 0 auto;
-	  background-color: #f0f4f8;
-	  border-radius: 12px;
-	  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-	  font-family: 'Segoe UI', sans-serif;
-	}
-	.configOptionNum {
-	  font-size: 2em;
-	  font-weight: bold;
-	  margin-bottom: 10px;
-	  color: #333;
-	}
-
-	.configTitle {
-	  font-size: 1.5em;
-	  font-weight: bold;
-	  margin-bottom: 20px;
-	  color: #2c3e50;
-	}
-
-	.configDetails p {
-	  margin-bottom: 20px;
-	}
-
-	.configDetails ul {
-	  margin-top: 5px;
-	  padding-left: 20px;
-	}
-
-	.configDetails code {
-	  background-color: #1f2434;
-	  padding: 2px 6px;
-	  border-radius: 4px;
-	  font-family: monospace;
-	}
-    .miningOptionNum{
-        font-size: 6em;
-        padding-right: 20px;
-        width: 140px;
+    /* Hero Banner */
+    .hero-banner {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 1.5rem;
+        padding: 3rem;
+        margin-bottom: 2rem;
         text-align: center;
-    }
-    .miningOptionInstructions{
-        flex: 1 1 auto;
-    }
-
-    .miningOptionInstructions > div:first-child{
-        font-size: 2.4em;
-    }
-    .miningOptionInstructions > div:last-child{
-        margin-top: 20px;
-        font-size: 1.3em;
+        position: relative;
+        overflow: hidden;
     }
 
-    #orHolder{
-        height: 37px;
-        text-align: center;
-    }
-    #orLine{
-        border-bottom: 1px solid #c2cacf;
-        height: 19px;
-        margin-bottom: -13px;
-    }
-    #orText{
-        background-color: #ebf4fa;
-        color: #5c5c5c;
-        display: inline-block;
-        width: 35px;
-        font-style: italic;
-    }
-
-    #coinInfoBackground{
-        transition-duration: 400ms;
+    .hero-banner::before {
+        content: '';
         position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: float 10s ease-in-out infinite;
+    }
+
+    .hero-banner h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .hero-banner p {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.9);
+        position: relative;
+    }
+
+    /* Quick Start Cards */
+    .quick-start {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .start-card {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 2.5rem;
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--text-primary);
+    }
+
+    .start-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        border-color: var(--accent);
+    }
+
+    .start-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--gradient);
+    }
+
+    .card-number {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        font-size: 5rem;
+        font-weight: 700;
+        color: rgba(59, 130, 246, 0.1);
+    }
+
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+        color: var(--accent);
+    }
+
+    .card-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+    }
+
+    .card-desc {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-highlight {
+        background: rgba(59, 130, 246, 0.1);
+        border-left: 3px solid var(--accent);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    /* Pool Selection */
+    .pool-selection {
+        background: var(--bg-card);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        border: 1px solid var(--border);
+    }
+
+    .pool-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .pool-header h2 {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .pools-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .pool-item {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        position: relative;
+    }
+
+    .pool-item:hover {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: var(--accent);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
+    }
+
+    .pool-item.glow {
+        animation: glow-pulse 0.5s ease;
+    }
+
+    @keyframes glow-pulse {
+        0%, 100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+    }
+
+    .pool-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .pool-algo {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    /* Configuration Guide */
+    .config-guide {
+        background: var(--bg-card);
+        border-radius: 1.5rem;
+        padding: 2.5rem;
+        margin-bottom: 3rem;
+        border: 1px solid var(--border);
+    }
+
+    .config-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .config-header h2 {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+    }
+
+    .config-header p {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+    }
+
+    .config-item {
+        background: var(--bg-secondary);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+    }
+
+    .config-item:hover {
+        border-color: var(--accent);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.1);
+    }
+
+    .config-item-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .config-emoji {
+        font-size: 2rem;
+    }
+
+    .config-number {
+        background: var(--gradient);
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .config-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        flex: 1;
+    }
+
+    .config-desc {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .config-example {
+        background: var(--bg-primary);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        font-family: 'Courier New', monospace;
+        border: 1px solid var(--border);
+    }
+    
+    .config-example > div {
+        margin: 0.5rem 0;
+        line-height: 1.8;
+    }
+
+    .example-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .code-inline {
+        background: rgba(59, 130, 246, 0.2);
+        color: var(--accent-hover);
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.3rem;
+        font-family: 'Courier New', monospace;
+    }
+
+    .config-effect {
+        background: rgba(16, 185, 129, 0.1);
+        border-left: 3px solid var(--success);
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+
+    .effect-label {
+        font-weight: 600;
+        color: var(--success);
+        margin-bottom: 0.5rem;
+    }
+
+    .config-effect ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .config-effect li {
+        padding: 0.3rem 0;
+        color: var(--text-secondary);
+        position: relative;
+        padding-left: 1.5rem;
+    }
+
+    .config-effect li::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        color: var(--success);
+        font-weight: 700;
+    }
+
+    /* ASICBoost Badge */
+    .boost-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        animation: pulse 2s infinite;
+        margin: 1rem 0;
+    }
+
+    /* Connection Modal */
+    .modal-overlay {
+        position: fixed;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: black;
-        opacity: 0.0;
-    }
-    #coinInfo{
-        display: flex;
-        flex-direction: column;
-        color: white;
-        width: 750px;
-        min-height: 400px;
-        top: 50px;
-        left: 50%;
-        margin-left: -375px;
-        position: absolute;
-        background-color: #f06350;
-		 border-radius: 10px;
-    }
-    #coinInfo .coinInfoName{
-        text-transform: capitalize;
-    }
-    #coinInfo > div:first-of-type{
-        font-size: 1.8em;
-        text-align: center;
-        margin-top: 40px;
-        margin-bottom: 35px;
-    }
-    #coinInfoRows{
-        display: flex;
-        flex-direction: row;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        align-items: center;
         justify-content: center;
-        flex: 1 1 auto;
-        margin-bottom: 70px;
+        z-index: 1000;
     }
-    #coinInfoRows > div{
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    #coinInfoRows > div > div{
-        padding: 3px;
-    }
-    #coinInfoRowKeys{
-        font-weight: bold;
-        padding-right: 30px;
-    }
-    #coinInfoRowKeys .coinInfoSubtle{
-        font-weight: normal;
-    }
-    #coinInfoRowValues{
 
+    .modal-overlay.active {
+        display: flex;
     }
-    #coinInfoClose{
+
+    .modal-content {
+        background: var(--bg-card);
+        border-radius: 1.5rem;
+        padding: 2.5rem;
+        width: 90%;
+        max-width: 800px;
+        position: relative;
+        border: 1px solid var(--border);
+    }
+
+    .modal-close {
         position: absolute;
-        font-size: 3em;
-        top: 0;
-        right: 0;
-        width: 60px;
-        height: 60px;
+        top: 1rem;
+        right: 1rem;
+        width: 40px;
+        height: 40px;
+        background: var(--bg-secondary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+        font-size: 1.5rem;
+    }
+
+    .modal-close:hover {
+        background: var(--danger);
+        transform: rotate(90deg);
+    }
+
+    .modal-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2rem;
         text-align: center;
+    }
+
+    .connection-details {
+        background: var(--bg-secondary);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border);
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .detail-value {
+        color: var(--text-primary);
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+        text-align: right;
+    }
+
+    /* MRR Section */
+    .mrr-section {
+        background: linear-gradient(135deg, #1a1f2e, #232938);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin: 2rem 0;
+        border: 2px solid var(--accent);
+        text-align: center;
+    }
+
+    .mrr-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+    }
+
+    .mrr-logo {
+        margin: 1.5rem 0;
+    }
+
+    .mrr-button {
+        display: inline-block;
+        background: var(--gradient);
         color: white;
+        padding: 1rem 2rem;
+        border-radius: 0.75rem;
         text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
     }
-    #coinInfoClose:hover{
-        color: #50f0e3;
-    }
-	.warning {
-	text-align: center;
-    color: green;
-    font-weight: bold;
-    background-color: #ffe6e6;
-    padding: 10px;
-    border: 1px solid blue;
-    border-radius: 5px;
-  }
 
+    .mrr-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero-banner h1 {
+            font-size: 2rem;
+        }
+        
+        .quick-start {
+            grid-template-columns: 1fr;
+        }
+        
+        .pools-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+        
+        .config-item-header {
+            flex-wrap: wrap;
+        }
+    }
 </style>
 
-<div id="holder">
+<div class="getting-started-container">
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+        <h1>🚀 Start Mining in 2 Minutes</h1>
+        <p>Join the most advanced SHA256 mining pool with ASICBoost support</p>
+        <span class="boost-badge">🔥 ASICBoost ENABLED - Up to 30% More Efficient!</span>
+    </div>
 
-    <div id="menu">
+    <!-- Quick Start Cards -->
+    <div class="quick-start">
+        <div class="start-card" id="quickMine">
+            <span class="card-number">1</span>
+            <div class="card-icon">
+                <i class="fas fa-server"></i>
+            </div>
+            <div class="card-title">Quick Mine</div>
+            <div class="card-desc">
+                Point your ASIC miner to our stratum servers and start earning immediately
+            </div>
+            <div class="card-highlight">
+                <strong>Perfect for:</strong> ASIC owners with hardware ready to go
+            </div>
+        </div>
 
-        {{? (function(){
+        <div class="start-card" id="rentMiner">
+            <span class="card-number">2</span>
+            <div class="card-icon">
+                <i class="fas fa-cloud"></i>
+            </div>
+            <div class="card-title">Rent Hashpower</div>
+            <div class="card-desc">
+                No hardware? No problem! Rent mining rigs instantly through MiningRigRentals
+            </div>
+            <div class="card-highlight">
+                <strong>Perfect for:</strong> Beginners or those wanting to test mining
+            </div>
+        </div>
+    </div>
+
+    <!-- MRR Section -->
+    <div class="mrr-section">
+        <div class="mrr-title">⚡ No Mining Hardware? Start Mining Today!</div>
+        <img src="/static/mrr-logo2.png" alt="MiningRigRentals" class="mrr-logo" width="300" height="150">
+        <p style="color: var(--text-secondary); margin: 1rem 0;">
+            Rent SHA256 mining power instantly - No equipment needed!
+        </p>
+        <a href="https://www.miningrigrentals.com/" target="_blank" class="mrr-button">
+            Start Renting Hashpower →
+        </a>
+    </div>
+
+    <!-- Pool Selection -->
+    <div class="pool-selection">
+        <div class="pool-header">
+            <h2>📊 Select Your Coin</h2>
+            <span style="color: var(--text-secondary);">Click any coin for connection details</span>
+        </div>
+        
+        <div class="pools-grid">
+            {{? (function(){
                 if (!it.portalConfig.switching) return false;
                 for (var p in it.portalConfig.switching){
                     if (it.portalConfig.switching[p].enabled)
@@ -251,27 +558,12 @@
                 }
                 return false;
             })()
-        }}
-        <div class="menuHeader">Coin-Switching Ports</div>
-        {{?}}
-
-        <div class="menuList">
-        {{ for (var p in it.portalConfig.switching){
-            if (!it.portalConfig.switching[p].enabled) continue;
-            var info = {
-                algo: p,
-                ports: {},
-                host: it.portalConfig.website.stratumHost
-            };
-            info.ports[it.portalConfig.switching[p].port] = {diff: it.portalConfig.switching[p].diff};
-            info = JSON.stringify(info).replace(/"/g, '&quot;');
-        }}
-            <a href="#" class="poolOption" data-info="{{=info}}">{{=p}}</a>
-        {{ } }}
-        </div>
-
-        <div class="menuHeader">Coins</div>
-        <div class="menuList" id="coinList">
+            }}
+            {{?}}
+            
+            <div style="grid-column: 1 / -1; padding: 1rem 0;">
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">💰 Available Coins</h3>
+            </div>
             {{ for(var pool in it.poolsConfigs) {
                 var info = JSON.stringify({
                     coin: it.poolsConfigs[pool].coin,
@@ -280,234 +572,238 @@
                     host: it.portalConfig.website.stratumHost
                 }).replace(/"/g, '&quot;');
             }}
-            <a href="#" class="poolOption" data-info="{{=info}}">{{=pool}}</a>
+            <div class="pool-item poolOption" data-info="{{=info}}">
+                <div class="pool-name">{{=pool}}</div>
+                <div class="pool-algo">{{=it.poolsConfigs[pool].coin.algorithm}}</div>
+            </div>
             {{ } }}
         </div>
     </div>
 
-    <div id="main">
-        <a href="#" class="miningOption" id="nompAppDownload">
-            <div class="miningOptionNum">1.</div>
-            <div class="miningOptionInstructions">
-                <div>Point your miner here to mine sha coins</div>
-		<div style="background-color: #1f2434; display: inline-block; padding: 5px;">...or just rent one...
-  			<img src="/static/mrr-logo2.png" width="200" height="100" alt="MininRigRentals" />
-		</div>
-            </div>
-        </a>
-        <div id="orHolder">
-            <div id="orLine"></div>
+    <!-- Configuration Guide -->
+    <div class="config-guide">
+        <div class="config-header">
+            <h2>⚙️ Advanced Configuration</h2>
+            <p>Optimize your mining with these password field parameters</p>
         </div>
-        <a href="#" class="miningOption" id="coinGlowTrigger">
-            <div class="miningOptionNum">2.</div>
-            <div class="miningOptionInstructions">
-                <div>Select a coin for connection details</div>
-					<div class="warning">
-					  🚀 ASICBoost support ENABLED!
-					</div>
-                <div>Happy mining !</div>
-            </div>
-        </a>
-		<div id="orHolder">
-      			<div id="orLine"></div>
-		</div>
-<div class="configOption" id="miningConfigGuide">
-    <div class="configTitle">Connection Details</div>
-    <div class="configDetails">
-        
-        <!-- Option 1 -->
+
+        <!-- Config Option 1 -->
         <div class="config-item">
-            <div class="config-header">
+            <div class="config-item-header">
                 <span class="config-emoji">🎯</span>
-                <span class="config-number">1.</span>
-                <span class="config-code">d_init</span>
-                <span class="config-arrow">→</span>
-                <span class="config-label">Custom Initial Difficulty</span>
+                <span class="config-number">1</span>
+                <div class="config-title">Custom Initial Difficulty</div>
             </div>
-            <div class="config-desc">Sets the miner's starting difficulty manually.</div>
+            <div class="config-desc">
+                Set your miner's starting difficulty manually - perfect for high-powered ASICs
+            </div>
             <div class="config-example">
-                <div class="example-label">Example:</div>
-                <div>Username: <span class="code-inline">wallet-address.myworker</span></div>
+                <div class="example-label">Example Configuration:</div>
+                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
                 <div>Password: <span class="code-inline">d=25000</span></div>
             </div>
             <div class="config-effect">
-                <div class="effect-label">Effect:</div>
+                <div class="effect-label">Benefits:</div>
                 <ul>
-                    <li>Starts with difficulty of 25000</li>
-                    <li>Useful for ASICs needing higher initial difficulty</li>
-                    <li>Overrides pool's default starting difficulty</li>
+                    <li>Starts with difficulty of 25,000</li>
+                    <li>Prevents work restart issues on ASICs</li>
+                    <li>Reduces rejected shares at startup</li>
                 </ul>
             </div>
         </div>
 
-        <!-- Option 2 -->
+        <!-- Config Option 2 -->
         <div class="config-item">
-            <div class="config-header">
+            <div class="config-item-header">
                 <span class="config-emoji">📉</span>
-                <span class="config-number">2.</span>
-                <span class="config-code">min_diff</span>
-                <span class="config-arrow">→</span>
-                <span class="config-label">Minimum Difficulty for VarDiff</span>
+                <span class="config-number">2</span>
+                <div class="config-title">Minimum VarDiff Setting</div>
             </div>
-            <div class="config-desc">Sets the lowest difficulty the pool will assign during VarDiff.</div>
+            <div class="config-desc">
+                Prevent difficulty from dropping too low - essential for modern ASICs
+            </div>
             <div class="config-example">
-                <div class="example-label">Example:</div>
-                <div>Username: <span class="code-inline">wallet-address.myworker</span></div>
+                <div class="example-label">Example Configuration:</div>
+                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
                 <div>Password: <span class="code-inline">md=10000</span></div>
             </div>
             <div class="config-effect">
-                <div class="effect-label">Effect:</div>
+                <div class="effect-label">Benefits:</div>
                 <ul>
-                    <li>VarDiff won't drop below 10000</li>
-                    <li>Prevents flooding with tiny shares</li>
-                    <li>Ideal for high-hashrate miners like Antminer S19</li>
+                    <li>VarDiff won't drop below 10,000</li>
+                    <li>Ideal for Antminer S19, S21, T21 series</li>
+                    <li>Reduces network overhead</li>
                 </ul>
             </div>
         </div>
 
-        <!-- Option 3 -->
+        <!-- Config Option 3 -->
         <div class="config-item">
-            <div class="config-header">
-                <span class="config-emoji">🚀</span>
-                <span class="config-number">3.</span>
-                <span class="config-code">mode=solo</span>
-                <span class="config-arrow">→</span>
-                <span class="config-label">Solo Mining Mode</span>
+            <div class="config-item-header">
+                <span class="config-emoji">🎲</span>
+                <span class="config-number">3</span>
+                <div class="config-title">Solo Mining Mode</div>
             </div>
-            <div class="config-desc">Treats miner as solo—full block reward if a block is found.</div>
+            <div class="config-desc">
+                Mine solo and keep the entire block reward when you find a block
+            </div>
             <div class="config-example">
-                <div class="example-label">Example:</div>
-                <div>Username: <span class="code-inline">wallet-address.myworker</span></div>
+                <div class="example-label">Example Configuration:</div>
+                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
                 <div>Password: <span class="code-inline">m=solo</span></div>
             </div>
             <div class="config-effect">
-                <div class="effect-label">Effect:</div>
+                <div class="effect-label">Benefits:</div>
                 <ul>
-                    <li>Miner gets full block reward</li>
-                    <li>Great for miners who want to gamble on blocks</li>
+                    <li>Keep 100% of block rewards</li>
+                    <li>Perfect for high hashrate miners</li>
+                    <li>No sharing with pool participants</li>
                 </ul>
             </div>
         </div>
 
-        <!-- Option 4 -->
+        <!-- Config Option 4 -->
         <div class="config-item">
-            <div class="config-header">
-                <span class="config-emoji">📊</span>
-                <span class="config-number">4.</span>
-                <span class="config-code">mode=prop</span>
-                <span class="config-arrow">→</span>
-                <span class="config-label">PROP Mining Mode</span>
+            <div class="config-item-header">
+                <span class="config-emoji">👥</span>
+                <span class="config-number">4</span>
+                <div class="config-title">PROP Pool Mining (Default)</div>
             </div>
-            <div class="config-desc">Enables proportional payout mode, where miners earn rewards <br>based on the number of valid shares they submit during a round.</div>
+            <div class="config-desc">
+                Mine with the pool for consistent, proportional rewards
+            </div>
             <div class="config-example">
-                <div class="example-label">Example:</div>
-                <div>Username: <span class="code-inline">wallet-address.myworker</span></div>
-                <div>Password: <span class="code-inline">x or leave blank</span></div>
+                <div class="example-label">Example Configuration:</div>
+                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
+                <div>Password: <span class="code-inline">x</span> or leave blank</div>
             </div>
             <div class="config-effect">
-                <div class="effect-label">Effect:</div>
+                <div class="effect-label">Benefits:</div>
                 <ul>
-                    <li>Miners are rewarded proportionally to their contribution in each round</li>
-                    <li>More predictable payouts compared to solo mode</li>
-                    <li>Ideal for consistent hashpower miners who prefer steady earnings</li>
+                    <li>Steady, predictable earnings</li>
+                    <li>Lower variance than solo mining</li>
+                    <li>Rewards based on contribution</li>
                 </ul>
             </div>
         </div>
 
-        <!-- Option 5 -->
+        <!-- Config Option 5 -->
         <div class="config-item">
-            <div class="config-header">
-                <span class="config-emoji">🧪</span>
-                <span class="config-number">5.</span>
-                <span class="config-label">Combining Flags</span>
+            <div class="config-item-header">
+                <span class="config-emoji">🔧</span>
+                <span class="config-number">5</span>
+                <div class="config-title">Combine Multiple Settings</div>
             </div>
-            <div class="config-desc">You can combine flags in the password field using commas.</div>
+            <div class="config-desc">
+                Mix and match parameters for the perfect setup
+            </div>
             <div class="config-example">
-                <div class="example-label">Example:</div>
+                <div class="example-label">Example Configuration:</div>
+                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
                 <div>Password: <span class="code-inline">d=25000,md=10000,m=solo</span></div>
             </div>
             <div class="config-effect">
-                <div class="effect-label">This sets:</div>
+                <div class="effect-label">This Configuration Sets:</div>
                 <ul>
-                    <li>Initial difficulty to 25000</li>
-                    <li>Minimum VarDiff to 10000</li>
+                    <li>Initial difficulty to 25,000</li>
+                    <li>Minimum VarDiff to 10,000</li>
                     <li>Solo mining mode enabled</li>
                 </ul>
             </div>
         </div>
-        
-    </div>
-</div>
-		
     </div>
 </div>
 
-<a href="#" id="coinInfoBackground" class="hidden"></a>
-
-<div id="coinInfo" class="hidden">
-    <a href="#" id="coinInfoClose">×</a>
-    <div><span class="coinInfoName"></span> Configuration:</div>
-    <div id="coinInfoRows">
-        <div id="coinInfoRowKeys">
-            <div>Username:</div>
-            <div>Password:</div>
+<!-- Connection Modal -->
+<div class="modal-overlay" id="connectionModal">
+    <div class="modal-content">
+        <div class="modal-close" id="modalClose">×</div>
+        <div class="modal-title">
+            <span id="coinName"></span> Connection Details
         </div>
-        <div id="coinInfoRowValues">
-            <div id="coinInfoUsername"></div>
-            <div>anything ( usually x )</div>
+        <div class="connection-details">
+            <div class="detail-row">
+                <span class="detail-label">Algorithm:</span>
+                <span class="detail-value" id="coinAlgo"></span>
+            </div>
+            <div id="stratumPorts"></div>
+            <div class="detail-row">
+                <span class="detail-label">Username:</span>
+                <span class="detail-value" id="coinUsername"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Password:</span>
+                <span class="detail-value">x (or use parameters above)</span>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-
-    function showCoinConfig(info){
-
-        var htmlKeys = '<div class="coinInfoData">Algorithm:</div>';
-        var htmlValues = '<div class="coinInfoData">' + info.algo + '</div>';
-
-        for (var port in info.ports){
-            htmlKeys += '<div class="coinInfoData">URL <span class="coinInfoSubtle">(vardiff ' + info.ports[port].diff + ')</span>:</div>';
-            htmlValues += '<div class="coinInfoData">stratum+tcp://' + info.host + ':' + port + '</div>';
+    // Show connection details modal
+    function showCoinConfig(info) {
+        var modal = document.getElementById('connectionModal');
+        var portsHtml = '';
+        
+        // Set coin name and algorithm
+        if (info.coin) {
+            document.getElementById('coinName').textContent = info.coin.name;
+            document.getElementById('coinUsername').textContent = '[your-' + info.coin.name + '-address].[worker]';
+        } else {
+            document.getElementById('coinName').textContent = info.algo.toUpperCase();
+            document.getElementById('coinUsername').textContent = '[your-wallet-address].[worker]';
         }
-
-        if (info.coin)
-            $('#coinInfoUsername').text('[ your ' + info.coin.name + ' wallet address ] . [ worker name ]');
-        else
-            $('#coinInfoUsername').text('your public key');
-        $('.coinInfoData').remove();
-        $('#coinInfoRowKeys').append(htmlKeys);
-        $('#coinInfoRowValues').append(htmlValues);
+        
+        document.getElementById('coinAlgo').textContent = info.algo.toUpperCase();
+        
+        // Generate stratum URLs
+        for (var port in info.ports) {
+            portsHtml += '<div class="detail-row">';
+            portsHtml += '<span class="detail-label">Stratum URL (diff ' + info.ports[port].diff + '):</span>';
+            portsHtml += '<span class="detail-value">stratum+tcp://' + info.host + ':' + port + '</span>';
+            portsHtml += '</div>';
+        }
+        
+        document.getElementById('stratumPorts').innerHTML = portsHtml;
+        modal.classList.add('active');
     }
-
-    $('#coinGlowTrigger').click(function(event){
-        event.preventDefault();
-        $('.menuList').addClass('glow');
-        setTimeout(function(){
-            $('.menuList').removeClass('glow');
-        }, 200);
-        return false;
+    
+    // Pool selection with glow effect
+    document.querySelectorAll('.poolOption').forEach(function(element) {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            var info = JSON.parse(this.getAttribute('data-info'));
+            showCoinConfig(info);
+        });
     });
-
-    $('.poolOption').click(function(event){
-        event.preventDefault();
-        showCoinConfig($(this).data('info'));
-        $('#coinInfoBackground,#coinInfo').removeClass('hidden');
-        $('#coinInfoBackground').css('opacity', 0.7);
-        return false;
+    
+    // Quick mine button - highlight pools
+    document.getElementById('quickMine').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.pool-item').forEach(function(el) {
+            el.classList.add('glow');
+            setTimeout(function() {
+                el.classList.remove('glow');
+            }, 500);
+        });
+        // Scroll to pool selection
+        document.querySelector('.pool-selection').scrollIntoView({ behavior: 'smooth' });
     });
-
-    $('#coinInfoBackground,#coinInfoClose').click(function(event){
-        event.preventDefault();
-        $('#coinInfoBackground,#coinInfo').addClass('hidden');
-        $('#coinInfoBackground').css('opacity', 0.0);
-        return false;
+    
+    // Rent miner button
+    document.getElementById('rentMiner').addEventListener('click', function(e) {
+        e.preventDefault();
+        window.open('https://www.miningrigrentals.com/', '_blank');
     });
-
-    $('#nompAppDownload').click(function(event){
-        event.preventDefault();
-        alert('Happy mining !');
-    window.open('https://www.miningrigrentals.com/', '_blank');
-        return false;
+    
+    // Modal close
+    document.getElementById('modalClose').addEventListener('click', function() {
+        document.getElementById('connectionModal').classList.remove('active');
+    });
+    
+    document.getElementById('connectionModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+        }
     });
 </script>

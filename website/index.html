@@ -1,220 +1,901 @@
-<!doctype html>
-<html lang="${language}">
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="BitcoinSilver, Mytherra, BTCS, MYT, mining, mining-pool, cryptocurrency">
-    <meta name="description" content="sha256 mining portal">
-    <meta http-equiv="refresh" content="115">
+    <meta name="description" content="SHA256 Mining Pool - Modern, Fast, Reliable">
     <link rel="shortcut icon" href="/static/flavicon.ico">
+	<link rel="stylesheet" href="/static/style-lang.css">
+    <title>SHA256 Mining Pool</title>
+    
+    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/3.0.0/pure-min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/3.0.0/grids-responsive-min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.min.js"></script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+	
+	    <!-- Chart.js for modern charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+	    
     <script src="/static/main.js"></script>
-    <link rel="stylesheet" href="/static/style.css">
-    <title>sha256-mining.go.ro</title>
-</head>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #141823;
+            --bg-card: #1a1f2e;
+            --bg-hover: #232938;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-hover: #60a5fa;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: rgba(255, 255, 255, 0.1);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+			padding-top: 70px;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 20%, rgba(34, 211, 238, 0.05) 0%, transparent 50%);
+            animation: drift 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-20px, -20px) rotate(1deg); }
+            66% { transform: translate(20px, -10px) rotate(-1deg); }
+        }
+
+        /* Header */
+		.header {
+			background: rgba(20, 24, 35, 0.95); /* Slightly more opaque for better visibility */
+			backdrop-filter: blur(10px);
+			border-bottom: 1px solid var(--border);
+			position: fixed; /* Changed from sticky to fixed */
+			top: 0;
+			left: 0;
+			right: 0;
+			width: 100%;
+			z-index: 1000; /* Increased z-index */
+			transition: all 0.3s ease;
+		}
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            -webkit-text-fill-color: var(--accent);
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-item {
+            position: relative;
+            padding: 0.5rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .nav-item i {
+            font-size: 1.1rem;
+        }
+
+        /* Language Selector */
+        .lang-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lang-select:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        /* Main Container */
+		main {
+			max-width: 1400px;
+			margin: 0 auto;
+			padding: 2rem 1.5rem;
+			min-height: calc(100vh - 270px); /* Adjusted for fixed header */
+			position: relative; /* Ensure proper stacking context */
+			z-index: 1;
+		}
+
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        /* Hero Section for home page */
+        .hero {
+            background: var(--bg-card);
+            border-radius: 1.5rem;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+            filter: blur(60px);
+            opacity: 0.5;
+        }
+
+        .hero-content {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-features {
+            list-style: none;
+            margin-top: 2rem;
+        }
+
+        .hero-features li {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .hero-features i {
+            color: var(--success);
+            font-size: 1.2rem;
+        }
+
+        .hero-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-logo img {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 10px 30px rgba(59, 130, 246, 0.3));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Ticker */
+        .ticker-container {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+            border-color: var(--accent);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--gradient);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .stat-content {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .stat-value .sub-value {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-left: 0.5rem;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Responsive */
+@media (max-width: 768px) {
+    /* Hide nav by default on mobile */
+    .nav {
+        display: none !important;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        background: rgba(20, 24, 35, 0.98);
+        flex-direction: column;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        max-height: calc(100vh - 60px);
+        overflow-y: auto;
+        z-index: 999;
+    }
+    
+    /* Show nav when active class is added */
+    .nav.active {
+        display: flex !important;
+    }
+    
+    /* Ensure nav items stack vertically on mobile */
+    .nav.active .nav-item {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Language selector in mobile menu */
+    .nav.active .lang-select {
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    /* Prevent body scroll when menu is open */
+    body.menu-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+    }
+}
+		
+		    /* Ensure stats container doesn't interfere */
+    .stats-container {
+        position: relative;
+        z-index: 1;
+        /* Remove any transforms that might create new stacking context */
+        transform: none;
+    }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-hover);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+    </style>
+</head>
 <body>
     {{ function capitalizeFirstLetter(t){return t.charAt(0).toUpperCase()+t.slice(1)} }}
-    <header>
-        <div class="custom-wrapper pure-g" id="menu">
-            <div class="pure-u-1 pure-u-md-1-8">
-                <div class="home-menu pure-menu">
-                   <a href="/" class="pure-menu-heading">sha256-mining.go.ro</a>
-                </div>
-            </div>
-            <div class="pure-u-1 pure-u-md-1-8">
-                <div class="home-menu pure-menu pure-menu-horizontal custom-menu custom-can-transform">
-                    <ul class="pure-menu-list">
-                        <li class="pure-menu-item">
-                            <a class="pure-menu-link" href="/getting_started">
-                                <i class="fas fa-rocket fa-fw"></i>
-                                <span id="getting_started" data-lang-key="getting_started">Getting Started</span>
-                            </a>
-                        </li>
-                        <li class="pure-menu-item">
-                            <a class="pure-menu-link" href="/stats">
-                                <i class="fas fa-chart-bar fa-fw"></i>
-                                <span id="stats" data-lang-key="pool_stats">Pool Stats</span>
-                            </a>
-                        </li>
-                        <li class="pure-menu-item">
-                            <a class="pure-menu-link" href="/workers">
-                                <i class="fas fa-cogs fa-fw"></i>
-                                <span id="workers" data-lang-key="workers_stats">Miner Stats</span>
-                            </a>
-                        </li>
-                        <li class="pure-menu-item">
-                            <a class="pure-menu-link" href="/tbs">
-                                <i class="fas fa-table fa-fw"></i>
-                                <span id="tbs" data-lang-key="tab_stats">Tab Stats</span>
-                            </a>
-                        </li>
-                        <li class="pure-menu-item">
-                            <a class="pure-menu-link" href="/payments">
-                                <i class="fas fa-money-bill fa-fw"></i>
-                                <span id="payments" data-lang-key="payments">Payments</span>
-                            </a>
-                        </li>
-                        <li class="pure-menu-item">
-                            <a class="pure-menu-link" href="/api">
-                                <i class="fas fa-code fa-fw"></i>
-                                <span id="api" data-lang-key="api">API</span>
-                            </a>
-                        </li>
-                        <li class="pure-menu-item">
-                            <select id="language-select" title="language">
-                                <option value="en">🇪🇳</option>
-                                <option value="en-US">🇺🇸</option>
-                                <option value="ja">🇯🇵</option>
-                                <option value="zh">🇨🇳</option>
-                                <option value="zh-TW">🇹🇼</option>
-                                <option value="zh-HK">🇭🇰</option>
-								<option value="hu">🇭🇺</option>
-								<option value="ko">🇰🇷</option>
-                                <option value="fr">🇫🇷</option>
-                                <option value="es">🇪🇸</option>
-                                <option value="de">🇩🇪</option>
-                                <option value="pt">🇵🇹</option>
-                                <option value="it">🇮🇹</option>
-								<option value="ro">🇷🇴</option>
-                                <option value="ru">🇷🇺</option>
-                                <option value="hi">🇮🇳</option>
-                                <option value="ar">🇸🇦</option>
-                                <option value="tl">🇵🇭</option>
-                                <option value="id">🇮🇩</option>
-                                <option value="ms">🇲🇾</option>
-                                <option value="vi">🇻🇳</option>
-                                <option value="tr">🇹🇷</option>
-                            </select>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <i class="fas fa-cube"></i>
+                SHA256 Mining
+            </a>
+            
+			<button class="menu-toggle">
+				<i class="fas fa-bars"></i>
+			</button>
+            
+            <nav class="nav" id="nav">
+                <a href="/" class="nav-item hot-swapper active">
+                    <i class="fas fa-home"></i>
+                    <span data-lang-key="home">Home</span>
+                </a>
+                <a href="/getting_started" class="nav-item hot-swapper">
+                    <i class="fas fa-rocket"></i>
+                    <span data-lang-key="getting_started">Getting Started</span>
+                </a>
+                <a href="/stats" class="nav-item hot-swapper">
+                    <i class="fas fa-chart-bar"></i>
+                    <span data-lang-key="pool_stats">Pool Stats</span>
+                </a>
+                <a href="/workers" class="nav-item hot-swapper">
+                    <i class="fas fa-cogs"></i>
+                    <span data-lang-key="workers_stats">Miner Stats</span>
+                </a>
+                <a href="/tbs" class="nav-item hot-swapper">
+                    <i class="fas fa-table"></i>
+                    <span data-lang-key="tab_stats">Tab Stats</span>
+                </a>
+                <a href="/payments" class="nav-item hot-swapper">
+                    <i class="fas fa-money-bill"></i>
+                    <span data-lang-key="payments">Payments</span>
+                </a>
+                <a href="/api" class="nav-item hot-swapper">
+                    <i class="fas fa-code"></i>
+                    <span data-lang-key="api">API</span>
+                </a>
+				<select class="lang-select" id="language-select" title="language">
+					<option value="en">🇬🇧 EN</option>
+					<option value="en-US">🇺🇸 US</option>
+					<option value="ro">🇷🇴 RO</option>
+					<option value="de">🇩🇪 DE</option>
+					<option value="fr">🇫🇷 FR</option>
+					<option value="es">🇪🇸 ES</option>
+					<option value="ru">🇷🇺 RU</option>
+					<option value="zh">🇨🇳 ZH</option>
+					<option value="ja">🇯🇵 JA</option>
+					<option value="hu">🇭🇺 HU</option>
+					<option value="ko">🇰🇷 KO</option>
+					<option value="pt">🇵🇹 PT</option>
+					<option value="it">🇮🇹 IT</option>
+					<option value="hi">🇮🇳 HI</option>
+					<option value="ar">🇸🇦 AR</option>
+					<option value="tl">🇵🇭 TL</option>
+					<option value="id">🇮🇩 ID</option>
+					<option value="ms">🇲🇾 MS</option>
+					<option value="vi">🇻🇳 VI</option>
+					<option value="tr">🇹🇷 TR</option>
+				</select>
+
+				<!-- Custom dropdown for desktop -->
+				<div class="language-selector">
+					<div class="custom-lang-select" id="custom-lang-btn">
+						<div class="current-lang">
+							<span class="current-flag">🇬🇧</span>
+							<span class="current-code">EN</span>
+						</div>
+						<i class="fas fa-chevron-down dropdown-arrow"></i>
+					</div>
+					
+					<div class="lang-dropdown" id="lang-dropdown">
+						<div class="lang-group-header">Popular</div>
+						<div class="lang-option active" data-lang="en">
+							<span class="flag">🇬🇧</span>
+							<div class="lang-info">
+								<span class="lang-name">English (UK)</span>
+								<span class="lang-code">EN</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="en-US">
+							<span class="flag">🇺🇸</span>
+							<div class="lang-info">
+								<span class="lang-name">English (US)</span>
+								<span class="lang-code">EN-US</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="es">
+							<span class="flag">🇪🇸</span>
+							<div class="lang-info">
+								<span class="lang-name">Español</span>
+								<span class="lang-code">ES</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="zh">
+							<span class="flag">🇨🇳</span>
+							<div class="lang-info">
+								<span class="lang-name">中文</span>
+								<span class="lang-code">ZH</span>
+							</div>
+						</div>
+						
+						<div class="lang-group-header">Europe</div>
+						<div class="lang-option" data-lang="de">
+							<span class="flag">🇩🇪</span>
+							<div class="lang-info">
+								<span class="lang-name">Deutsch</span>
+								<span class="lang-code">DE</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="fr">
+							<span class="flag">🇫🇷</span>
+							<div class="lang-info">
+								<span class="lang-name">Français</span>
+								<span class="lang-code">FR</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="it">
+							<span class="flag">🇮🇹</span>
+							<div class="lang-info">
+								<span class="lang-name">Italiano</span>
+								<span class="lang-code">IT</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="pt">
+							<span class="flag">🇵🇹</span>
+							<div class="lang-info">
+								<span class="lang-name">Português</span>
+								<span class="lang-code">PT</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="ro">
+							<span class="flag">🇷🇴</span>
+							<div class="lang-info">
+								<span class="lang-name">Română</span>
+								<span class="lang-code">RO</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="ru">
+							<span class="flag">🇷🇺</span>
+							<div class="lang-info">
+								<span class="lang-name">Русский</span>
+								<span class="lang-code">RU</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="hu">
+							<span class="flag">🇭🇺</span>
+							<div class="lang-info">
+								<span class="lang-name">Magyar</span>
+								<span class="lang-code">HU</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="tr">
+							<span class="flag">🇹🇷</span>
+							<div class="lang-info">
+								<span class="lang-name">Türkçe</span>
+								<span class="lang-code">TR</span>
+							</div>
+						</div>
+						
+						<div class="lang-group-header">Asia</div>
+						<div class="lang-option" data-lang="ja">
+							<span class="flag">🇯🇵</span>
+							<div class="lang-info">
+								<span class="lang-name">日本語</span>
+								<span class="lang-code">JA</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="ko">
+							<span class="flag">🇰🇷</span>
+							<div class="lang-info">
+								<span class="lang-name">한국어</span>
+								<span class="lang-code">KO</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="hi">
+							<span class="flag">🇮🇳</span>
+							<div class="lang-info">
+								<span class="lang-name">हिन्दी</span>
+								<span class="lang-code">HI</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="ar">
+							<span class="flag">🇸🇦</span>
+							<div class="lang-info">
+								<span class="lang-name">العربية</span>
+								<span class="lang-code">AR</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="id">
+							<span class="flag">🇮🇩</span>
+							<div class="lang-info">
+								<span class="lang-name">Bahasa Indonesia</span>
+								<span class="lang-code">ID</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="ms">
+							<span class="flag">🇲🇾</span>
+							<div class="lang-info">
+								<span class="lang-name">Bahasa Melayu</span>
+								<span class="lang-code">MS</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="tl">
+							<span class="flag">🇵🇭</span>
+							<div class="lang-info">
+								<span class="lang-name">Tagalog</span>
+								<span class="lang-code">TL</span>
+							</div>
+						</div>
+						<div class="lang-option" data-lang="vi">
+							<span class="flag">🇻🇳</span>
+							<div class="lang-info">
+								<span class="lang-name">Tiếng Việt</span>
+								<span class="lang-code">VI</span>
+							</div>
+						</div>
+					</div>
+				</div>
+            </nav>
         </div>
     </header>
+
     <main>
         {{=it.page}}
     </main>
-    <footer>
-        <div id="communityFooter">
-            This site is powered by <a target="_blank" href="https://github.com/janos-raul/sha256-nomp/">sha256-nomp</a>
-            project forked by <a target="_blank" href="https://github.com/janos-raul/">janos-raul</a>,
-            from <a target="_blank" href="https://github.com/ROZ-MOFUMOFU-ME/zny-nomp/">zny-nomp</a>
-            licensed under the <a href="https://en.wikipedia.org/wiki/MIT_License">MIT License</a>. <br>
-            <i class="fas fa-heart fa-fw"></i>&nbsp;Donating&nbsp;
-            <i class="fab fa-bitcoin fa-fw"></i>&nbsp;BTC:&nbsp;bc1q0aa3k39ww33z24p3wpk72jjn32h2n5rfr85pnx&nbsp;
-            <i class="fab fa-bitcoin fa-fw"></i>&nbsp;BTCS:&nbsp;bs1q8dnz4q52czdusl8hy04fw3jryj2kc3earck3y2&nbsp;
-            <i class="fab fa-bitcoin fa-fw"></i>&nbsp;BCH:&nbsp;qzhpajyfz7yvl8963rre5zqdp72pqy47ysttst0wmr <br>
-            <i class="fas fa-comments fa-fw"></i>&nbsp;&nbsp;Contact&nbsp;:&nbsp;&nbsp;
-            <a target="_blank" href="https://x.com/janos_raul"><i class="fab fa-x-twitter fa-fw"></i></a>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            <a href="mailto:janos.szabo@gmail.com"><i class="fas fa-envelope fa-fw"></i></a>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            <a target="_blank" href="https://discord.gg/TerHJRs38B"><i class="fab fa-discord fa-fw"></i></a>
-            &nbsp;&nbsp;| &nbsp;&nbsp;
-            <iframe src="https://ghbtns.com/github-btn.html?user=janos-raul&repo=sha256-nomp&type=star&count=true"
-                frameborder="0" scrolling="0" width="150" height="20" title="zny-nomp"></iframe>
+	
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>Powered by <a href="https://github.com/janos-raul/sha256-nomp/" target="_blank" style="color: var(--accent);">sha256-nomp</a> 
+            forked by <a href="https://github.com/janos-raul/" target="_blank" style="color: var(--accent);">janos-raul</a></p>
+            <div class="footer-links">
+                <a href="https://x.com/janos_raul" target="_blank">
+                    <i class="fab fa-x-twitter"></i> Twitter
+                </a>
+                <a href="mailto:janos.szabo@gmail.com">
+                    <i class="fas fa-envelope"></i> Email
+                </a>
+                <a href="https://discord.gg/TerHJRs38B" target="_blank">
+                    <i class="fab fa-discord"></i> Discord
+                </a>
+                <a href="https://github.com/janos-raul/sha256-nomp" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <div style="margin-top: 1rem;">
+                <p style="font-size: 0.85rem;">
+                    <i class="fas fa-heart" style="color: var(--danger);"></i> Donations Welcome<br>
+                    <i class="fab fa-bitcoin"></i> BTC: bc1q0aa3k39ww33z24p3wpk72jjn32h2n5rfr85pnx<br>
+                    <i class="fab fa-bitcoin"></i> BTCS: bs1q8dnz4q52czdusl8hy04fw3jryj2kc3earck3y2<br>
+                    <i class="fab fa-bitcoin"></i> BCH: qzhpajyfz7yvl8963rre5zqdp72pqy47ysttst0wmr
+                </p>
+            </div>
         </div>
     </footer>
-    <script>
-        (function (window, document) {
-            var menu = document.getElementById('menu'),
-                rollback,
-                WINDOW_CHANGE_EVENT = ('onorientationchange' in window) ? 'orientationchange' : 'resize';
 
-            function toggleHorizontal() {
-                menu.classList.remove('closing');
-                [].forEach.call(
-                    document.getElementById('menu').querySelectorAll('.custom-can-transform'),
-                    function (el) {
-                        el.classList.toggle('pure-menu-horizontal');
-                    }
-                );
-            };
-
-            function toggleMenu() {
-                // set timeout so that the panel has a chance to roll up
-                // before the menu switches states
-                if (menu.classList.contains('open')) {
-                    menu.classList.add('closing');
-                    rollBack = setTimeout(toggleHorizontal, 500);
-                }
-                else {
-                    if (menu.classList.contains('closing')) {
-                        clearTimeout(rollBack);
-                    } else {
-                        toggleHorizontal();
-                    }
-                }
-                menu.classList.toggle('open');
-                document.getElementById('toggle').classList.toggle('x');
-            };
-
-            function closeMenu() {
-                if (menu.classList.contains('open')) {
-                    toggleMenu();
-                }
+<script>
+    // Initialize everything on DOM ready
+    $(document).ready(function() {
+        // Update active nav state
+        function updateActiveNav() {
+            const currentPath = window.location.pathname.slice(1) || '';
+            $('.nav-item').removeClass('active');
+            if (currentPath === '') {
+                $('a[href="/"]').addClass('active');
+            } else {
+                $('a[href="/' + currentPath.split('/')[0] + '"]').addClass('active');
             }
+        }
+        
+        updateActiveNav();
+        
+        // Language handling
+        async function loadTranslations() {
+            try {
+                const response = await fetch('/static/translations.json');
+                if (!response.ok) throw new Error('Network response was not ok');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to load translations:', error);
+                return {};
+            }
+        }
 
-            document.getElementById('toggle').addEventListener('click', function (e) {
-                toggleMenu();
-                e.preventDefault();
+        window.setLanguage = async function(lang) {
+            const translations = await loadTranslations();
+            document.querySelectorAll('[data-lang-key]').forEach(element => {
+                const key = element.getAttribute('data-lang-key');
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                } else if (translations['en'] && translations['en'][key]) {
+                    element.textContent = translations['en'][key];
+                }
             });
-
-            window.addEventListener(WINDOW_CHANGE_EVENT, closeMenu);
-        })(this, this.document);
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            async function loadTranslations() {
-                try {
-                    const response = await fetch('/static/translations.json');
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    const translations = await response.json();
-                    return translations;
-                } catch (error) {
-                    console.error('Failed to load translations:', error);
-                    return {};
-                }
-            }
-
-    async function setLanguage(lang) {
-        const translations = await loadTranslations();
-        document.querySelectorAll('[data-lang-key]').forEach(element => {
-            const key = element.getAttribute('data-lang-key');
-            element.textContent = translations[lang][key] || translations['en'][key];
-        });
-        document.documentElement.lang = lang;
-        document.getElementById('language-select').value = lang;
-        localStorage.setItem('preferredLanguage', lang); // Save language
-    }
-
-    function getStoredLanguage() {
-        return localStorage.getItem('preferredLanguage') || 'en';
-    }
-
-    setLanguage(getStoredLanguage());
-
-    document.getElementById('language-select').addEventListener('change', function () {
-        setLanguage(this.value);
+            document.documentElement.lang = lang;
+            document.getElementById('language-select').value = lang;
+            localStorage.setItem('preferredLanguage', lang);
+        }
+        
+    const langData = {
+        'en': { flag: '🇬🇧', code: 'EN', name: 'English (UK)' },
+        'en-US': { flag: '🇺🇸', code: 'EN', name: 'English (US)' },
+        'ro': { flag: '🇷🇴', code: 'RO', name: 'Română' },
+        'de': { flag: '🇩🇪', code: 'DE', name: 'Deutsch' },
+        'fr': { flag: '🇫🇷', code: 'FR', name: 'Français' },
+        'es': { flag: '🇪🇸', code: 'ES', name: 'Español' },
+        'ru': { flag: '🇷🇺', code: 'RU', name: 'Русский' },
+        'zh': { flag: '🇨🇳', code: 'ZH', name: '中文' },
+        'ja': { flag: '🇯🇵', code: 'JA', name: '日本語' },
+        'hu': { flag: '🇭🇺', code: 'HU', name: 'Magyar' },
+        'ko': { flag: '🇰🇷', code: 'KO', name: '한국어' },
+        'pt': { flag: '🇵🇹', code: 'PT', name: 'Português' },
+        'it': { flag: '🇮🇹', code: 'IT', name: 'Italiano' },
+        'hi': { flag: '🇮🇳', code: 'HI', name: 'हिन्दी' },
+        'ar': { flag: '🇸🇦', code: 'AR', name: 'العربية' },
+        'tl': { flag: '🇵🇭', code: 'TL', name: 'Tagalog' },
+        'id': { flag: '🇮🇩', code: 'ID', name: 'Bahasa Indonesia' },
+        'ms': { flag: '🇲🇾', code: 'MS', name: 'Bahasa Melayu' },
+        'vi': { flag: '🇻🇳', code: 'VI', name: 'Tiếng Việt' },
+        'tr': { flag: '🇹🇷', code: 'TR', name: 'Türkçe' }
+    };
+    
+    // Initialize with stored language
+    const storedLang = localStorage.getItem('preferredLanguage') || 'en';
+    updateLanguageDisplay(storedLang);
+	(async function() {
+		await setLanguage(storedLang);
+	})();
+    
+    // Toggle dropdown
+    $('#custom-lang-btn').on('click', function(e) {
+        e.stopPropagation();
+        $(this).toggleClass('active');
+        $('#lang-dropdown').toggleClass('active');
     });
-
-  });
-    </script>
+    
+    // Select language from dropdown
+    $('.lang-option').on('click', function(e) {
+        e.stopPropagation();
+        const lang = $(this).data('lang');
+        
+        // Update active state
+        $('.lang-option').removeClass('active');
+        $(this).addClass('active');
+        
+        // Update display
+        updateLanguageDisplay(lang);
+        
+        // Close dropdown
+        $('#custom-lang-btn').removeClass('active');
+        $('#lang-dropdown').removeClass('active');
+        
+        // Update the hidden select (for mobile)
+        $('#language-select').val(lang);
+        
+        // Trigger language change
+        if (typeof setLanguage === 'function') {
+            setLanguage(lang);
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    $(document).on('click', function() {
+        $('#custom-lang-btn').removeClass('active');
+        $('#lang-dropdown').removeClass('active');
+    });
+    
+    // Prevent dropdown from closing when clicking inside
+    $('#lang-dropdown').on('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Function to update language display
+    function updateLanguageDisplay(lang) {
+        const data = langData[lang] || langData['en'];
+        $('.current-flag').text(data.flag);
+        $('.current-code').text(data.code);
+        
+        // Update active option
+        $('.lang-option').removeClass('active');
+        $(`.lang-option[data-lang="${lang}"]`).addClass('active');
+        
+        // Update native select for mobile
+        $('#language-select').val(lang);
+    }
+    
+    // Sync with native select changes (mobile)
+    $('#language-select').on('change', function() {
+        const lang = $(this).val();
+        updateLanguageDisplay(lang);
+        if (typeof setLanguage === 'function') {
+            setLanguage(lang);
+        }
+    });
+});
+</script>
 </body>
-
 </html>

@@ -18,6 +18,10 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 * ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
 * ✅ **Dual Mining** - Support pool and solo mining simultaneously
 
+### Recent Updates (v1.4.3)
+
+* **UPDATE**: Added Whatsminer support
+
 ### Recent Updates (v1.4.2)
 
 * **UPDATE**: Updated package.json dependencies
@@ -30,13 +34,31 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 * **ENHANCED**: Consistent fee handling for both 'generate' and 'immature' blocks
 * **OPTIMIZED**: Payment processor efficiency improvements
 
+### Supported Coins
+
+SHA256-NOMP comes pre-configured with the following coins:
+
+| Coin | Symbol | Algorithm | Ports | Min Confirmations | Block Time |
+|------|--------|-----------|-------|-------------------|------------|
+| Bitcoin | BTC | SHA256 | 50212-50216 | 101 | 10 min |
+| Bitcoin Silver | BTCS | SHA256 | 50220-50226 | 201 | 5 min |
+| Mytherra | MYT | SHA256 | 50232-50236 | 101 | 5 min |
+| Bitcoin II | BC2 | SHA256 | 50242-50246 | 101 | 10 min |
+
+All coins support:
+- ✅ ASICBoost with version rolling
+- ✅ SegWit and Taproot
+- ✅ Solo and pool mining modes
+- ✅ Variable difficulty per port
+- ✅ Multiple mining ports for different hashrates
+
 ### Community
 
 If your pool uses SHA256-NOMP let us know and we will list your website here.
 
 ### Some pools using SHA256-NOMP:
 
-* [sha256-mining.go.ro - Mining Pool](https://sha256-mining.go.ro:50300)   
+* [sha256-mining.go.ro - Mining Pool](https://sha256-mining.go.ro:50300)
 
 * [UGPOOL.lol - Mining Pool](https://ugpool.lol/)
 
@@ -89,6 +111,11 @@ npm install
 ```
 
 #### 2) Configuration
+
+SHA256-NOMP uses three types of configuration files:
+- **config.json** - Main portal configuration
+- **coins/*.json** - Coin-specific configurations (blockchain settings)
+- **pool_configs/*.json** - Pool operational configurations (ports, fees, payments)
 
 ##### Portal config
 Inside the `config_example.json` file, ensure the default configuration will work for your environment, then copy the file to `config.json`.
@@ -210,120 +237,220 @@ Explanation for each field:
             }
         }
     },
-
-    "profitSwitch": {
-        "enabled": false,
-        "updateInterval": 600,
-        "depth": 0.90,
-        "usePoloniex": true,
-        "useCryptsy": true,
-        "useMintpal": true
-    }
 }
 ````
 
 ##### Coin config
-Inside the `coins` directory, ensure a json file exists for your coin. If it does not you will have to create it.
-Here is an example of the required fields:
+Inside the `coins` directory, ensure a json file exists for your coin. The coin configuration defines blockchain-specific settings and daemon connection parameters.
+
+**Available Coins:**
+- `bitcoin.json` - Bitcoin (BTC)
+- `bitcoinsilver.json` - Bitcoin Silver (BTCS)
+- `mytherra.json` - Mytherra (MYT)
+- `bitcoinii.json` - Bitcoin II (BC2)
+
+**Coin Configuration Fields:**
 ````javascript
 {
-    "name": "Bitcoin",
+    // Basic coin information
+    "name": "bitcoin",
     "symbol": "BTC",
     "algorithm": "sha256",
-    "asicboost": true,  // Enable ASICBoost with version rolling
+    "reward": "POW",
 
-    // Coinbase value is what is added to a block when it is mined
-    "coinbase": "SHA256NOMP",
-    
-    /* Magic value only required for setting up p2p block notifications. */
-    "peerMagic": "f9beb4d9", //optional
-    "peerMagicTestnet": "0b110907" //optional
+    // ASICBoost configuration
+    "asicboost": true,                    // Enable ASICBoost with version rolling
+    "versionMask": "0x3fffe000",          // Version mask for ASICBoost
+    "enforcePoolVersionMask": true,       // Enforce version mask
+    "versionRollingMinBits": 16,          // Minimum bits for version rolling
+    "asicboostMinDifficulty": 1000,       // Minimum difficulty for ASICBoost
+    "asicboostMaxClients": 1000,          // Maximum ASICBoost clients
 
-    //"txMessages": false, //optional - defaults to false
+    // Coinbase and transaction settings
+    "coinbase": "yourpool.com",           // Coinbase signature (pool identifier)
+    "txMessages": false,                  // Enable transaction messages
+    "segwit": true,                       // Enable SegWit support
+    "taproot": true,                      // Enable Taproot support
+    "coinbaseTxVersion": 2,               // Coinbase transaction version
+    "hasBlockReward": true,               // Coin has block reward
+    "blockVersion": 536870912,            // Block version number
+    "default_witness_commitment": true,   // Include witness commitment
+    "shareDifficultyTarget": "target",    // Share difficulty calculation method
+
+    // Network and timing settings
+    "rpcTimeout": 5000,                   // RPC timeout in milliseconds
+    "blockTime": 600,                     // Expected block time in seconds
+    "minConf": 101,                       // Minimum confirmations for payouts
+
+    // Address validation (prevents invalid addresses)
+    "addressValidation": {
+        "validateWorkerUsername": true,   // Validate miner addresses
+        "addressPrefix": "bc",            // Expected address prefix (bc for BTC, bs for BTCS, myt for MYT)
+        "minLength": 26,                  // Minimum address length
+        "maxLength": 46                   // Maximum address length
+    },
+
+    // Block explorer URLs
+    "explorer": {
+        "txURL": "https://blockstream.info/tx/",      // Transaction explorer URL
+        "blockURL": "https://blockstream.info/block/" // Block explorer URL
+    },
+
+    // RPC daemon connection (used by blockConfirmations.js and other utilities)
+    "rpc": {
+        "host": "127.0.0.1",              // Daemon host
+        "port": 8332,                     // Daemon RPC port
+        "user": "rpcuser",                // RPC username
+        "password": "rpcpassword"         // RPC password
+    }
 }
 ````
 
+**Important Notes:**
+- The `minConf` value determines how many confirmations are required before blocks are paid out
+- Bitcoin typically uses 101 confirmations, Bitcoin Silver uses 201
+- ASICBoost is enabled by default for optimal performance with modern ASIC miners
+- The `rpc` section is used by maintenance scripts like `blockConfirmations.js`
+
 ##### Pool config
-Take a look at the example json file inside the `pool_configs` directory. Rename it to `bitcoin.json` and change the
-example fields to fit your setup.
+Pool configurations define operational settings for each coin's mining pool. Each coin has its own pool config file in `pool_configs/`.
 
-```
-Please Note that: 1 Difficulty is actually 8192, 0.125 Difficulty is actually 1024.
+**Available Pool Configurations:**
+- `pool_configs/bitcoin.json` - Bitcoin pool (ports 50212-50216)
+- `pool_configs/bitcoinsilver.json` - Bitcoin Silver pool (ports 50220-50226)
+- `pool_configs/mytherra.json` - Mytherra pool (ports 50232-50236)
+- `pool_configs/bitcoinii.json` - Bitcoin II pool (ports 50242-50246)
 
-Whenever a miner submits a share, the pool counts the difficulty and keeps adding them as the shares.
+**Pool Configuration Structure:**
 
-ie: Miner 1 mines at 0.1 difficulty and finds 10 shares, the pool sees it as 1 share. Miner 2 mines at 0.5 difficulty and finds 5 shares, the pool sees it as 2.5 shares.
-```
-
-```bitcoin.json
+```javascript
 {
-    "enabled": true,
-    "coin": "bitcoin.json",
-    
-    "asicboost": true,  // Enable ASICBoost support with version rolling
-    
-    "address": "YOUR_POOL_WALLET_ADDRESS",
-    
+    // Basic settings
+    "enabled": true,                      // Enable this pool
+    "coin": "bitcoin.json",              // Reference to coin config file
+    "asicboost": true,                   // Enable ASICBoost for this pool
+    "blockIdentifier": "",               // Optional block identifier
+
+    // Pool wallet and fee addresses
+    "address": "YOUR_POOL_WALLET_ADDRESS",    // Main pool payout address
+
     "rewardRecipients": {
-        "POOL_FEE_ADDRESS": 1.0  // 1% pool fee at coinbase level
+        "YOUR_FEE_ADDRESS": 1.0          // Pool fee percentage (1.0 = 1%)
     },
 
+    // Payment processing configuration
     "paymentProcessing": {
-        "minConf": 101,
-        "enabled": true,
-        "paymentMode": "prop", // or "pplnt"
-        "paymentInterval": 120,
-        "minimumPayment": 0.01,
-        "soloMining": true,  // Enable solo mining
-        "soloFee": 2.0,      // Total fee for solo miners (2%)
+        "txfee": 0.0004,                 // Transaction fee for payouts
+        "minConf": 101,                  // Confirmations before payment (must match coin config)
+        "enabled": true,                 // Enable automatic payments
+        "soloMining": true,              // Enable solo mining mode
+        "paymentMode": "prop",           // Payment mode: "prop" or "pplnt"
+        "poolFee": 2.0,                  // Pool mining fee (2.0 = 2%)
+        "soloFee": 2.0,                  // Solo mining fee (2.0 = 2%)
+        "paymentInterval": 3600,         // Payment interval in seconds (3600 = 1 hour)
+        "minimumPayment": 0.01,          // Minimum payout for pool miners
+        "minimumPayment_solo": 0.01,     // Minimum payout for solo miners
+        "maxBlocksPerPayment": 5,        // Maximum blocks to process per payment run
+
+        // Payment daemon connection
         "daemon": {
             "host": "127.0.0.1",
             "port": 8332,
-            "user": "username",
-            "password": "password"
+            "user": "rpcuser",
+            "password": "rpcpassword"
         }
     },
 
+    // TLS/SSL configuration (optional)
+    "tlsOptions": {
+        "enabled": false,
+        "serverKey": "",
+        "serverCert": "",
+        "ca": ""
+    },
+
+    // Mining ports configuration
     "ports": {
-        "3032": {
-            "diff": 1024,
-            "varDiff": {
-                "minDiff": 512,
-                "maxDiff": 131072,
-                "targetTime": 15,
-                "retargetTime": 90,
-                "variancePercent": 30
+        "50212": {                       // Port number
+            "diff": 25000,               // Starting difficulty
+            "tls": false,                // Enable TLS for this port
+            "soloMining": true,          // Allow solo mining on this port
+            "varDiff": {                 // Variable difficulty settings
+                "minDiff": 10000,        // Minimum difficulty
+                "maxDiff": 500000,       // Maximum difficulty
+                "targetTime": 15,        // Target time between shares (seconds)
+                "retargetTime": 90,      // How often to adjust difficulty (seconds)
+                "variancePercent": 30    // Allowed variance percentage
             }
         },
-        "3033": {  // High difficulty port for large miners
-            "diff": 16384,
+        "50213": {                       // Higher difficulty port for larger miners
+            "diff": 50000,
+            "tls": false,
+            "soloMining": true,
             "varDiff": {
-                "minDiff": 16384,
-                "maxDiff": 2097152,
-                "targetTime": 15,
-                "retargetTime": 90,
-                "variancePercent": 30
+                "minDiff": 50000,
+                "maxDiff": 5000000,
+                "targetTime": 25,
+                "retargetTime": 180,
+                "variancePercent": 35
             }
         }
     },
 
+    // Pool identifier for multi-region setups
+    "poolId": "main",
+
+    // Daemon instances for block submission and monitoring
     "daemons": [
         {
             "host": "127.0.0.1",
             "port": 8332,
-            "user": "username",
-            "password": "password"
+            "user": "rpcuser",
+            "password": "rpcpassword"
         }
     ],
 
+    // P2P block notifications (optional, alternative to blocknotify)
     "p2p": {
         "enabled": false,
         "host": "127.0.0.1",
         "port": 8333,
         "disableTransactions": true
+    },
+
+    // MPOS database integration (optional)
+    "mposMode": {
+        "enabled": false,
+        "host": "127.0.0.1",
+        "port": 3306,
+        "user": "",
+        "password": "",
+        "database": "",
+        "checkPassword": true,
+        "autoCreateWorker": false
     }
 }
 ```
+
+**Difficulty Notes:**
+> **Important:** Pool difficulty is NOT the same as network difficulty!
+> - 1.0 pool difficulty = 8192 network difficulty
+> - 0.125 pool difficulty = 1024 network difficulty
+>
+> When miners submit shares, the pool accumulates the difficulty:
+> - Miner 1 at 0.1 difficulty finding 10 shares = 1 accumulated share
+> - Miner 2 at 0.5 difficulty finding 5 shares = 2.5 accumulated shares
+
+**Payment Modes:**
+- **PROP (Proportional)**: Miners are paid proportionally to their shares when a block is found
+- **PPLNT (Pay Per Last N Time)**: Payment based on shares in the last N time window
+
+**Port Configuration Strategy:**
+Each coin has multiple ports with different difficulty ranges:
+- Low difficulty ports (e.g., 50212): For small miners and testing
+- Medium difficulty ports (e.g., 50213): For medium-sized miners
+- High difficulty ports (e.g., 50214): For large mining operations
+- Very high difficulty ports (e.g., 50216): For massive mining farms
 
 #### Solo Mining Configuration
 
@@ -351,7 +478,152 @@ blocknotify=node /home/user/sha256-nomp/scripts/cli.js blocknotify bitcoin %s
 Alternatively, you can use a more efficient block notify script written in pure C. Build and usage instructions
 are commented in [scripts/blocknotify.c](scripts/blocknotify.c).
 
-#### 3) Start the portal
+#### 3) Block Confirmation Monitoring
+
+SHA256-NOMP includes a utility script for monitoring block confirmations: `libs/blockConfirmations.js`
+
+##### What is blockConfirmations.js?
+
+This script checks the confirmation status of pending blocks (both pool and solo) and updates their status in Redis. It's useful for:
+- Monitoring block maturity before payouts
+- Detecting orphaned blocks
+- Tracking confirmation progress
+- Debugging payment issues
+
+##### How blockConfirmations.js Works
+
+The script performs the following steps:
+
+1. **Connects to Redis** - Reads pending blocks from the pool's Redis database
+2. **Queries Coin Daemons** - Checks each pending block against the blockchain via RPC
+3. **Updates Confirmations** - Records the current confirmation count for each block
+4. **Detects Orphans** - Identifies blocks that are no longer in the main chain
+5. **Generates Report** - Provides detailed statistics about block status
+
+##### Using blockConfirmations.js - Step by Step
+
+**Step 1: Configure the Script**
+
+Edit `libs/blockConfirmations.js` and update the `poolConfigs` object with your coin configurations:
+
+```javascript
+const poolConfigs = {
+    bitcoin: {
+        daemon: {
+            host: "127.0.0.1",
+            port: 8332,
+            user: "rpcuser",
+            password: "rpcpassword"
+        },
+        minConfirmations: 101  // Must match your pool config minConf
+    },
+    bitcoinsilver: {
+        daemon: {
+            host: "127.0.0.1",
+            port: 10013,
+            user: "rpcuser",
+            password: "rpcpassword"
+        },
+        minConfirmations: 201
+    }
+    // Add more coins as needed
+};
+```
+
+**Step 2: Ensure Redis is Running**
+
+The script requires Redis to be running and accessible:
+
+```bash
+redis-cli ping
+# Should return: PONG
+```
+
+**Step 3: Run the Script**
+
+Execute the script from the pool's root directory:
+
+```bash
+node libs/blockConfirmations.js
+```
+
+**Step 4: Interpret the Output**
+
+The script provides detailed output:
+
+```
+[SPECIAL] [BlockConfirm] [Init] === Block Confirmation Tracker Started ===
+[INFO] [BlockConfirm] [Init] Checking confirmations for: bitcoin, bitcoinsilver, mytherra
+[INFO] [BlockConfirm] [bitcoin] Starting block confirmation check...
+[INFO] [BlockConfirm] [bitcoin] Found 3 pending pool blocks
+[INFO] [BlockConfirm] [bitcoin] POOL block 850123: 45/101 confirmations
+[INFO] [BlockConfirm] [bitcoin] POOL block 850124: 23/101 confirmations
+[SPECIAL] [BlockConfirm] [bitcoin] POOL block 850100 CONFIRMED! 101/101 confirmations
+[INFO] [BlockConfirm] [bitcoin] Found 1 pending SOLO blocks
+[SPECIAL] [BlockConfirm] [bitcoin] ★ SOLO block 850095 by bc1q...xyz CONFIRMED! 120/101 confirmations
+[WARNING] [BlockConfirm] [bitcoin] POOL block 850050 ORPHANED!
+[SPECIAL] [BlockConfirm] [Summary] === Confirmation Check Complete ===
+[INFO] [BlockConfirm] [Summary] Runtime: 1247ms
+[INFO] [BlockConfirm] [Summary] Pool blocks: 3 (Confirmed: 1)
+[INFO] [BlockConfirm] [Summary] Solo blocks: 1 (Confirmed: 1)
+[WARNING] [BlockConfirm] [Summary] Orphaned blocks detected: 1
+```
+
+**Step 5: Automate with Cron (Optional)**
+
+For regular monitoring, add to your crontab:
+
+```bash
+# Check block confirmations every 10 minutes
+*/10 * * * * cd /path/to/sha256-nomp && /usr/bin/node libs/blockConfirmations.js >> logs/block-confirmations.log 2>&1
+```
+
+##### Understanding Block Confirmations
+
+**What are confirmations?**
+- Each new block added to the blockchain after your block counts as one confirmation
+- Confirmations make blocks more secure and less likely to be orphaned
+- Most pools require 101-201 confirmations before paying out miners
+
+**Block States:**
+- **Pending**: Block found but not yet confirmed (0 - minConf confirmations)
+- **Confirmed**: Block has reached required confirmations (≥ minConf)
+- **Orphaned**: Block no longer in the main chain (confirmations = -1)
+
+**Why blocks get orphaned:**
+- Another miner found a competing block at the same height
+- Network propagation delays
+- Chain reorganizations
+
+**Confirmation Requirements by Coin:**
+- Bitcoin (BTC): 101 confirmations (~16.8 hours)
+- Bitcoin Silver (BTCS): 201 confirmations (~16.8 hours, 5 min blocks)
+- Mytherra (MYT): 101 confirmations (~8.4 hours, 5 min blocks)
+- Bitcoin II (BC2): 101 confirmations (~16.8 hours)
+
+##### Troubleshooting
+
+**Script can't connect to Redis:**
+```bash
+# Check if Redis is running
+sudo systemctl status redis
+
+# Start Redis if needed
+sudo systemctl start redis
+```
+
+**RPC connection errors:**
+- Verify daemon is running and synced
+- Check RPC credentials in blockConfirmations.js
+- Ensure firewall allows RPC connections
+- Verify RPC port is correct for each coin
+
+**No pending blocks found:**
+- Normal if no recent blocks were found
+- Check that pool has been running and miners are connected
+- Verify Redis contains block data: `redis-cli keys "*blocksPending*"`
+
+#### 4) Start the portal
 
 ```bash
 npm start

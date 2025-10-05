@@ -9,7 +9,7 @@
   "versionRollingMinBits": 16,         										
   "asicboostMinDifficulty": 1000,     
   "asicboostMaxClients": 1000,         
-  "coinbase": "sha256-mining.go.ro",
+  "coinbase": "yourpool.com",
   "txMessages": false,
   "segwit": true,
   "taproot": true,
@@ -22,22 +22,23 @@
   "blockTime": 300,
   "minConf": 101,
 	
-"addressValidation": {
-    "validateWorkerUsername": true,
-    "addressPrefix": "myt",
-    "minLength": 30,
-    "maxLength": 42
+  "addressValidation": {
+		"validateWorkerUsername": true,
+		"addressPrefix": "myt",
+		"minLength": 26,
+		"maxLength": 46
   },
 
-"explorer": {
+  "explorer": {
         "txURL": "https://explorer.mytherrablockchain.org/tx/",
         "blockURL": "https://explorer.mytherrablockchain.org/block/"
     },
-"rpc": {
-    "host": "192.168.188.2",
-    "port": 24013,
-    "user": "",
-    "password": ""
+	
+  "rpc": {
+		"host": "127.0.0.1",
+		"port": 24013,
+		"user": "rpcuser",
+		"password": "rpcpassword"
   }
 }
 

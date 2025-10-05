@@ -2,7 +2,7 @@ var dateFormat = require('dateformat');
 var colors = require('colors');
 var fs = require('fs');
 var path = require('path');
-var archiver = require('archiver'); // You'll need to install this: npm install archiver
+var archiver = require('archiver');
 
 var severityToColor = function(severity, text) {
     switch(severity) {
@@ -63,6 +63,7 @@ var PoolLogger = function (configuration) {
 			error: fs.createWriteStream(path.join(logDir, 'error.log'), { flags: 'a' }),
 			warning: fs.createWriteStream(path.join(logDir, 'warning.log'), { flags: 'a' }),
 			payments: fs.createWriteStream(path.join(logDir, 'payments.log'), { flags: 'a' }),
+			info: fs.createWriteStream(path.join(logDir, 'info.log'), { flags: 'a' }),
 			blocks: fs.createWriteStream(path.join(logDir, 'blocks.log'), { flags: 'a' }),
 			solo: fs.createWriteStream(path.join(logDir, 'solo.log'), { flags: 'a' }),
 			shares: fs.createWriteStream(path.join(logDir, 'shares.log'), { flags: 'a' }),
@@ -70,7 +71,7 @@ var PoolLogger = function (configuration) {
 			performance: fs.createWriteStream(path.join(logDir, 'performance.log'), { flags: 'a' }),
 			bans: fs.createWriteStream(path.join(logDir, 'bans.log'), { flags: 'a' }),
 			api: fs.createWriteStream(path.join(logDir, 'api.log'), { flags: 'a' }),
-			auth: fs.createWriteStream(path.join(logDir, 'authorizations.log'), { flags: 'a' }),
+			authorizations: fs.createWriteStream(path.join(logDir, 'authorizations.log'), { flags: 'a' }),
 			stats: fs.createWriteStream(path.join(logDir, 'stats.log'), { flags: 'a' }),
 			website: fs.createWriteStream(path.join(logDir, 'website.log'), { flags: 'a' })
 		};
@@ -402,6 +403,10 @@ var PoolLogger = function (configuration) {
 				safeWrite(logStreams.payments, fileLogString);
 			}
 			
+			if (systemLower === 'info') {
+				safeWrite(logStreams.info, fileLogString);
+			}
+			
 			// API logging
 			if ((systemLower === 'api' || component.toLowerCase() === 'api')) {
 				safeWrite(logStreams.api, fileLogString);
@@ -414,7 +419,7 @@ var PoolLogger = function (configuration) {
 				 text.toLowerCase().includes('authorized') ||
 				 text.toLowerCase().includes('unauthorized') ||
 				 text.toLowerCase().includes('authorization'))) {
-				safeWrite(logStreams.auth, fileLogString);
+				safeWrite(logStreams.authorizations, fileLogString);
 			}
 			
 			// Stats logging  

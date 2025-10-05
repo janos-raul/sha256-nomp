@@ -39,8 +39,7 @@ module.exports = function(logger, portalConfig, poolConfigs){
         switch(method){
             case 'stats':
                 res.header('Content-Type', 'application/json');
-				res.end(portalStats.statsString);
-                //res.end(JSON.stringify(portalStats.stats));
+                res.end(JSON.stringify(portalStats.stats));
                 
                 // Log and track
                 var duration = Date.now() - requestStart;
@@ -130,154 +129,157 @@ module.exports = function(logger, portalConfig, poolConfigs){
                 return;
                 
             case 'worker_stats':
-                res.header('Content-Type', 'application/json');
-                
-                if (req.url.indexOf("?") > 0) {
-                    var url_parms = req.url.split("?");
-                    if (url_parms.length > 0) {
-                        var history = {};
-                        var workers = {};
-                        var address = url_parms[1] || null;
-                        
-                        if (address != null && address.length > 0) {
-                            // Log worker stats request
-                            logger.info(logSystem, 'WorkerStats', 'Stats requested for address: ' + address.split(".")[0]);
-                            
-                            // make sure it is just the miners address
-                            address = address.split(".")[0];
-                            var workerStatsStart = Date.now();
-                            
-                            // get miners balance along with worker balances
-                            portalStats.getBalanceByAddress(address, function(balances) {
-                                // get current round share total
-                                portalStats.getTotalSharesByAddress(address, function(shares) {
-                                    var totalHash = parseFloat(0.0);
-                                    var totalShares = shares;
-                                    var networkHash = 0;
-                                    var isSoloMiner = false;
-                                    var workerCount = 0;
-                                    var soloWorkerCount = 0;
-                                    
-                                    // Check history for both regular and solo workers
-                                    for (var h in portalStats.statHistory) {
-                                        for(var pool in portalStats.statHistory[h].pools) {
-                                            // Check regular workers
-                                            for(var w in portalStats.statHistory[h].pools[pool].workers){
-                                                if (w.startsWith(address)) {
-                                                    if (history[w] == null) {
-                                                        history[w] = [];
-                                                    }
-                                                    if (portalStats.statHistory[h].pools[pool].workers[w].hashrate) {
-                                                        history[w].push({
-                                                            time: portalStats.statHistory[h].time, 
-                                                            hashrate: portalStats.statHistory[h].pools[pool].workers[w].hashrate
-                                                        });
-                                                    }
-                                                }
-                                            }
-                                            // Check solo workers in history if they exist
-                                            if (portalStats.statHistory[h].pools[pool].soloWorkers) {
-                                                for(var w in portalStats.statHistory[h].pools[pool].soloWorkers){
-                                                    if (w.startsWith(address)) {
-                                                        if (history[w] == null) {
-                                                            history[w] = [];
-                                                        }
-                                                        if (portalStats.statHistory[h].pools[pool].soloWorkers[w].hashrate) {
-                                                            history[w].push({
-                                                                time: portalStats.statHistory[h].time, 
-                                                                hashrate: portalStats.statHistory[h].pools[pool].soloWorkers[w].hashrate
-                                                            });
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Check current stats for both regular and solo workers
-                                    for(var pool in portalStats.stats.pools) {
-                                        // Check regular workers
-                                        for(var w in portalStats.stats.pools[pool].workers){
-                                            if (w.startsWith(address)) {
-                                                workerCount++;
-                                                workers[w] = portalStats.stats.pools[pool].workers[w];
-                                                for (var b in balances.balances) {
-                                                    if (w == balances.balances[b].worker) {
-                                                        workers[w].paid = balances.balances[b].paid;
-                                                        workers[w].balance = balances.balances[b].balance;
-                                                    }
-                                                }
-                                                workers[w].balance = (workers[w].balance || 0);
-                                                workers[w].paid = (workers[w].paid || 0);
-                                                totalHash += portalStats.stats.pools[pool].workers[w].hashrate;
-                                                networkHash = portalStats.stats.pools[pool].poolStats.networkHash;
-                                            }
-                                        }
-                                        
-                                        // Check solo workers
-                                        if (portalStats.stats.pools[pool].soloWorkers) {
-                                            for(var w in portalStats.stats.pools[pool].soloWorkers){
-                                                if (w.startsWith(address)) {
-                                                    isSoloMiner = true;
-                                                    soloWorkerCount++;
-                                                    workers[w] = portalStats.stats.pools[pool].soloWorkers[w];
-                                                    workers[w].isSolo = true; // Mark as solo worker
-                                                    
-                                                    // Check for solo balances
-                                                    for (var b in balances.balances) {
-                                                        if (w == balances.balances[b].worker) {
-                                                            workers[w].paid = balances.balances[b].paid;
-                                                            workers[w].balance = balances.balances[b].balance;
-                                                        }
-                                                    }
-                                                    workers[w].balance = (workers[w].balance || 0);
-                                                    workers[w].paid = (workers[w].paid || 0);
-                                                    totalHash += portalStats.stats.pools[pool].soloWorkers[w].hashrate || 0;
-                                                    networkHash = portalStats.stats.pools[pool].poolStats.networkHash;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    res.end(JSON.stringify({
-                                        miner: address,
-                                        isSoloMiner: isSoloMiner,
-                                        totalHash: totalHash,
-                                        totalShares: totalShares,
-                                        networkHash: networkHash,
-                                        immature: balances.totalImmature,
-                                        balance: balances.totalHeld,
-                                        paid: balances.totalPaid,
-                                        workers: workers,
-                                        history: history
-                                    }));
-                                    
-                                    // Log completion
-                                    var duration = Date.now() - workerStatsStart;
-                                    logger.info(logSystem, 'WorkerStats', 
-                                        'Stats for ' + address + ' served in ' + duration + 'ms - ' +
-                                        'Workers: ' + workerCount + ' pool, ' + soloWorkerCount + ' solo, ' +
-                                        'Hashrate: ' + (totalHash / 1000000).toFixed(2) + ' MH/s');
-                                    trackRequest('worker_stats', duration);
-                                });
-                            });
-                        } else {
-                            // Log error
-                            logger.warning(logSystem, 'WorkerStats', 'Invalid address parameter');
-                            res.end(JSON.stringify({result: "error"}));
-                            trackRequest('worker_stats', Date.now() - requestStart, true);
-                        }
-                    } else {
-                        logger.warning(logSystem, 'WorkerStats', 'Missing parameters');
-                        res.end(JSON.stringify({result: "error"}));
-                        trackRequest('worker_stats', Date.now() - requestStart, true);
-                    }
-                } else {
-                    logger.warning(logSystem, 'WorkerStats', 'No query string');
-                    res.end(JSON.stringify({result: "error"}));
-                    trackRequest('worker_stats', Date.now() - requestStart, true);
-                }
-                return;
+				res.header('Content-Type', 'application/json');
+				
+				var address = req.query.addr || req.query.address || null;
+				
+				// Fallback parsing if req.query doesn't work
+				if (!address && req.url.indexOf("?") > 0) {
+					var queryString = req.url.split("?")[1];
+					var params = {};
+					queryString.split("&").forEach(function(param) {
+						var parts = param.split("=");
+						if (parts.length === 2) {
+							params[parts[0]] = parts[1];
+						}
+					});
+					address = params.addr || params.address || null;
+				}
+				
+				// NOW check if we have an address (outside the fallback block)
+				if (address && address.length > 0) {
+					// Initialize these variables here
+					var history = {};
+					var workers = {};
+					
+					// Log worker stats request
+					logger.info(logSystem, 'WorkerStats', 'Stats requested for address: ' + address);
+					
+					// make sure it is just the miners address
+					address = address.split(".")[0];
+					var workerStatsStart = Date.now();
+					
+					// get miners balance along with worker balances
+					portalStats.getBalanceByAddress(address, function(balances) {
+						// get current round share total
+						portalStats.getTotalSharesByAddress(address, function(shares) {
+							var totalHash = parseFloat(0.0);
+							var totalShares = shares;
+							var networkHash = 0;
+							var isSoloMiner = false;
+							var workerCount = 0;
+							var soloWorkerCount = 0;
+							
+							// Check history for both regular and solo workers
+							for (var h in portalStats.statHistory) {
+								for(var pool in portalStats.statHistory[h].pools) {
+									// Check regular workers
+									for(var w in portalStats.statHistory[h].pools[pool].workers){
+										if (w.startsWith(address)) {
+											if (history[w] == null) {
+												history[w] = [];
+											}
+											if (portalStats.statHistory[h].pools[pool].workers[w].hashrate) {
+												history[w].push({
+													time: portalStats.statHistory[h].time, 
+													hashrate: portalStats.statHistory[h].pools[pool].workers[w].hashrate
+												});
+											}
+										}
+									}
+									// Check solo workers in history if they exist
+									if (portalStats.statHistory[h].pools[pool].soloWorkers) {
+										for(var w in portalStats.statHistory[h].pools[pool].soloWorkers){
+											if (w.startsWith(address)) {
+												if (history[w] == null) {
+													history[w] = [];
+												}
+												if (portalStats.statHistory[h].pools[pool].soloWorkers[w].hashrate) {
+													history[w].push({
+														time: portalStats.statHistory[h].time, 
+														hashrate: portalStats.statHistory[h].pools[pool].soloWorkers[w].hashrate
+													});
+												}
+											}
+										}
+									}
+								}
+							}
+							
+							// Check current stats for both regular and solo workers
+							for(var pool in portalStats.stats.pools) {
+								// Check regular workers
+								for(var w in portalStats.stats.pools[pool].workers){
+									if (w.startsWith(address)) {
+										workerCount++;
+										workers[w] = portalStats.stats.pools[pool].workers[w];
+										for (var b in balances.balances) {
+											if (w == balances.balances[b].worker) {
+												workers[w].paid = balances.balances[b].paid;
+												workers[w].balance = balances.balances[b].balance;
+											}
+										}
+										workers[w].balance = (workers[w].balance || 0);
+										workers[w].paid = (workers[w].paid || 0);
+										totalHash += portalStats.stats.pools[pool].workers[w].hashrate;
+										networkHash = portalStats.stats.pools[pool].poolStats.networkHash;
+									}
+								}
+								
+								// Check solo workers
+								if (portalStats.stats.pools[pool].soloWorkers) {
+									for(var w in portalStats.stats.pools[pool].soloWorkers){
+										if (w.startsWith(address)) {
+											isSoloMiner = true;
+											soloWorkerCount++;
+											workers[w] = portalStats.stats.pools[pool].soloWorkers[w];
+											workers[w].isSolo = true; // Mark as solo worker
+											
+											// Check for solo balances
+											for (var b in balances.balances) {
+												if (w == balances.balances[b].worker) {
+													workers[w].paid = balances.balances[b].paid;
+													workers[w].balance = balances.balances[b].balance;
+												}
+											}
+											workers[w].balance = (workers[w].balance || 0);
+											workers[w].paid = (workers[w].paid || 0);
+											totalHash += portalStats.stats.pools[pool].soloWorkers[w].hashrate || 0;
+											networkHash = portalStats.stats.pools[pool].poolStats.networkHash;
+										}
+									}
+								}
+							}
+							
+							res.end(JSON.stringify({
+								miner: address,
+								isSoloMiner: isSoloMiner,
+								totalHash: totalHash,
+								totalShares: totalShares,
+								networkHash: networkHash,
+								immature: balances.totalImmature,
+								balance: balances.totalHeld,
+								paid: balances.totalPaid,
+								workers: workers,
+								history: history
+							}));
+							
+							// Log completion
+							var duration = Date.now() - workerStatsStart;
+							logger.info(logSystem, 'WorkerStats', 
+								'Stats for ' + address + ' served in ' + duration + 'ms - ' +
+								'Workers: ' + workerCount + ' pool, ' + soloWorkerCount + ' solo, ' +
+								'Hashrate: ' + (totalHash / 1000000).toFixed(2) + ' MH/s');
+							trackRequest('worker_stats', duration);
+						});
+					});
+				} else {
+					// Log error
+					logger.warning(logSystem, 'WorkerStats', 'Invalid or missing address parameter');
+					res.end(JSON.stringify({result: "error", message: "Invalid address"}));
+					trackRequest('worker_stats', Date.now() - requestStart, true);
+				}
+				return;
                 
             case 'live_stats':
                 res.writeHead(200, {

@@ -1,80 +1,632 @@
 <style>
-    #topPool {
-        padding: 18px 18px 0px 18px;
-    }
-    #topPool>div>div>svg {
-        display: block;
-        height: 280px;
-    }
-	
-	#menu{
-        background-color: #3d3d3d;
-        min-width: 170px;
+    /* Workers Page Specific Styles */
+    .workers-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
     }
 
-    #menu > .menuHeader{
-        color: #e3f7ff;
-        border-bottom: 1px solid #7f878b;
-        font-size: 1.2em;
-        padding: 16px 16px 4px 15px;
+    /* Header Section */
+    .workers-header {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
     }
-	
-    .poolWrapper {
-        background: #ddd;
-        border: solid 1px #c7c7c7;
-        border-radius: 5px;
-        padding: 5px;
-        margin-bottom: 18px;
-    }
-    .poolLabel {
-        font-size: 1.2em;
-        text-align: center;
-        padding: 4px;
-    }
-    table {
-        background: #ddd;
+
+    .workers-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
+        height: 3px;
+        background: var(--gradient);
     }
-    table th {
-        background: #c7c7c7;
-    }
-    .soloSection {
-        margin-top: 20px;
-        border-top: 2px solid #f0ad4e;
-        padding-top: 15px;
-    }
-    .soloLabel {
-        background: #f0ad4e;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 3px;
-        display: inline-block;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-    .minerType {
-        font-size: 0.8em;
-        padding: 2px 5px;
-        border-radius: 3px;
-        margin-left: 5px;
-    }
-    .poolMiner {
-        background: #5cb85c;
-        color: white;
-    }
-    .soloMiner {
-        background: #f0ad4e;
-        color: white;
-    } 
 
+    .pool-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .pool-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .pool-stats {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        font-size: 0.95rem;
+    }
+
+    .pool-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+    }
+
+    .pool-stat i {
+        color: var(--accent);
+    }
+
+    .pool-stat strong {
+        color: var(--text-primary);
+        margin-left: 0.25rem;
+    }
+
+    /* Miner Lookup */
+    .miner-lookup {
+        background: var(--bg-secondary);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .lookup-label {
+        display: block;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    .lookup-group {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .lookup-input {
+        flex: 1;
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .lookup-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .lookup-button {
+        background: var(--gradient);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .lookup-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Workers Section */
+    .workers-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .miner-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .badge-pool {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+    }
+
+    .badge-solo {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+    }
+
+    .section-info {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    /* Workers Table */
+    .workers-table-wrapper {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+    }
+
+    .workers-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .workers-table thead {
+        background: var(--bg-secondary);
+        border-bottom: 2px solid var(--border);
+    }
+
+    .workers-table th {
+        padding: 1rem;
+        text-align: left;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .workers-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: all 0.3s ease;
+    }
+
+    .workers-table tbody tr:hover {
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    .workers-table td {
+        padding: 1rem;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+
+    .worker-address {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .worker-address a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .worker-address a:hover {
+        text-decoration: underline;
+    }
+
+    .worker-count {
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+        margin-left: 0.5rem;
+    }
+
+    .efficiency-good {
+        color: var(--success);
+        font-weight: 600;
+    }
+
+    .efficiency-medium {
+        color: var(--warning);
+        font-weight: 600;
+    }
+
+    .efficiency-bad {
+        color: var(--danger);
+        font-weight: 600;
+    }
+
+    /* No Workers Message */
+    .no-workers {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
+        border-radius: 0.75rem;
+        margin: 1rem 0;
+    }
+
+    .no-workers i {
+        font-size: 3rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    /* Pagination Info */
+    .pagination-info {
+        text-align: center;
+        padding: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        background: var(--bg-secondary);
+        border-radius: 0 0 1rem 1rem;
+        margin-top: -1px;
+    }
+
+    /* Solo Section */
+    .solo-section {
+        position: relative;
+        margin-top: 3rem;
+    }
+
+    .solo-divider {
+        height: 2px;
+        background: linear-gradient(to right, transparent, var(--warning), transparent);
+        margin: 2rem 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .pool-info {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .pool-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .workers-table-wrapper {
+            padding: 0.75rem;
+        }
+
+        .workers-table {
+            font-size: 0.85rem;
+        }
+
+        .workers-table th,
+        .workers-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        /* Hide less important columns on mobile */
+        .workers-table th:nth-child(3),
+        .workers-table td:nth-child(3),
+        .workers-table th:nth-child(6),
+        .workers-table td:nth-child(6) {
+            display: none;
+        }
+    }
 </style>
+
+{{
+    function capitalizeFirstLetter(t) {
+        return t.charAt(0).toUpperCase() + t.slice(1);
+    }
+
+    function getReadableSharesString(shares) {
+        shares = parseFloat(shares);
+        if (isNaN(shares) || shares < 1) return '0';
+
+        if (shares >= 1e12) return (shares / 1e12).toFixed(2) + ' T';
+        if (shares >= 1e9) return (shares / 1e9).toFixed(2) + ' B';
+        if (shares >= 1e6) return (shares / 1e6).toFixed(2) + ' M';
+        if (shares >= 1e3) return (shares / 1e3).toFixed(2) + ' K';
+
+        return Math.round(shares).toString();
+    }
+
+    function aggregateWorkersByAddress(workers) {
+        var aggregated = {};
+
+        for (var worker in workers) {
+            var workerstat = workers[worker];
+            var address = worker.split('.')[0];
+
+            if (!aggregated[address]) {
+                aggregated[address] = {
+                    address: address,
+                    shares: 0,
+                    invalidshares: 0,
+                    currRoundShares: 0,
+                    hashrate: 0,
+                    hashrateString: '',
+                    luckDays: workerstat.luckDays || 'N/A',
+                    workerCount: 0,
+                    workers: []
+                };
+            }
+
+            aggregated[address].shares += parseFloat(workerstat.shares) || 0;
+            aggregated[address].invalidshares += parseFloat(workerstat.invalidshares) || 0;
+            aggregated[address].currRoundShares += parseFloat(workerstat.currRoundShares) || 0;
+            aggregated[address].hashrate += parseFloat(workerstat.hashrate) || 0;
+            aggregated[address].workerCount++;
+            aggregated[address].workers.push(worker);
+
+            if (workerstat.luckDays && workerstat.luckDays !== 'N/A') {
+                if (aggregated[address].luckDays === 'N/A' ||
+                    parseFloat(workerstat.luckDays) < parseFloat(aggregated[address].luckDays)) {
+                    aggregated[address].luckDays = workerstat.luckDays;
+                }
+            }
+        }
+
+        for (var addr in aggregated) {
+            var stats = aggregated[addr];
+            if (stats.hashrate > 1e15) {
+                stats.hashrateString = (stats.hashrate / 1e15).toFixed(2) + ' PH/s';
+            } else if (stats.hashrate > 1e12) {
+                stats.hashrateString = (stats.hashrate / 1e12).toFixed(2) + ' TH/s';
+            } else if (stats.hashrate > 1e9) {
+                stats.hashrateString = (stats.hashrate / 1e9).toFixed(2) + ' GH/s';
+            } else if (stats.hashrate > 1e6) {
+                stats.hashrateString = (stats.hashrate / 1e6).toFixed(2) + ' MH/s';
+            } else if (stats.hashrate > 1e3) {
+                stats.hashrateString = (stats.hashrate / 1e3).toFixed(2) + ' KH/s';
+            } else {
+                stats.hashrateString = stats.hashrate.toFixed(2) + ' H/s';
+            }
+        }
+
+        var sortedAddresses = Object.keys(aggregated)
+            .filter(function(addr) { return aggregated[addr].hashrate > 0; })
+            .sort(function(a, b) { return aggregated[b].hashrate - aggregated[a].hashrate; });
+
+        var result = [];
+        for (var i = 0; i < sortedAddresses.length; i++) {
+            result.push(aggregated[sortedAddresses[i]]);
+        }
+
+        return result;
+    }
+}}
+
+<div class="workers-container">
+    {{ for(var pool in it.stats.pools) { }}
+    {{ var poolData = it.stats.pools[pool]; }}
+
+    <!-- Pool Header -->
+    <div class="workers-header">
+        <div class="pool-info">
+            <h2 class="pool-title">
+                <i class="fas fa-server"></i> {{=capitalizeFirstLetter(poolData.name)}} Pool
+            </h2>
+            <div class="pool-stats">
+                <div class="pool-stat">
+                    <i class="fas fa-users"></i>
+                    <span>Pool Miners:</span>
+                    <strong id="statsMiners{{=pool}}">{{=poolData.poolMinerCount || 0}}</strong>
+                </div>
+                <div class="pool-stat">
+                    <i class="fas fa-user"></i>
+                    <span>Solo Miners:</span>
+                    <strong id="statsSoloMiners{{=pool}}">{{=poolData.soloMinerCount || 0}}</strong>
+                </div>
+                <div class="pool-stat">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Pool Hash:</span>
+                    <strong>{{=poolData.poolHashrateString || '0 H/s'}}</strong>
+                </div>
+                <div class="pool-stat">
+                    <i class="fas fa-gauge-high"></i>
+                    <span>Solo Hash:</span>
+                    <strong>{{=poolData.soloHashrateString || '0 H/s'}}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Miner Lookup -->
+        <div class="miner-lookup">
+            <label class="lookup-label">
+                <i class="fas fa-search"></i> Miner Address Lookup
+            </label>
+            <div class="lookup-group">
+                <input type="text"
+                       class="lookup-input"
+                       placeholder="Enter wallet address..."
+                       onkeypress="return searchKeyPress(event);">
+                <button class="lookup-button" type="button">
+                    Search
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pool Miners Section -->
+    <div class="workers-section">
+        <div class="section-header">
+            <h3 class="section-title">Pool Miners</h3>
+            <span class="miner-badge badge-pool">PROP</span>
+            {{ if (poolData.paymentMode === 'pplnt') { }}
+            <span class="section-info">(Pay Per Last N Time)</span>
+            {{ } else { }}
+            <span class="section-info">(Proportional Rewards)</span>
+            {{ } }}
+        </div>
+
+        <div class="workers-table-wrapper">
+            <table class="workers-table">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Workers</th>
+                        <th>Valid Shares</th>
+                        <th>Round Shares</th>
+                        <th>Efficiency</th>
+                        <th>Hashrate</th>
+                        <th>Luck (Days)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{
+                    var aggregatedPoolWorkers = aggregateWorkersByAddress(poolData.poolWorkers);
+                    var displayCount = Math.min(25, aggregatedPoolWorkers.length);
+
+                    for (var i = 0; i < displayCount; i++) {
+                        var miner = aggregatedPoolWorkers[i];
+                        var eff = miner.shares > 0 ? Math.floor(10000 * miner.shares / (miner.shares + miner.invalidshares)) / 100 : 0;
+                        var effClass = eff >= 95 ? 'efficiency-good' : (eff >= 90 ? 'efficiency-medium' : 'efficiency-bad');
+                    }}
+                    <tr>
+                        <td>
+                            <div class="worker-address">
+                                <a href="/workers/{{=miner.address}}">{{=miner.address}}</a>
+                                <span class="miner-badge badge-pool">POOL</span>
+                            </div>
+                        </td>
+                        <td>
+                            {{=miner.workerCount}}
+                            {{ if (miner.workerCount > 1) { }}
+                            <span class="worker-count">({{=miner.workerCount}} workers)</span>
+                            {{ } }}
+                        </td>
+                        <td>{{=getReadableSharesString(miner.shares)}}</td>
+                        <td>{{=getReadableSharesString(miner.currRoundShares)}}</td>
+                        <td>
+                            <span class="{{=effClass}}">
+                                {{=eff}}%
+                            </span>
+                        </td>
+                        <td>{{=miner.hashrateString}}</td>
+                        <td>{{=miner.luckDays}}</td>
+                    </tr>
+                    {{ } }}
+
+                    {{ if (aggregatedPoolWorkers.length === 0) { }}
+                    <tr>
+                        <td colspan="7">
+                            <div class="no-workers">
+                                <i class="fas fa-inbox"></i>
+                                No active pool miners at this time
+                            </div>
+                        </td>
+                    </tr>
+                    {{ } }}
+                </tbody>
+            </table>
+
+            {{ if (aggregatedPoolWorkers.length > 25) { }}
+            <div class="pagination-info">
+                Showing top 25 of {{=aggregatedPoolWorkers.length}} active pool addresses
+            </div>
+            {{ } }}
+        </div>
+    </div>
+
+    <!-- Solo Miners Section -->
+    {{ if (poolData.soloMining) { }}
+    <div class="solo-divider"></div>
+
+    <div class="workers-section solo-section">
+        <div class="section-header">
+            <h3 class="section-title">Solo Miners</h3>
+            <span class="miner-badge badge-solo">SOLO</span>
+            <span class="section-info">({{=poolData.soloFee || 0}}% fee on found blocks)</span>
+        </div>
+
+        <div class="workers-table-wrapper">
+            {{ if (poolData.soloWorkers && Object.keys(poolData.soloWorkers).length > 0) { }}
+            <table class="workers-table">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Workers</th>
+                        <th>Valid Shares</th>
+                        <th>Round Shares</th>
+                        <th>Efficiency</th>
+                        <th>Hashrate</th>
+                        <th>Luck (Days)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{
+                    var aggregatedSoloWorkers = aggregateWorkersByAddress(poolData.soloWorkers);
+                    var displaySoloCount = Math.min(25, aggregatedSoloWorkers.length);
+
+                    for (var j = 0; j < displaySoloCount; j++) {
+                        var soloMiner = aggregatedSoloWorkers[j];
+                        var soloEff = soloMiner.shares > 0 ? Math.floor(10000 * soloMiner.shares / (soloMiner.shares + soloMiner.invalidshares)) / 100 : 0;
+                        var soloEffClass = soloEff >= 95 ? 'efficiency-good' : (soloEff >= 90 ? 'efficiency-medium' : 'efficiency-bad');
+                    }}
+                    <tr>
+                        <td>
+                            <div class="worker-address">
+                                <a href="/workers/{{=soloMiner.address}}">{{=soloMiner.address}}</a>
+                                <span class="miner-badge badge-solo">SOLO</span>
+                            </div>
+                        </td>
+                        <td>
+                            {{=soloMiner.workerCount}}
+                            {{ if (soloMiner.workerCount > 1) { }}
+                            <span class="worker-count">({{=soloMiner.workerCount}} workers)</span>
+                            {{ } }}
+                        </td>
+                        <td>{{=getReadableSharesString(soloMiner.shares)}}</td>
+                        <td>{{=getReadableSharesString(soloMiner.currRoundShares)}}</td>
+                        <td>
+                            <span class="{{=soloEffClass}}">
+                                {{=soloEff}}%
+                            </span>
+                        </td>
+                        <td>{{=soloMiner.hashrateString}}</td>
+                        <td>{{=soloMiner.luckDays}}</td>
+                    </tr>
+                    {{ } }}
+
+                    {{ if (aggregatedSoloWorkers.length === 0) { }}
+                    <tr>
+                        <td colspan="7">
+                            <div class="no-workers">
+                                <i class="fas fa-inbox"></i>
+                                No active solo miners at this time
+                            </div>
+                        </td>
+                    </tr>
+                    {{ } }}
+                </tbody>
+            </table>
+
+            {{ if (aggregatedSoloWorkers.length > 25) { }}
+            <div class="pagination-info">
+                Showing top 25 of {{=aggregatedSoloWorkers.length}} active solo addresses
+            </div>
+            {{ } }}
+            {{ } else { }}
+            <div class="no-workers">
+                <i class="fas fa-inbox"></i>
+                No active solo miners at this time
+            </div>
+            {{ } }}
+        </div>
+    </div>
+    {{ } }}
+
+    {{ } }}
+</div>
+
 <script type="text/javascript">
     function searchKeyPress(e) {
         e = e || window.event;
         if (e.keyCode == 13) {
-            // Get the button that's in the same container as the input
             var input = e.target || e.srcElement;
-            var button = $(input).closest('.input-group').find('.btn-lg')[0];
+            var button = $(input).closest('.lookup-group').find('.lookup-button')[0];
             if (button) {
                 button.click();
             }
@@ -82,197 +634,38 @@
         }
         return true;
     }
-    
-    $(document).ready(function () {
-        // Handle each button click individually
-        $('.btn-lg').click(function () {
-            // Get the input that's in the same container as this button
-            var input = $(this).closest('.input-group').find('.input-lg');
+
+    // Initialize workers page
+    function initWorkersPage() {
+        // Remove any existing handlers first
+        $('.lookup-button').off('click');
+
+        // Add click handler
+        $('.lookup-button').on('click', function () {
+            var input = $(this).closest('.lookup-group').find('.lookup-input');
             var address = input.val().trim();
-            
+
             if (address) {
-                // Use absolute path from root
-                window.location.href = "/workers/" + address;
+                // Use hotSwap if available for better navigation
+                if (window.hotSwap) {
+                    window.hotSwap('workers/' + address, true);
+                } else {
+                    window.location.href = "/workers/" + address;
+                }
             }
         });
-    });
+    }
+
+    // Register for hot-swap
+    window.initWorkerScripts = function() {
+        initWorkersPage();
+    };
+
+    // Initialize on DOM ready (for direct page loads)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWorkersPage);
+    } else {
+        // DOM is already loaded (happens with hot-swap)
+        initWorkersPage();
+    }
 </script>
-{{ function capitalizeFirstLetter(t){return t.charAt(0).toUpperCase()+t.slice(1)} }}
-{{ var i=0; for(var pool in it.stats.pools) { }}
-{{ var poolData = it.stats.pools[pool]; }}
-<div id="topPool">
-    <div class="poolWrapper">
-        <div class="poolLabel">
-            <span style="float:right; margin-bottom: 8px;">
-				<span style="float:right; margin-bottom: 8px;">
-					<small>
-						<div class="input-group">
-							<label>Miner Lookup:
-								<input type="text" class="form-control input-lg" name="lookup"
-									onkeypress="return searchKeyPress(event);">
-							</label>
-							<span class="input-group-btn">
-								<button class="btn btn-default btn-lg" type="button">Lookup</button>
-							</span>
-						</div>
-					</small>
-				</span>
-            </span>
-            {{=capitalizeFirstLetter(poolData.name)}} Pool &nbsp;&nbsp;<br>
-				<small>
-					<i class="fas fa-users fa-fw"></i> 
-					<span id="statsMiners{{=pool}}">{{=poolData.minerCount || 0}}</span> Pool Miners &nbsp;&nbsp;
-					<i class="fas fa-user fa-fw"></i> 
-					<span id="statsSoloMiners{{=pool}}">{{=poolData.soloMinerCount || 0}}</span> Solo Miners &nbsp;&nbsp;
-					<i class="fas fa-tachometer-alt fa-fw"></i> 
-					Pool: {{=poolData.hashrateString || '0 H/s'}} &nbsp;&nbsp;
-					<i class="fas fa-tachometer-alt fa-fw"></i> 
-					Solo: {{=poolData.soloHashrateString || '0 H/s'}} 
-				</small>
-        </div>
-        
-        <!-- POOL MINERS SECTION -->
-        <div class="poolMinerTable">
-            <h4 style="margin: 10px 0;">
-                <span class="poolMiner minerType">POOL MINERS</span>
-                {{ if (poolData.paymentMode === 'prop') { }}
-                <small style="color: #666;">(PROP - Proportional Rewards)</small>
-                {{ } else if (poolData.paymentMode === 'pplnt') { }}
-                <small style="color: #666;">(PPLNT - Pay Per Last N Time)</small>
-                {{ } }}
-            </h4>
-			<div class="table-responsive">
-             <table class="pure-table">
-				<thead>
-					<tr>
-						<th>Address</th>
-						<th>Valid Shares</th>
-						<th>Round Shares</th>
-						<th>Efficiency</th>
-						<th>Hashrate</th>
-						<th>Luck (Days)</th>
-					</tr>
-				</thead>
-				<tbody>
-                {{ var minerCount = 0; }}
-                {{ var activeMiners = 0; }}
-                {{ for(var worker in poolData.miners) { }}
-                {{ var workerstat = poolData.miners[worker]; }}
-                {{ if (minerCount < 25 && workerstat.hashrate > 0) { }}
-					<tr class="pure-table-odd">
-						<td>
-							<a href="/workers/{{=worker.split('.')[0]}}">{{=worker}}</a>
-							<span class="poolMiner minerType" style="font-size: 0.7em;">POOL</span>
-						</td>
-						<td>{{=Math.round(workerstat.shares)}}</td>
-						<td>{{=Math.round(workerstat.currRoundShares * 100) / 100}}</td>
-						<td>{{? workerstat.shares > 0}} {{=Math.floor(10000 * workerstat.shares / (workerstat.shares + workerstat.invalidshares)) / 100}}% {{??}} 0% {{?}}</td>
-						<td>{{=workerstat.hashrateString}}</td>
-						<td>{{=workerstat.luckDays || 'N/A'}}</td>
-					</tr>
-                {{ minerCount++; activeMiners++; }}
-                {{ } }}
-                {{ } }}
-                {{ if (activeMiners === 0) { }}
-                <tr>
-                    <td colspan="5" style="text-align: center; padding: 20px; color: #999;">
-                        No active pool miners at this time
-                    </td>
-                </tr>
-                {{ } }}
-                </tbody>
-            </table>
-		   </div>
-            {{ 
-            var totalPoolMiners = 0;
-            for(var worker in poolData.miners) {
-                if(poolData.miners[worker].hashrate > 0) totalPoolMiners++;
-            }
-            }}
-            {{ if (totalPoolMiners > 25) { }}
-            <div style="text-align: center; padding: 10px; color: #666;">
-                Showing top 25 of {{=totalPoolMiners}} active pool miners
-            </div>
-            {{ } }}
-        </div>
-        
-        <!-- SOLO MINERS SECTION -->
-        {{ if (poolData.soloWorkers && Object.keys(poolData.soloWorkers).length > 0) { }}
-        <div class="soloSection">
-            <h4 style="margin: 10px 0;">
-                <span class="soloMiner minerType">SOLO MINERS</span>
-                {{ if (poolData.soloMining) { }}
-                <small style="color: #666;">({{=poolData.soloFee || 0}}% fee on found blocks)</small>
-                {{ } }}
-            </h4>
-            <div class="poolMinerTable">
-			 <div class="table-responsive">
-                <table class="pure-table">
-					<thead>
-						<tr>
-							<th>Address</th>
-							<th>Valid Shares</th>
-							<th>Round Shares</th>
-							<th>Efficiency</th>
-							<th>Hashrate</th>
-							<th>Luck (Days)</th>
-						</tr>
-					</thead>
-					<tbody>
-                    {{ var soloCount = 0; }}
-                    {{ var activeSoloMiners = 0; }}
-                    {{ for(var worker in poolData.soloWorkers) { }}
-                    {{ var workerstat = poolData.soloWorkers[worker]; }}
-                    {{ if (soloCount < 25 && workerstat.hashrate > 0) { }}
-						<tr class="pure-table-odd">
-							<td>
-								<a href="/workers/{{=worker.split('.')[0]}}">{{=worker.split('.')[0]}}</a>
-								<span class="soloMiner minerType" style="font-size: 0.7em;">SOLO</span>
-							</td>
-							<td>{{=Math.round(workerstat.shares)}}</td>
-							<td>{{=Math.round(workerstat.currRoundShares * 100) / 100}}</td>
-							<td>{{? workerstat.shares > 0}} {{=Math.floor(10000 * workerstat.shares / (workerstat.shares + workerstat.invalidshares)) / 100}}% {{??}} 0% {{?}}</td>
-							<td>{{=workerstat.hashrateString}}</td>
-							<td>{{=workerstat.luckDays || 'N/A'}}</td>
-						</tr>
-                    {{ soloCount++; activeSoloMiners++; }}
-                    {{ } }}
-                    {{ } }}
-                    {{ if (activeSoloMiners === 0) { }}
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 20px; color: #999;">
-                            No active solo miners at this time
-                        </td>
-                    </tr>
-                    {{ } }}
-                    </tbody>
-                </table>
-                {{ 
-                var totalSoloMiners = 0;
-                for(var worker in poolData.soloWorkers) {
-                    if(poolData.soloWorkers[worker].hashrate > 0) totalSoloMiners++;
-                }
-                }}
-                {{ if (totalSoloMiners > 25) { }}
-                <div style="text-align: center; padding: 10px; color: #666;">
-                    Showing top 25 of {{=totalSoloMiners}} active solo miners
-                </div>
-                {{ } }}
-            </div>
-		  </div>
-        </div>
-        {{ } else if (poolData.soloMining) { }}
-        <div class="soloSection">
-            <h4 style="margin: 10px 0;">
-                <span class="soloMiner minerType">SOLO MINERS</span>
-                <small style="color: #666;">({{=poolData.soloFee || 0}}% fee on found blocks)</small>
-            </h4>
-            <div style="text-align: center; padding: 20px; color: #999; background: #f9f9f9; border-radius: 3px;">
-                No active solo miners at this time
-            </div>
-        </div>
-        {{ } }}
-        
-    </div>
-</div>
-{{ } }}

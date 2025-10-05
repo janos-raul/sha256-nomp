@@ -1,601 +1,905 @@
 <style>
-    #topCharts {
-        padding: 18px 18px 0px 18px;
+    /* Stats Page Specific Styles */
+    .stats-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
     }
 
-    #topCharts>div>div>svg {
-        display: block;
-        height: 280px;
-    }
-	
-	#menu{
-        background-color: #3d3d3d;
-        min-width: 170px;
-    }
-
-    #menu > .menuHeader{
-        color: #e3f7ff;
-        border-bottom: 1px solid #7f878b;
-        font-size: 1.2em;
-        padding: 16px 16px 4px 15px;
+    /* Chart Wrappers */
+    .chart-wrapper {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
     }
 
-    .chartWrapper {
-        background: #eee;
-        border: solid 1px #c7c7c7;
-        border-radius: 5px;
-        padding: 5px;
-        margin-bottom: 18px;
-    }
-
-    .chartLabel {
-        font-size: 1.2em;
-        text-align: center;
-        padding: 4px;
-    }
-
-    #boxesLower {
-        margin: 0 9px;
-    }
-
-    #boxesLower>div {
-        display: flex;
-    }
-
-    #boxesLower>div>div {
-        flex: 1 1 auto;
-        margin: 0 9px 18px 9px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .boxLowerHeader {
-        font-size: 1.3em;
-        margin: 0 0 5px 10px;
-    }
-
-    #boxStatsLeft {
-        color: black;
-        background-color: #cccccc;
-    }
-
-    #boxStatsRight {
-        color: black;
-        background-color: #cccccc;
-    }
-
-    .boxStats {
-        color: white;
-    }
-
-    .boxStatsList {
-        display: flex;
-        flex-flow: row wrap;
-        justify-content: space-around;
-        opacity: 0.77;
-        margin-bottom: 5px;
-        flex: 1 1 auto;
-        align-content: center;
-    }
-
-    .boxStatsList i.fa {
-        height: 15px;
-        width: 33px;
-        text-align: center;
-    }
-
-    .boxStatsList>div {
-        padding: 5px 20px;
-    }
-
-    .boxStatsList>div>div {
-        padding: 3px;
-    }
-
-    div.tooltip {
+    .chart-wrapper::before {
+        content: '';
         position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: var(--gradient);
+    }
+
+    .chart-label {
+        font-size: 1.3rem;
+        font-weight: 600;
         text-align: center;
-        width: 60px;
-        height: 28px;
-        padding: 2px;
-        font: 12px sans-serif;
-        background: lightsteelblue;
-        border: 0px;
-        border-radius: 8px;
-        pointer-events: none;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
     }
 
-    #tooltip.hidden {
-        opacity: 0;
+    .chart-holder {
+        position: relative;
+        height: 300px;
+        padding: 1rem;
     }
 
-    #bottomCharts {
-        padding: 0px 18px 0px 18px;
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
     }
-	    .blockTypeLabel {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 0.75em;
-        margin-left: 5px;
-        font-weight: bold;
+
+    /* Stat Cards */
+    .stat-card {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
     }
-    .poolBlockLabel {
-        background: #5cb85c;
-        color: white;
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+        border-color: var(--accent);
     }
-    .soloBlockLabel {
-        background: #f0ad4e;
-        color: white;
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: var(--gradient);
     }
-    .blockStatRow {
+
+    .stat-header {
         display: flex;
         justify-content: space-between;
-        padding: 3px 0;
-    }
-    .blockStatSection {
-        border-left: 3px solid transparent;
-        padding-left: 5px;
-        margin: 5px 0;
-    }
-    .poolBlockSection {
-        border-left-color: #5cb85c;
-    }
-    .soloBlockSection {
-        border-left-color: #f0ad4e;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
     }
 
+    .stat-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        font-size: 1.2rem;
+    }
+
+    .stat-list {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .stat-item i {
+        color: var(--text-muted);
+        margin-right: 0.5rem;
+        width: 20px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Blocks Section */
+    .blocks-section {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border);
+    }
+
+    .blocks-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .blocks-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .blocks-stats {
+        display: flex;
+        gap: 2rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .blocks-stats span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .blocks-stats strong {
+        color: var(--text-primary);
+    }
+
+    /* Block Items */
+    .block-item {
+        background: var(--bg-secondary);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .block-item.pool-block {
+        border-left-color: var(--success);
+    }
+
+    .block-item.solo-block {
+        border-left-color: var(--warning);
+        background: rgba(245, 158, 11, 0.05);
+    }
+
+    .block-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .block-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .block-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .block-height {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .block-height a {
+        color: var(--accent);
+        text-decoration: none;
+    }
+
+    .block-height a:hover {
+        text-decoration: underline;
+    }
+
+    .block-type {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.3rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .block-type.pool {
+        background: var(--success);
+        color: white;
+    }
+
+    .block-type.solo {
+        background: var(--warning);
+        color: white;
+    }
+
+    .block-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .block-status.pending {
+        color: var(--warning);
+    }
+
+    .block-status.confirmed {
+        color: var(--success);
+    }
+
+    .block-status.paid {
+        color: var(--accent);
+    }
+
+    .block-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .block-detail {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .block-detail i {
+        color: var(--text-muted);
+        width: 20px;
+    }
+
+    .block-detail a {
+        color: var(--accent);
+        text-decoration: none;
+    }
+
+    .block-detail a:hover {
+        text-decoration: underline;
+    }
+
+    /* Pie Chart Section */
+    .pie-chart-section {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border);
+    }
+
+    .pie-chart-holder {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+        position: relative;
+    }
+
+    /* Luck Indicator */
+    .luck-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .luck-good {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .luck-normal {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent);
+    }
+
+    .luck-bad {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+    }
+
+    /* Loading Animation */
+    .stats-loading {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+    }
+
+    .stats-loading i {
+        font-size: 3rem;
+        animation: spin 1s linear infinite;
+        color: var(--accent);
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Tablet Responsive */
+    @media (max-width: 1024px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        /* Stats container mobile adjustments */
+        .stats-container {
+            max-width: 100%;
+            overflow-x: hidden;
+            padding: 1rem;
+            margin: 0;
+        }
+        
+        /* Ensure all card elements don't overflow */
+        .stat-card, 
+        .chart-wrapper,
+        .blocks-section,
+        .pie-chart-section {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        /* Fix chart containers */
+        .chart-holder {
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        /* Mobile adjustments for blocks */
+        .blocks-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .blocks-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .block-details {
+            grid-template-columns: 1fr;
+        }
+        
+        /* Pie chart mobile adjustments */
+        .pie-chart-holder {
+            min-height: 300px;
+        }
+    }
+
+    /* Very small screens */
+    @media (max-width: 360px) {
+        .stats-container {
+            padding: 0.5rem;
+        }
+        
+        .stat-card,
+        .chart-wrapper,
+        .blocks-section,
+        .pie-chart-section {
+            padding: 1rem;
+        }
+        
+        .stat-title {
+            font-size: 1rem;
+        }
+        
+        .chart-label,
+        .blocks-title {
+            font-size: 1.1rem;
+        }
+    }
 </style>
 
-<div id="topCharts">
-    <div class="chartWrapper">
-        <div class="chartLabel">Pool Historical Hashrate</div>
-        <div class="chartHolder"><svg id="poolHashrate"></svg></div>
-    </div>
-<div class="chartWrapper">
-    <div class="chartLabel">Pool Pending Blocks (Pool + Solo)</div>
-    <div class="chartHolder"><svg id="poolPending"></svg></div>
-</div>
 {{ function capitalizeFirstLetter(t){return t.charAt(0).toUpperCase()+t.slice(1)} }}
 {{ function readableDate(a) {
-var d = new Date(parseInt(a));
-return d.getFullYear() + '/' +
-(d.getMonth() + 1).toString().padStart(2, '0') + '/' +
-d.getDate().toString().padStart(2, '0') + ' ' +
-d.getHours().toString().padStart(2, '0') + ':' +
-d.getMinutes().toString().padStart(2, '0') + ':' +
-d.getSeconds().toString().padStart(2, '0') + ' ' +
-d.toString().match(/GMT([+-]\d{4})/)[0].replace('GMT', 'UTC') + ' ' +
-'(' + d.toString().match(/\(([^)]+)\)$/)[1] + ')';
+    var d = new Date(parseInt(a));
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
 } }}
-<div class="pure-g" id="boxesLower">
-    {{ for(var pool in it.stats.pools) { }}
-    <div class="pure-u-1-3">
-        <div class="boxStats" id="boxStatsLeft">
-            <div class="boxLowerHeader">{{=capitalizeFirstLetter(it.stats.pools[pool].name)}} Pool Stats</div>
-            <div class="boxStatsList">
-                <div>
-                    <div><i class="fas fa-users fa-fw"></i> <span
-                            id="statsMiners{{=pool}}">{{=it.stats.pools[pool].minerCount}}</span> Miners</div>
-                    <div><i class="fas fa-gears fa-fw"></i> <span
-                            id="statsWorkers{{=pool}}">{{=it.stats.pools[pool].workerCount}}</span> Workers</div>
-                    <div><i class="fas fa-gauge-simple-high fa-fw"></i> <span
-                            id="statsHashrate{{=pool}}">{{=it.stats.pools[pool].hashrateString}}</span> (Now)</div>
-                    <div><i class="fas fa-gauge-simple-high fa-fw"></i> <span id="statsHashrateAvg{{=pool}}">...</span>
-                        (Avg)</div>
-							<div><i class="fas fa-clock fa-fw"></i>&nbsp;Luck: 
-								<span id="statsLuckDays{{=pool}}">
-								  {{ 
-									var rawLuck = it.stats.pools[pool].luckDays || 0;
-									var luck = parseFloat(rawLuck);
-									var timeUnits = [ ' Days', ' Hours', ' Minutes' ];
-									var _luckTime = 'N/A';
 
-									if (!isNaN(luck)) {
-									  if (luck < 1) { 
-										luck *= 24; 
-										if (luck < 1) { 
-										  luck *= 60; 
-										  _luckTime = luck < 0.01 ? '< 1 Minute' : luck.toFixed(2) + timeUnits[2]; 
-										} else { 
-										  _luckTime = luck.toFixed(2) + timeUnits[1]; 
-										} 
-									  } else { 
-										_luckTime = luck.toFixed(2) + timeUnits[0]; 
-									  }
-									}
-								  }}
-								  {{= _luckTime }}
-								</span>
-							</div>
-                    <div>
-                        <i class="fas fa-chart-bar fa-fw"></i> Share: <span id="statsHashPercent{{=pool}}">
-                            {{
-                            var percent=0.0;
-                            if(it.stats.pools[pool].hashrate == 0 ) {
-                            percent=0.0;
-                            } else {
-                            percent=it.stats.pools[pool].hashrate / it.stats.pools[pool].poolStats.networkHash * 100;
+<div class="stats-container">
+    <!-- Charts Section -->
+    <div class="chart-wrapper">
+        <div class="chart-label">
+            <i class="fas fa-chart-line"></i> Pool Historical Hashrate
+        </div>
+        <div class="chart-holder">
+            <canvas id="poolHashrateChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-wrapper">
+        <div class="chart-label">
+            <i class="fas fa-cubes"></i> Pending Blocks (Pool + Solo)
+        </div>
+        <div class="chart-holder">
+            <canvas id="poolPendingChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        {{ for(var pool in it.stats.pools) { }}
+        <!-- Pool Stats Card -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-title">{{=capitalizeFirstLetter(pool)}} Pool</div>
+                <div class="stat-icon">
+                    <i class="fas fa-server"></i>
+                </div>
+            </div>
+            <div class="stat-list">
+                <div class="stat-item">
+                    <span><i class="fas fa-users"></i> Miners</span>
+                    <span class="stat-value" id="statsMiners{{=pool}}">{{=it.stats.pools[pool].minerCount}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-microchip"></i> Workers</span>
+                    <span class="stat-value" id="statsWorkers{{=pool}}">{{=it.stats.pools[pool].workerCount}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-tachometer-alt"></i> Hashrate</span>
+                    <span class="stat-value" id="statsHashrate{{=pool}}">{{=it.stats.pools[pool].hashrateString}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-gauge"></i> Average</span>
+                    <span class="stat-value" id="statsHashrateAvg{{=pool}}">...</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-clock"></i> Luck</span>
+                    <span class="stat-value luck-indicator" id="statsLuckDays{{=pool}}">
+                        {{ 
+                        var rawLuck = it.stats.pools[pool].luckDays || 0;
+                        var luck = parseFloat(rawLuck);
+                        var timeUnits = [ ' Days', ' Hours', ' Minutes' ];
+                        var _luckTime = 'N/A';
+                        if (!isNaN(luck)) {
+                            if (luck < 1) { 
+                                luck *= 24; 
+                                if (luck < 1) { 
+                                    luck *= 60; 
+                                    _luckTime = luck < 0.01 ? '< 1 Minute' : luck.toFixed(2) + timeUnits[2]; 
+                                } else { 
+                                    _luckTime = luck.toFixed(2) + timeUnits[1]; 
+                                } 
+                            } else { 
+                                _luckTime = luck.toFixed(2) + timeUnits[0]; 
                             }
-                            }}
-                            {{=percent.toFixed(5)}}
-                        </span> %
-                    </div>
+                        }
+                        }}
+                        {{= _luckTime }}
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-percentage"></i> Pool Share</span>
+                    <span class="stat-value" id="statsHashPercent{{=pool}}">
+                        {{=(it.stats.pools[pool].hashrate / it.stats.pools[pool].poolStats.networkHash * 100).toFixed(5)}}%
+                    </span>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="pure-u-1-3">
-        <div class="boxStats" id="boxStatsRight">
-            <div class="boxLowerHeader">{{=capitalizeFirstLetter(it.stats.pools[pool].name)}} Network Stats</div>
-            <div class="boxStatsList">
-                <div>
-                    <div><i class="fas fa-bars fa-fw"></i> <small>Block Height:</small> <span
-                            id="statsNetworkBlocks{{=pool}}">{{=it.stats.pools[pool].poolStats.networkBlocks}}</span>
-                    </div>
-                    <div><i class="fas fa-gauge-simple-high fa-fw"></i> <small>Network H/s:</small> <span
-                            id="statsnetworkHash{{=pool}}">{{=it.stats.pools[pool].poolStats.networkHashString}}</span>
-                    </div>
-                    <div><i class="fas fa-unlock fa-fw"></i> <small>Difficulty:</small> <span
-                            id="statsNetworkDiff{{=pool}}">{{= it.getReadableDifficultyString(it.stats.pools[pool].poolStats.networkDiff) }}</span>
-                    </div>
-                    <div><i class="fas fa-signal fa-fw"></i> <small>Node Connections:</small> <span
-                            id="statsNetworkConnections{{=pool}}">{{=it.stats.pools[pool].poolStats.networkConnections}}</span>
-                    </div>
-                    <div><i class="fas fa-code-fork fa-fw"></i> <small>Daemon:</small> <span
-                            id="statsNetworkVersion{{=pool}}">{{=it.stats.pools[pool].poolStats.networkVersion}}</span>
-                    </div>
-                    <div><i class="fas fa-flask fa-fw"></i> <small>Algorithm: </small>
-                        <span>{{=capitalizeFirstLetter(it.stats.pools[pool].algorithm)}}</span>
-                    </div>
+
+        <!-- Network Stats Card -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-title">{{=capitalizeFirstLetter(pool)}} Network</div>
+                <div class="stat-icon">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+            </div>
+            <div class="stat-list">
+                <div class="stat-item">
+                    <span><i class="fas fa-cubes"></i> Height</span>
+                    <span class="stat-value" id="statsNetworkBlocks{{=pool}}">{{=it.stats.pools[pool].poolStats.networkBlocks}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-tachometer-alt"></i> Network</span>
+                    <span class="stat-value" id="statsnetworkHash{{=pool}}">{{=it.stats.pools[pool].poolStats.networkHashString}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-unlock"></i> Difficulty</span>
+                    <span class="stat-value" id="statsNetworkDiff{{=pool}}">{{= it.getReadableDifficultyString(it.stats.pools[pool].poolStats.networkDiff) }}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-signal"></i> Connections</span>
+                    <span class="stat-value" id="statsNetworkConnections{{=pool}}">{{=it.stats.pools[pool].poolStats.networkConnections}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-code-branch"></i> Version</span>
+                    <span class="stat-value" id="statsNetworkVersion{{=pool}}">{{=it.stats.pools[pool].poolStats.networkVersion}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-flask"></i> Algorithm</span>
+                    <span class="stat-value">{{=capitalizeFirstLetter(it.stats.pools[pool].algorithm)}}</span>
                 </div>
             </div>
         </div>
-    </div>
-<div class="pure-u-1-3">
-    <div class="boxStats" id="boxStatsLeft">
-        <div class="boxLowerHeader">{{=capitalizeFirstLetter(it.stats.pools[pool].name)}} Block Stats</div>
-        <div class="boxStatsList">
-            <div>
-                <div><i class="fas fa-cubes fa-fw"></i> Total Blocks
-                    {{=it.stats.pools[pool].poolStats.validBlocks}}</div>
-                <div><i class="fas fa-hourglass-half fa-fw"></i> Pool Pending
-                    {{=it.stats.pools[pool].blocks.pending}}</div>
+
+        <!-- Block Stats Card -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-title">{{=capitalizeFirstLetter(pool)}} Blocks</div>
+                <div class="stat-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+            </div>
+            <div class="stat-list">
+                <div class="stat-item">
+                    <span><i class="fas fa-check-circle"></i> Total Valid</span>
+                    <span class="stat-value">{{=it.stats.pools[pool].poolStats.validBlocks}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-hourglass-half"></i> Pool Pending</span>
+                    <span class="stat-value">{{=it.stats.pools[pool].poolBlocks.pending}}</span>
+                </div>
                 {{ if (it.stats.pools[pool].soloBlocks) { }}
-                <div><i class="fas fa-hourglass-half fa-fw"></i> Solo Pending
-                    {{=it.stats.pools[pool].soloBlocks.pending || 0}}</div>
+                <div class="stat-item">
+                    <span><i class="fas fa-user"></i> Solo Pending</span>
+                    <span class="stat-value">{{=it.stats.pools[pool].soloBlocks.pending || 0}}</span>
+                </div>
                 {{ } }}
-                <div><i class="fas fa-gavel fa-fw"></i> Pool Confirmed {{=it.stats.pools[pool].blocks.confirmed}}
+                <div class="stat-item">
+                    <span><i class="fas fa-check"></i> Pool Confirmed</span>
+                    <span class="stat-value">{{=it.stats.pools[pool].poolBlocks.confirmed}}</span>
                 </div>
                 {{ if (it.stats.pools[pool].soloBlocks) { }}
-                <div><i class="fas fa-gavel fa-fw"></i> Solo Confirmed
-                    {{=it.stats.pools[pool].soloBlocks.confirmed || 0}}</div>
+                <div class="stat-item">
+                    <span><i class="fas fa-user-check"></i> Solo Confirmed</span>
+                    <span class="stat-value">{{=it.stats.pools[pool].soloBlocks.confirmed || 0}}</span>
+                </div>
                 {{ } }}
-                <div><i class="fas fa-square-xmark fa-fw"></i> Orphaned
-                    {{=it.stats.pools[pool].blocks.orphaned}}</div>
-                <div><i class="fas fa-square-check fa-fw"></i> Valid Shares
-                    {{=it.stats.pools[pool].poolStats.validShares}}</div>
-                <div><i class="fas fa-square-minus fa-fw"></i> Invalid Shares
-                    {{=it.stats.pools[pool].poolStats.invalidShares}}</div>
+                <div class="stat-item">
+                    <span><i class="fas fa-times-circle"></i> Orphaned</span>
+                    <span class="stat-value">{{=it.stats.pools[pool].blocks.orphaned}}</span>
+                </div>
+                <div class="stat-item">
+                    <span><i class="fas fa-money-bill"></i> Total Paid</span>
+                    <span class="stat-value" id="statsTotalPaid{{=pool}}">{{=(parseFloat(it.stats.pools[pool].poolStats.totalPaid)).toFixed(8)}}</span>
+                </div>
             </div>
         </div>
+        {{ } }}
     </div>
-</div>
+
+    <!-- Blocks Found Section -->
+    {{ for(var pool in it.stats.pools) { }}
+    {{ var blockscomb = new Array; }}
+    <div class="blocks-section">
+        <div class="blocks-header">
+            <div class="blocks-title">
+                <i class="fas fa-cube"></i> {{=capitalizeFirstLetter(pool)}} Blocks Found
+            </div>
+            <div class="blocks-stats">
+                <span>
+                    <i class="fas fa-cubes"></i>
+                    <strong id="statsValidBlocks{{=pool}}">
+                        {{=it.stats.pools[pool].blocks.pending + it.stats.pools[pool].blocks.confirmed}}
+                    </strong> Total
+                </span>
+                <span>
+                    <i class="fas fa-server"></i>
+                    Pool: <strong id="statsPoolBlocks{{=pool}}">
+                        {{=it.stats.pools[pool].poolBlocks.pending + it.stats.pools[pool].poolBlocks.confirmed}}
+                    </strong>
+                </span>
+                {{ if (it.stats.pools[pool].soloBlocks && (it.stats.pools[pool].soloBlocks.pending > 0 || it.stats.pools[pool].soloBlocks.confirmed > 0)) { }}
+                <span>
+                    <i class="fas fa-user"></i>
+                    Solo: <strong id="statsSoloBlocks{{=pool}}">
+                        {{=it.stats.pools[pool].soloBlocks.pending + it.stats.pools[pool].soloBlocks.confirmed}}
+                    </strong>
+                </span>
+                {{ } }}
+            </div>
+        </div>
+
+        <div class="blocks-list">
+            <!-- Pool Pending Blocks -->
+            {{ for(var b in it.stats.pools[pool].poolPending.blocks) { }}
+            {{ var block = it.stats.pools[pool].poolPending.blocks[b].split(":"); }}
+            <div class="block-item pool-block">
+                <div class="block-main">
+                    <div class="block-info">
+                        <span class="block-height">
+                            <i class="fas fa-cube"></i>
+                            {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
+                            <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">Block #{{=block[2]}}</a>
+                            {{ } else { }}
+                            Block #{{=block[2]}}
+                            {{ } }}
+                        </span>
+                        <span class="block-type pool">POOL</span>
+                    </div>
+                    <div class="block-status pending">
+                        {{if (it.stats.pools[pool].poolPending.confirms && it.stats.pools[pool].poolPending.confirms[block[0]]) { }}
+                            {{ var confirms = parseInt(it.stats.pools[pool].poolPending.confirms[block[0]]); }}
+                            {{ var minConf = parseInt(it.poolsConfigs[pool].paymentProcessing.minConf); }}
+                            {{ if (confirms >= minConf) { }}
+                                <i class="fas fa-check-circle"></i> Confirmed
+                            {{ } else { }}
+                                <i class="fas fa-spinner fa-spin"></i> {{=confirms}}/{{=minConf}}
+                            {{ } }}
+                        {{ } else { }}
+                            <i class="fas fa-clock"></i> Pending
+                        {{ } }}
+                    </div>
+                </div>
+                <div class="block-details">
+                    <div class="block-detail">
+                        <i class="fas fa-user"></i>
+                        <span>Found by: <a href="/workers/{{=block[3].split('.')[0]}}">{{=block[3].split('.')[0]}}</a></span>
+                    </div>
+                    {{if (block[4] != null) { }}
+                    <div class="block-detail">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{=readableDate(block[4])}}</span>
+                    </div>
+                    {{ } }}
+                </div>
+            </div>
+            {{ blockscomb.push(block);}}
+            {{ } }}
+
+            <!-- Pool Confirmed Blocks -->
+            {{ var i=0; for(var b in it.stats.pools[pool].poolConfirmed.blocks) { }}
+            {{ if (i < 8) { i++; }}
+            {{ var block = it.stats.pools[pool].poolConfirmed.blocks[b].split(":"); }}
+            <div class="block-item pool-block">
+                <div class="block-main">
+                    <div class="block-info">
+                        <span class="block-height">
+                            <i class="fas fa-cube"></i>
+                            {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
+                            <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">Block #{{=block[2]}}</a>
+                            {{ } else { }}
+                            Block #{{=block[2]}}
+                            {{ } }}
+                        </span>
+                        <span class="block-type pool">POOL</span>
+                    </div>
+                    <div class="block-status paid">
+                        <i class="fas fa-check-double"></i> Paid
+                    </div>
+                </div>
+                <div class="block-details">
+                    <div class="block-detail">
+                        <i class="fas fa-user"></i>
+                        <span>Found by: <a href="/workers/{{=block[3].split('.')[0]}}">{{=block[3].split('.')[0]}}</a></span>
+                    </div>
+                    {{if (block[4] != null) { }}
+                    <div class="block-detail">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{=readableDate(block[4])}}</span>
+                    </div>
+                    {{ } }}
+                </div>
+            </div>
+            {{blockscomb.push(block);}}
+            {{ } }}
+            {{ } }}
+
+            <!-- Solo Pending Blocks -->
+            {{ if (it.stats.pools[pool].soloPending && it.stats.pools[pool].soloPending.blocks.length > 0) { }}
+            {{ for(var b in it.stats.pools[pool].soloPending.blocks) { }}
+            {{ var block = it.stats.pools[pool].soloPending.blocks[b].split(":"); }}
+            <div class="block-item solo-block">
+                <div class="block-main">
+                    <div class="block-info">
+                        <span class="block-height">
+                            <i class="fas fa-cube"></i>
+                            {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
+                            <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">Block #{{=block[2]}}</a>
+                            {{ } else { }}
+                            Block #{{=block[2]}}
+                            {{ } }}
+                        </span>
+                        <span class="block-type solo">SOLO</span>
+                    </div>
+                    <div class="block-status pending">
+                        {{if (it.stats.pools[pool].soloPending.confirms && it.stats.pools[pool].soloPending.confirms[block[0]]) { }}
+                            {{ var confirms = parseInt(it.stats.pools[pool].soloPending.confirms[block[0]]); }}
+                            {{ var minConf = parseInt(it.poolsConfigs[pool].paymentProcessing.minConf); }}
+                            {{ if (confirms >= minConf) { }}
+                                <i class="fas fa-check-circle"></i> Confirmed
+                            {{ } else { }}
+                                <i class="fas fa-spinner fa-spin"></i> {{=confirms}}/{{=minConf}}
+                            {{ } }}
+                        {{ } else { }}
+                            <i class="fas fa-clock"></i> Pending
+                        {{ } }}
+                    </div>
+                </div>
+                <div class="block-details">
+                    <div class="block-detail">
+                        <i class="fas fa-user"></i>
+                        <span>Found by: <a href="/workers/{{=block[3].split('.')[0]}}">{{=block[3].split('.')[0]}}</a></span>
+                    </div>
+                    {{if (block[4] != null) { }}
+                    <div class="block-detail">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{=readableDate(block[4])}}</span>
+                    </div>
+                    {{ } }}
+                </div>
+            </div>
+            {{ blockscomb.push(block);}}
+            {{ } }}
+            {{ } }}
+
+            <!-- Solo Confirmed Blocks -->
+            {{ if (it.stats.pools[pool].soloConfirmed && it.stats.pools[pool].soloConfirmed.blocks.length > 0) { }}
+            {{ var j=0; for(var b in it.stats.pools[pool].soloConfirmed.blocks) { }}
+            {{ if (j < 8) { j++; }}
+            {{ var block = it.stats.pools[pool].soloConfirmed.blocks[b].split(":"); }}
+            <div class="block-item solo-block">
+                <div class="block-main">
+                    <div class="block-info">
+                        <span class="block-height">
+                            <i class="fas fa-cube"></i>
+                            {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
+                            <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">Block #{{=block[2]}}</a>
+                            {{ } else { }}
+                            Block #{{=block[2]}}
+                            {{ } }}
+                        </span>
+                        <span class="block-type solo">SOLO</span>
+                    </div>
+                    <div class="block-status paid">
+                        <i class="fas fa-check-double"></i> Paid
+                    </div>
+                </div>
+                <div class="block-details">
+                    <div class="block-detail">
+                        <i class="fas fa-user"></i>
+                        <span>Found by: <a href="/workers/{{=block[3].split('.')[0]}}">{{=block[3].split('.')[0]}}</a></span>
+                    </div>
+                    {{if (block[4] != null) { }}
+                    <div class="block-detail">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{=readableDate(block[4])}}</span>
+                    </div>
+                    {{ } }}
+                </div>
+            </div>
+            {{blockscomb.push(block);}}
+            {{ } }}
+            {{ } }}
+            {{ } }}
+        </div>
+    </div>
+
+    <!-- Pie Chart for Block Finders -->
+    {{ if (blockscomb.length > 0) { }}
+    <div class="pie-chart-section">
+        <div class="chart-label">
+            <i class="fas fa-chart-pie"></i> Top 10 Miners - Last {{=blockscomb.length}} Blocks
+        </div>
+        <div class="pie-chart-holder">
+            <canvas id="blocksPie{{=pool}}"></canvas>
+        </div>
+    </div>
+    
+    <script>
+        var blockscomb{{=pool}} = {{=JSON.stringify(blockscomb)}};
+    </script>
+    {{ } }}
     {{ } }}
 </div>
 
-{{ for(var pool in it.stats.pools) { }}
-{{ var blockscomb = new Array; }}
-<div class="pure-g" id="boxesLower">
-    <div class="pure-u-1-1">
-        <div class="boxStats" id="boxStatsRight">
-<div class="boxLowerHeader">
-    {{=capitalizeFirstLetter(pool)}} Blocks Found &nbsp;&nbsp;
-    <span style="float:right;">
-        <small>
-            <i class="fas fa-bars fa-fw"></i> 
-            <span id="statsValidBlocks{{=pool}}">
-                {{=it.stats.pools[pool].blocks.pending + it.stats.pools[pool].blocks.confirmed}}
-            </span> Total
-            (Pool: <span id="statsPoolBlocks{{=pool}}">
-                {{=it.stats.pools[pool].poolBlocks.pending + it.stats.pools[pool].poolBlocks.confirmed}}
-            </span>
-            {{ if (it.stats.pools[pool].soloBlocks && (it.stats.pools[pool].soloBlocks.pending > 0 || it.stats.pools[pool].soloBlocks.confirmed > 0)) { }}
-            | Solo: <span id="statsSoloBlocks{{=pool}}">
-                {{=it.stats.pools[pool].soloBlocks.pending + it.stats.pools[pool].soloBlocks.confirmed}}
-            </span>
-            {{ } }})
-            &nbsp;&nbsp;
-            <i class="fas fa-money-bill fa-fw"></i> Paid: <span
-                id="statsTotalPaid{{=pool}}">{{=(parseFloat(it.stats.pools[pool].poolStats.totalPaid)).toFixed(8)}}</span>
-            {{=it.stats.pools[pool].symbol}}
-        </small>&nbsp;&nbsp;
-    </span>
-</div>
-            <div class="boxStatsList" style="margin-top: 9px;">
-                
-				<!-- Pool Pending Blocks -->
-				{{ for(var b in it.stats.pools[pool].poolPending.blocks) { }}
-				{{ var block = it.stats.pools[pool].poolPending.blocks[b].split(":"); }}
-				<div style="margin-bottom: 9px; background-color: #eee; min-width:960px; border-left: 3px solid #5cb85c; padding: 5px;">
-					<i class="fas fa-bars fa-fw"></i>
-					<small>Block:</small>
-					{{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
-					<a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">{{=block[2]}}</a>
-					{{ } else { }}
-					{{=block[2]}}
-					{{ } }}
-					{{if (block[4] != null) { }}
-					<span style="padding-left: 18px;"><small>{{=readableDate(block[4])}}</small></span>
-					{{ } }}
-					{{if (it.stats.pools[pool].poolPending.confirms && it.stats.pools[pool].poolPending.confirms[block[0]]) { }}
-						{{ var confirms = parseInt(it.stats.pools[pool].poolPending.confirms[block[0]]); }}
-						{{ var minConf = parseInt(it.poolsConfigs[pool].paymentProcessing.minConf); }}
-						{{ if (confirms >= minConf) { }}
-							<div style="float:right; text-align:right;">
-								<div><small style="color: green;">Confirmed !</small></div>
-								<div><small style="color: green;">Awaiting Payment</small></div>
-							</div>
-						{{ } else { }}
-						<span style="float:right; color: red;"><small>{{=confirms}} / {{=minConf}}</small></span>
-						{{ } }}
-					{{ } else { }}
-					<span style="float:right; color: red;"><small>*PENDING*</small></span>
-					{{ } }}
-					<div><i class="fas fa-gavel fa-fw"></i> <small>Found By:</small> 
-						<a href="/workers/{{=block[3].split('.')[0]}}">{{=block[3]}}</a>
-					</div>
-				</div>
-				{{ blockscomb.push(block);}}
-				{{ } }}
-				
-				<!-- Pool Confirmed Blocks -->
-                {{ var i=0; for(var b in it.stats.pools[pool].poolConfirmed.blocks) { }}
-                {{ if (i < 8) { i++; }}
-                {{ var block = it.stats.pools[pool].poolConfirmed.blocks[b].split(":"); }}
-                <div style="margin-bottom: 9px; background-color: #eeeeee; min-width:960px; border-left: 3px solid #5cb85c; padding: 5px;">
-                    <i class="fas fa-bars fa-fw"></i>
-                    <small>Block:</small>
-                    {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
-                    <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">{{=block[2]}}</a>
-                    {{ } else { }}
-                    {{=block[2]}}
-                    {{ } }}
-                    {{if (block[4] != null) { }}
-                    <span style="padding-left: 18px;"><small>{{=readableDate(block[4])}}</small></span>
-                    {{ } }}
-                    <span style="float:right; padding-left: 18px; color: green;"><small>*PAID*</small></span>
-                    <div><i class="fas fa-gavel fa-fw"></i> <small>Found By:</small> 
-                        <a href="/workers/{{=block[3].split('.')[0]}}">{{=block[3]}}</a>
-                    </div>
-                </div>
-                {{blockscomb.push(block);}}
-                {{ } }}
-                {{ } }}
-                
-                <!-- Solo Pending Blocks -->
-                {{ if (it.stats.pools[pool].soloPending && it.stats.pools[pool].soloPending.blocks.length > 0) { }}
-                {{ for(var b in it.stats.pools[pool].soloPending.blocks) { }}
-                {{ var block = it.stats.pools[pool].soloPending.blocks[b].split(":"); }}
-                <div style="margin-bottom: 9px; background-color: #ffeaa7; min-width:960px; border-left: 3px solid #f0ad4e; padding: 5px;">
-                    <i class="fas fa-bars fa-fw"></i>
-                    <small>Block:</small>
-                    {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
-                    <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">{{=block[2]}}</a>
-                    {{ } else { }}
-                    {{=block[2]}}
-                    {{ } }}
-                    <span class="soloBlockLabel">SOLO</span>
-                    {{if (block[4] != null) { }}
-                    <span style="padding-left: 18px;"><small>{{=readableDate(block[4])}}</small></span>
-                    {{ } }}
-                    {{if (it.stats.pools[pool].soloPending.confirms && it.stats.pools[pool].soloPending.confirms[block[0]]) { }}
-                        {{ var confirms = parseInt(it.stats.pools[pool].soloPending.confirms[block[0]]); }}
-                        {{ var minConf = parseInt(it.poolsConfigs[pool].paymentProcessing.minConf); }}
-                        {{ if (confirms >= minConf) { }}
-							<div style="float:right; text-align:right;">
-								<div><small style="color: green;">Confirmed !</small></div>
-								<div><small style="color: green;">Awaiting Payment</small></div>
-							</div>
-                        {{ } else { }}
-                        <span style="float:right; color: red;"><small>{{=confirms}} / {{=minConf}}</small></span>
-                        {{ } }}
-                    {{ } else { }}
-                    <span style="float:right; color: red;"><small>*PENDING*</small></span>
-                    {{ } }}
-                    <div><i class="fas fa-gavel fa-fw"></i> <small>Found By:</small> 
-                        <a href="/workers/{{=block[3].split('.')[0]}}">{{=block[3]}}</a>
-                    </div>
-                </div>
-                {{ blockscomb.push(block);}}
-                {{ } }}
-                {{ } }}
-                               
-                <!-- Solo Confirmed Blocks -->
-                {{ if (it.stats.pools[pool].soloConfirmed && it.stats.pools[pool].soloConfirmed.blocks.length > 0) { }}
-                {{ var j=0; for(var b in it.stats.pools[pool].soloConfirmed.blocks) { }}
-                {{ if (j < 8) { j++; }}
-                {{ var block = it.stats.pools[pool].soloConfirmed.blocks[b].split(":"); }}
-                <div style="margin-bottom: 9px; background-color: #ffeaa7; min-width:960px; border-left: 3px solid #f0ad4e; padding: 5px;">
-                    <i class="fas fa-bars fa-fw"></i>
-                    <small>Block:</small>
-                    {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
-                    <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">{{=block[2]}}</a>
-                    {{ } else { }}
-                    {{=block[2]}}
-                    {{ } }}
-                    <span class="soloBlockLabel">SOLO</span>
-                    {{if (block[4] != null) { }}
-                    <span style="padding-left: 18px;"><small>{{=readableDate(block[4])}}</small></span>
-                    {{ } }}
-                    <span style="float:right; padding-left: 18px; color: green;"><small>*PAID*</small></span>
-                    <div><i class="fas fa-gavel fa-fw"></i> <small>Found By:</small> 
-                        <a href="/workers/{{=block[3].split('.')[0]}}">{{=block[3]}}</a>
-                    </div>
-                </div>
-                {{blockscomb.push(block);}}
-                {{ } }}
-                {{ } }}
-                
-            </div>
-        </div>
-    </div>
-</div>
-{{ } }}
-                
-            </div>
-            <script>
-                var blockscomb = JSON.parse('{{=JSON.stringify(blockscomb)}}');
-            </script>
-        </div>
-    </div>
-</div>
-
-
-<div id="bottomCharts">
-    <div class="chartWrapper" id="bottomCharts{{=pool}}" style="text-align:center;">
-        <div class="chartWrapper" style="text-align:center;">
-            <div class="chartLabel">Finders of the last {{=blockscomb.length}} blocks</div>
-            <div class="hidden" id="tooltip{{=pool}}">
-                <p>
-                    <span id="value{{=pool}}"></span> blocks found by
-                    <span id="finderr{{=pool}}"></span>
-                </p>
-            </div>
-            <div class="chartHolder" id="pie{{=pool}}">
-                <svg id="blocksPie{{=pool}}" style="display: block; margin: auto; text-align:center;"></svg>
-            </div>
-        </div>
-    </div>
-</div>
-
+<script src="/static/modern-stats.js"></script>
 <script>
-    var groupedByFinder = {};
-    var data = [];
-
-    for (var i = 0; i < blockscomb.length; i++) {
-        var finder = blockscomb[i][3];
-        if (!(finder in groupedByFinder)) {
-            groupedByFinder[finder] = [];
+(function() {
+    function initStatsPage() {
+        // Prevent multiple initializations
+        if (window.statsPageFullyInitialized) {
+            console.log('Stats page already initialized');
+            return;
         }
-        groupedByFinder[finder].push(blockscomb[i]);
-    }
-
-    Object.keys(groupedByFinder).forEach(function (key) {
-        data.push({ label: key, value: groupedByFinder[key].length });
-    });
-
-    var w = 400,
-        h = 400,
-        r = h / 2,
-        legendRectSize = 18,
-        legendSpacing = 5;
-
-    var color = d3.scale.category20c();
-
-    var vis = d3.select("#blocksPie{{=pool}}")
-        .data([data])
-        .attr("width", 1000)
-        .attr("height", h)
-        .attr("preserveAspectRatio", "xMidYMin")
-        .append("g")
-        .attr("transform", "translate(" + r + "," + r + ")");
-
-    var pie = d3.layout.pie().value(function (d) { return d.value; });
-    var arc = d3.svg.arc().outerRadius(r);
-
-    var arcs = vis.selectAll("g.slice{{=pool}}")
-        .data(pie)
-        .enter()
-        .append("g")
-        .attr("class", "slice{{=pool}}")
-        .on("mouseover", function (d) {
-            d3.select("#tooltip{{=pool}}")
-                .style("left", d3.event.pageX + "px")
-                .style("top", d3.event.pageY + "px")
-                .style("opacity", 1);
-            d3.select("#value{{=pool}}").text(d.data.value);
-            d3.select("#finderr{{=pool}}").text(d.data.label);
-        });
-
-    arcs.append("path")
-        .attr("fill", function (d, i) {
-            return color(i);
-        })
-        .attr("d", arc);
-
-    var legend = vis.selectAll(".legend{{=pool}}")
-        .data(color.domain())
-        .enter()
-        .append("g")
-        .attr("class", "legend{{=pool}}")
-        .attr("transform", function (d, i) {
-            var height = legendRectSize + legendSpacing;
-            var offset = height * color.domain().length / 2;
-            var horz = 12 * legendRectSize;
-            var vert = i * height;
-            return "translate(" + horz + "," + vert + ")";
-        });
-
-    legend.append("rect")
-        .attr("width", legendRectSize)
-        .attr("height", legendRectSize)
-        .style("fill", color)
-        .style("stroke", color);
-
-    legend.append("text")
-        .attr("x", legendRectSize + legendSpacing)
-        .attr("y", legendRectSize - legendSpacing)
-        .text(function (d, i) {
-            return data[i].label;
-        });
-</script>
-{{ } }}
-<script>
-    document.querySelector('main').appendChild(document.createElement('script')).src = '/static/stats.js';
-</script>
-<script>
-    window.statsSource = new EventSource("/api/live_stats");
-$(function () {
-    statsSource.addEventListener('message', function (e) {
-        if (document.hidden) return;
-        var stats = JSON.parse(e.data);
-        for (var pool in stats.pools) {
-            $('#statsMiners' + pool).text(stats.pools[pool].minerCount);
-            $('#statsWorkers' + pool).text(stats.pools[pool].workerCount);
-            $('#statsHashrate' + pool).text(stats.pools[pool].hashrateString);
-            $('#statsHashrateAvg' + pool).text(getReadableHashRateString(calculateAverageHashrate(pool)));
-            $('#statsLuckDays' + pool).text(getReadableLuckTime(stats.pools[pool].luckDays));
-            $('#statsTotalPaid' + pool).text((parseFloat(stats.pools[pool].poolStats.totalPaid)).toFixed(8));
-            $('#statsNetworkBlocks' + pool).text(stats.pools[pool].poolStats.networkBlocks);
-            $('#statsNetworkDiff' + pool).text(stats.pools[pool].poolStats.networkDiff);
-            $('#statsnetworkHash' + pool).text(getReadableHashRateString(stats.pools[pool].poolStats.networkHash));
-            $('#statsNetworkConnections' + pool).text(stats.pools[pool].poolStats.networkConnections);
-            $('#statsHashPercent' + pool).text((stats.pools[pool].hashrate / stats.pools[pool].poolStats.networkHash * 100).toFixed(5));
-            
-            // MOVE THIS INSIDE THE LOOP
-            // Update total blocks (pool + solo) - blocks already contains the total
-            var totalBlocks = stats.pools[pool].blocks.pending + stats.pools[pool].blocks.confirmed;
-            $('#statsValidBlocks' + pool).text(totalBlocks);
-            
-            // Update separate pool and solo counts
-            var poolBlocks = stats.pools[pool].poolBlocks.pending + stats.pools[pool].poolBlocks.confirmed;
-            var soloBlocks = (stats.pools[pool].soloBlocks.pending || 0) + (stats.pools[pool].soloBlocks.confirmed || 0);
-            $('#statsPoolBlocks' + pool).text(poolBlocks);
-            if (soloBlocks > 0) {
-                $('#statsSoloBlocks' + pool).text(soloBlocks);
-            }
+        window.statsPageFullyInitialized = true;
+        
+        console.log('Initializing stats page...');
+        
+        // Fix mobile header
+        const header = document.querySelector('.header');
+        if (header) {
+            header.style.position = 'fixed';
+            header.style.top = '0';
+            header.style.left = '0';
+            header.style.right = '0';
+            header.style.width = '100%';
+            header.style.zIndex = '1000';
         }
-    });
-});
-    function getReadableNetworkHashRateString(hashrate) {
-        hashrate = (hashrate * 1000000);
-        if (hashrate < 1000000)
-            return '0 H/s';
-        var byteUnits = [' H/s', ' KH/s', ' MH/s', ' GH/s', ' TH/s', ' PH/s', ' EH/s', ' ZH/s', ' YH/s'];
-        var i = Math.floor((Math.log(hashrate / 1000) / Math.log(1000)) - 1);
-        hashrate = (hashrate / 1000) / Math.pow(1000, i + 1);
-        return hashrate.toFixed(2) + byteUnits[i];
+        
+        // Ensure body padding for fixed header
+        document.body.style.paddingTop = '70px';
+        
+        // Mobile menu functionality
+        if (!window.toggleMenu) {
+            window.toggleMenu = function() {
+                const nav = document.getElementById('nav');
+                if (nav) {
+                    nav.classList.toggle('active');
+                    document.body.classList.toggle('menu-open');
+                }
+            };
+        }
+        
+        // Ensure menu toggle is visible and works
+        const menuToggle = document.querySelector('.menu-toggle');
+        if (menuToggle) {
+            // Make sure it's visible on mobile
+            menuToggle.style.display = '';
+            
+            // Clear existing handlers
+            const newToggle = menuToggle.cloneNode(true);
+            menuToggle.parentNode.replaceChild(newToggle, menuToggle);
+            
+            // Add click handler
+            newToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.toggleMenu();
+            });
+        }
+        
+        // Initialize charts only once
+        if (typeof window.initStatsCharts === 'function') {
+            // Reset the pool stats initialization flag
+            window.poolStatsInitialized = false;
+            window.initStatsCharts();
+        }
     }
+    
+    // Register for hot-swap
+    window.initStatsScripts = function() {
+        window.statsPageFullyInitialized = false;
+        initStatsPage();
+    };
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initStatsPage);
+    } else {
+        initStatsPage();
+    }
+})();
 </script>

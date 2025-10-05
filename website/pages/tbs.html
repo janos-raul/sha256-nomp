@@ -1,144 +1,753 @@
 <style>
-    #topPool {
-        padding: 18px 18px 0px 18px;
+    /* Tab Stats Specific Styles */
+    .stats-header {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
     }
 
-    #topPool>div>div>svg {
-        display: block;
-        height: 280px;
-    }
-	
-	#menu{
-        background-color: #3d3d3d;
-        min-width: 170px;
-    }
-
-    #menu > .menuHeader{
-        color: #e3f7ff;
-        border-bottom: 1px solid #7f878b;
-        font-size: 1.2em;
-        padding: 16px 16px 4px 15px;
-    }
-
-    .poolWrapper {
-        background: #ddd;
-        border: solid 1px #c7c7c7;
-        border-radius: 5px;
-        padding: 5px;
-        margin-bottom: 18px;
-    }
-
-    .poolLabel {
-        font-size: 1.2em;
-        text-align: center;
-        padding: 4px;
-    }
-
-    table {
-        background: #ddd;
+    .stats-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
+        height: 4px;
+        background: var(--gradient);
     }
-    table th{
-        background: #c7c7c7;
+
+    .stats-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
     }
-		    /* Mobile responsive tables */
-    @media screen and (max-width: 768px) {
-        /* Make tables scrollable on mobile */
-        .poolMinerTable {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+
+    .stats-subtitle {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
+
+    /* Table Container */
+    .table-container {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .table-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .table-title i {
+        color: var(--accent);
+    }
+
+    /* Search/Filter Bar */
+    .table-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        position: relative;
+    }
+
+    .search-box input {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        padding: 0.5rem 2.5rem 0.5rem 1rem;
+        border-radius: 0.5rem;
+        min-width: 250px;
+        transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .search-box i {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+
+    /* Modern Table Styles */
+    .modern-table-wrapper {
+        overflow-x: auto;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background: var(--bg-secondary);
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .modern-table thead {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+        border-bottom: 2px solid var(--border);
+    }
+
+    .modern-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        background: inherit;
+        z-index: 10;
+    }
+
+    .modern-table td {
+        padding: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        transition: all 0.2s ease;
+    }
+
+    .modern-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .modern-table tbody tr:hover {
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    .modern-table tbody tr:hover td {
+        color: var(--text-primary);
+    }
+
+    /* Pool Name Badge */
+    .pool-badge {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .pool-badge i {
+        font-size: 0.8rem;
+        color: var(--accent);
+    }
+
+    /* Algo Badge */
+    .algo-badge {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-block;
+    }
+
+    /* Number Badges */
+    .number-badge {
+        font-weight: 600;
+        font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    .number-badge.miners {
+        color: var(--accent);
+    }
+
+    .number-badge.shares-valid {
+        color: var(--success);
+    }
+
+    .number-badge.shares-invalid {
+        color: var(--danger);
+    }
+
+    .number-badge.blocks-total {
+        color: var(--text-primary);
+    }
+
+    .number-badge.blocks-pending {
+        color: var(--warning);
+    }
+
+    .number-badge.blocks-confirmed {
+        color: var(--success);
+    }
+
+    .number-badge.blocks-orphaned {
+        color: var(--text-muted);
+    }
+
+    .number-badge.hashrate {
+        color: var(--accent);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    /* Summary Cards */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
+        border-color: var(--accent);
+    }
+
+    .summary-label {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-title {
+            font-size: 1.5rem;
         }
         
-        table {
-            min-width: 500px; /* Minimum width to maintain readability */
+        .table-header {
+            flex-direction: column;
+            align-items: flex-start;
         }
         
-        /* Reduce padding on mobile */
-        #topPool {
-            padding: 10px;
+        .search-box input {
+            min-width: 100%;
         }
         
-        /* Stack miner lookup on mobile */
-        .poolLabel span {
-            float: none !important;
-            display: block;
-            margin-bottom: 10px;
+        .modern-table {
+            font-size: 0.85rem;
         }
         
-        /* Smaller font sizes on mobile */
-        .poolLabel small {
-            font-size: 0.85em;
-            display: block;
-            line-height: 1.8;
-        }
-        
-        /* Make input and button full width on mobile */
-        .input-lg, .btn-lg {
-            width: 100%;
-            margin-bottom: 5px;
+        .modern-table th,
+        .modern-table td {
+            padding: 0.75rem 0.5rem;
         }
         
         /* Hide less important columns on mobile */
-        @media screen and (max-width: 480px) {
-            table th:nth-child(3),
-            table td:nth-child(3) {
-                display: none; /* Hide efficiency column on very small screens */
-            }
-        }
-    }
-    
-    /* Responsive text */
-    @media screen and (max-width: 480px) {
-        .poolLabel {
-            font-size: 1em;
-        }
-        
-        /* Break long addresses */
-        table td:first-child {
-            word-break: break-all;
-            max-width: 150px;
+        .modern-table th:nth-child(4),
+        .modern-table td:nth-child(4),
+        .modern-table th:nth-child(5),
+        .modern-table td:nth-child(5) {
+            display: none;
         }
     }
 
+    @media (max-width: 480px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        /* Further hide columns on very small screens */
+        .modern-table th:nth-child(6),
+        .modern-table td:nth-child(6),
+        .modern-table th:nth-child(7),
+        .modern-table td:nth-child(7),
+        .modern-table th:nth-child(8),
+        .modern-table td:nth-child(8) {
+            display: none;
+        }
+    }
+
+    /* Loading Animation */
+    .loading-pulse {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Tooltip */
+    .tooltip-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .tooltip-wrapper .tooltip-content {
+        visibility: hidden;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        text-align: center;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border);
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        font-size: 0.85rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .tooltip-wrapper:hover .tooltip-content {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    /* Export Button */
+    .export-btn {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .export-btn:hover {
+        background: var(--accent);
+        color: var(--text-primary);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
 </style>
-<div id="topPool">
-    <div class="poolWrapper">
-        <div class="poolLabel">
-            Pool Tab Stats
+
+<!-- Stats Header -->
+<div class="stats-header">
+    <h1 class="stats-title">
+        <i class="fas fa-table"></i>
+        Pool Tab Statistics
+    </h1>
+    <p class="stats-subtitle">Comprehensive overview of all pool performance metrics</p>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-grid">
+    <div class="summary-card">
+        <div class="summary-label">
+            <i class="fas fa-server"></i>
+            Total Pools
         </div>
-        <div class="poolMinerTable">
-		  <div class="table-responsive">
-            <table class="pure-table">
-                <thead>
-                    <tr>
-                        <th>Pool</th>
-                        <th>Algo</th>
-                        <th>Miners</th>
-                        <th>Valid Shares</th>
-                        <th>Invalid Shares</th>
-                        <th>Total Blocks</th>
-                        <th>Pending</th>
-                        <th>Confirmed</th>
-                        <th>Orphaned</th>
-                        <th>Hashrate</th>
-                    </tr>
-                </thead>
-                {{ for(var pool in it.stats.pools) { }}
-                <tr class="pure-table-odd">
-                    <td>{{=it.stats.pools[pool].name}}</td>
-                    <td>{{=it.stats.pools[pool].algorithm}}</td>
-                    <td>{{=it.stats.pools[pool].minerCount || 0}}</td>
-                    <td>{{=it.stats.pools[pool].poolStats.validShares}}</td>
-                    <td>{{=it.stats.pools[pool].poolStats.invalidShares}}</td>
-                    <td>{{=it.stats.pools[pool].poolStats.validBlocks}}</td>
-                    <td>{{=it.stats.pools[pool].blocks.pending}}</td>
-                    <td>{{=it.stats.pools[pool].blocks.confirmed}}</td>
-                    <td>{{=it.stats.pools[pool].blocks.orphaned}}</td>
-                    <td>{{=it.stats.pools[pool].hashrateString}}</td>
-                </tr>
-                {{ } }}
-            </table>
-		  </div>
+        <div class="summary-value" id="totalPools">{{=Object.keys(it.stats.pools).length}}</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-label">
+            <i class="fas fa-users"></i>
+            Total Miners
+        </div>
+        <div class="summary-value" id="totalMiners">{{=it.stats.global ? it.stats.global.miners : 0}}</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-label">
+            <i class="fas fa-cubes"></i>
+            Total Blocks
+        </div>
+         <div class="summary-value" id="totalBlocks">
+            {{
+                var totalBlocks = 0;
+                for(var pool in it.stats.pools) {
+                    var blocks = parseInt(it.stats.pools[pool].poolStats.validBlocks) || 0;
+                    totalBlocks += blocks;
+                }
+            }}{{=totalBlocks}}
         </div>
     </div>
+    <div class="summary-card">
+        <div class="summary-label">
+            <i class="fas fa-tachometer-alt"></i>
+            Combined Hashrate
+        </div>
+        <div class="summary-value" id="totalHashrate">{{=it.stats.global ? it.stats.global.hashrateString : '0 H/s'}}</div>
+    </div>
 </div>
+
+<!-- Main Table -->
+<div class="table-container">
+    <div class="table-header">
+        <h2 class="table-title">
+            <i class="fas fa-chart-bar"></i>
+            Detailed Pool Statistics
+        </h2>
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" id="poolSearch" placeholder="Search pools..." onkeyup="filterTable()">
+                <i class="fas fa-search"></i>
+            </div>
+            <button class="export-btn" onclick="exportTableToCSV()">
+                <i class="fas fa-download"></i>
+                Export CSV
+            </button>
+        </div>
+    </div>
+    
+    <div class="modern-table-wrapper">
+        <table class="modern-table" id="poolStatsTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">
+                        Pool <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(1)">
+                        Algorithm <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(2)">
+                        Miners <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(3)">
+                        Valid Shares <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(4)">
+                        Invalid Shares <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(5)">
+                        Total Blocks <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(6)">
+                        Pending <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(7)">
+                        Confirmed <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(8)">
+                        Orphaned <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable(9)">
+                        Hashrate <i class="fas fa-sort"></i>
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="poolTableBody">
+                {{ for(var pool in it.stats.pools) { }}
+                <tr>
+                    <td>
+                        <span class="pool-badge">
+                            <i class="fas fa-coins"></i>
+                            {{=it.stats.pools[pool].name}}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="algo-badge">{{=it.stats.pools[pool].algorithm}}</span>
+                    </td>
+                    <td>
+                        <span class="number-badge miners">{{=it.stats.pools[pool].minerCount || 0}}</span>
+                    </td>
+                    <td>
+                        <span class="number-badge shares-valid">
+                            {{=Number(it.stats.pools[pool].poolStats.validShares || 0).toLocaleString()}}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="number-badge shares-invalid">
+                            {{=Number(it.stats.pools[pool].poolStats.invalidShares || 0).toLocaleString()}}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="number-badge blocks-total">
+                            {{=it.stats.pools[pool].poolStats.validBlocks || 0}}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="number-badge blocks-pending">
+                            {{=it.stats.pools[pool].blocks.pending || 0}}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="number-badge blocks-confirmed">
+                            {{=it.stats.pools[pool].blocks.confirmed || 0}}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="number-badge blocks-orphaned">
+                            {{=it.stats.pools[pool].blocks.orphaned || 0}}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="number-badge hashrate">
+                            {{=it.stats.pools[pool].hashrateString || '0 H/s'}}
+                        </span>
+                    </td>
+                </tr>
+                {{ } }}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Initialize summary values
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calculate totals from table
+        calculateTableTotals();
+        
+        // Set up live updates
+        setupLiveUpdates();
+        
+        // Live updates are handled by EventSource in setupLiveUpdates()
+        // No need for full page reload - removed for better UX
+    });
+    
+    function calculateTableTotals() {
+        const tbody = document.querySelector('#poolTableBody');
+        if (!tbody) return;
+        
+        const rows = tbody.getElementsByTagName('tr');
+        let totalBlocks = 0;
+        
+        for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            if (cells[5]) { // Total blocks column (index 5)
+                const blocksText = cells[5].textContent.trim();
+                const blocks = parseInt(blocksText) || 0;
+                totalBlocks += blocks;
+            }
+        }
+        
+        document.getElementById('totalBlocks').textContent = totalBlocks;
+    }
+
+    function setupLiveUpdates() {
+        // Only update from live stats, not from DOM parsing
+        if (window.statsSource) {
+            window.statsSource.addEventListener('message', function(e) {
+                try {
+                    const stats = JSON.parse(e.data);
+                    
+                    // Update summary cards from live data
+                    if (stats.pools) {
+                        const poolCount = Object.keys(stats.pools).length;
+                        document.getElementById('totalPools').textContent = poolCount;
+                        
+                        // Calculate total blocks from stats
+                        let totalBlocks = 0;
+                        for (let pool in stats.pools) {
+                            totalBlocks += parseInt(stats.pools[pool].poolStats.validBlocks) || 0;
+                        }
+                        document.getElementById('totalBlocks').textContent = totalBlocks;
+                    }
+                    
+                    if (stats.global) {
+                        if (stats.global.miners !== undefined) {
+                            document.getElementById('totalMiners').textContent = stats.global.miners;
+                        }
+                        if (stats.global.hashrateString) {
+                            document.getElementById('totalHashrate').textContent = stats.global.hashrateString;
+                        }
+                    }
+                    
+                    // Update table hashrates and other stats
+                    if (stats.pools) {
+                        const rows = document.querySelectorAll('#poolTableBody tr');
+                        
+                        rows.forEach(row => {
+                            const poolNameCell = row.querySelector('.pool-badge');
+                            if (!poolNameCell) return;
+                            
+                            const poolName = poolNameCell.textContent.trim().toLowerCase();
+                            
+                            // Find matching pool in stats
+                            for (let pool in stats.pools) {
+                                if (pool.toLowerCase() === poolName || stats.pools[pool].name.toLowerCase() === poolName) {
+                                    const poolData = stats.pools[pool];
+                                    
+                                    // Update miners count (column 2)
+                                    const minersCell = row.cells[2];
+                                    if (minersCell) {
+                                        minersCell.querySelector('.number-badge').textContent = poolData.minerCount || 0;
+                                    }
+                                    
+                                    // Update hashrate (last column)
+                                    const hashrateCell = row.cells[row.cells.length - 1];
+                                    if (hashrateCell) {
+                                        const hashrateDisplay = hashrateCell.querySelector('.hashrate-display');
+                                        const tooltipContent = hashrateCell.querySelector('.tooltip-content');
+                                        
+                                        if (hashrateDisplay) {
+                                            hashrateDisplay.textContent = poolData.hashrateString || '0 H/s';
+                                        }
+                                        if (tooltipContent) {
+                                            tooltipContent.textContent = (poolData.hashrate || 0) + ' H/s raw';
+                                        }
+                                    }
+                                    
+                                    // Update blocks counts if they changed
+                                    if (row.cells[5]) {
+                                        row.cells[5].querySelector('.number-badge').textContent = poolData.poolStats.validBlocks || 0;
+                                    }
+                                    if (row.cells[6]) {
+                                        row.cells[6].querySelector('.number-badge').textContent = poolData.blocks.pending || 0;
+                                    }
+                                    if (row.cells[7]) {
+                                        row.cells[7].querySelector('.number-badge').textContent = poolData.blocks.confirmed || 0;
+                                    }
+                                    
+                                    break;
+                                }
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.error('Error updating stats:', err);
+                }
+            });
+        }
+    }
+
+    // Table filtering
+    function filterTable() {
+        const input = document.getElementById('poolSearch');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('poolStatsTable');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = tbody.getElementsByTagName('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const poolName = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
+            const algoName = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
+            
+            if (poolName.includes(filter) || algoName.includes(filter)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    }
+
+    // Table sorting
+    let sortDirection = {};
+    
+    function sortTable(columnIndex) {
+        const table = document.getElementById('poolStatsTable');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+        
+        // Toggle sort direction
+        sortDirection[columnIndex] = !sortDirection[columnIndex];
+        const ascending = sortDirection[columnIndex];
+        
+        rows.sort((a, b) => {
+            let aValue = a.getElementsByTagName('td')[columnIndex].textContent.trim();
+            let bValue = b.getElementsByTagName('td')[columnIndex].textContent.trim();
+            
+            // Remove commas and non-numeric characters for number comparison
+            aValue = aValue.replace(/[^0-9.-]/g, '');
+            bValue = bValue.replace(/[^0-9.-]/g, '');
+            
+            // Check if values are numbers
+            if (!isNaN(aValue) && !isNaN(bValue)) {
+                return ascending ? 
+                    parseFloat(aValue) - parseFloat(bValue) : 
+                    parseFloat(bValue) - parseFloat(aValue);
+            }
+            
+            // Text comparison
+            return ascending ? 
+                aValue.localeCompare(bValue) : 
+                bValue.localeCompare(aValue);
+        });
+        
+        // Clear tbody and re-append sorted rows
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+        
+        // Update sort icons
+        const headers = table.getElementsByTagName('th');
+        for (let i = 0; i < headers.length; i++) {
+            const icon = headers[i].querySelector('i');
+            if (icon && icon.classList.contains('fa-sort') || icon.classList.contains('fa-sort-up') || icon.classList.contains('fa-sort-down')) {
+                if (i === columnIndex) {
+                    icon.className = ascending ? 'fas fa-sort-up' : 'fas fa-sort-down';
+                } else {
+                    icon.className = 'fas fa-sort';
+                }
+            }
+        }
+    }
+
+    // Export to CSV
+    function exportTableToCSV() {
+        const table = document.getElementById('poolStatsTable');
+        const rows = table.querySelectorAll('tr');
+        const csvContent = [];
+        
+        rows.forEach(row => {
+            const cols = row.querySelectorAll('td, th');
+            const rowData = [];
+            cols.forEach(col => {
+                rowData.push('"' + col.textContent.trim().replace(/"/g, '""') + '"');
+            });
+            csvContent.push(rowData.join(','));
+        });
+        
+        const csv = csvContent.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pool_stats_' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    }
+</script>
