@@ -36,7 +36,9 @@ If your pool uses SHA256-NOMP let us know and we will list your website here.
 
 ### Some pools using SHA256-NOMP:
 
-* [sha256-mining.go.ro - Mining Pool](https://sha256-mining.go.ro:50300)
+* [sha256-mining.go.ro - Mining Pool](https://sha256-mining.go.ro:50300)   
+
+* [UGPOOL.lol - Mining Pool](https://ugpool.lol/)
 
 Usage
 =====
