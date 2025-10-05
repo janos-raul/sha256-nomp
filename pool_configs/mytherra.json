@@ -7,7 +7,7 @@
   "address": "YOUR_POOL_WALLET_ADDRESS",
 
     "rewardRecipients": {
-        "YOUR_FEE_ADDRESS": 1.0
+        "YOUR_FEE_ADDRESS": 0.0
     },
 
   "paymentProcessing": {

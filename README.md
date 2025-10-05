@@ -335,7 +335,12 @@ Pool configurations define operational settings for each coin's mining pool. Eac
     "address": "YOUR_POOL_WALLET_ADDRESS",    // Main pool payout address
 
     "rewardRecipients": {
-        "YOUR_FEE_ADDRESS": 1.0          // Pool fee percentage (1.0 = 1%)
+        // IMPORTANT: This is a COINBASE-LEVEL split, deducted BEFORE poolFee/soloFee!
+        // If you set this > 0, it reduces the block reward available for fee calculation
+        // Example: 6.25 BTC block with 1.0% here = 0.0625 BTC to fee address at coinbase
+        //          Remaining 6.1875 BTC is then split by poolFee/soloFee percentages
+        // RECOMMENDED: Set to 0.0 and use poolFee/soloFee instead for simpler accounting
+        "YOUR_FEE_ADDRESS": 0.0          // Coinbase reward split (0.0 = disabled, recommended)
     },
 
     // Payment processing configuration
@@ -345,8 +350,8 @@ Pool configurations define operational settings for each coin's mining pool. Eac
         "enabled": true,                 // Enable automatic payments
         "soloMining": true,              // Enable solo mining mode
         "paymentMode": "prop",           // Payment mode: "prop" or "pplnt"
-        "poolFee": 2.0,                  // Pool mining fee (2.0 = 2%)
-        "soloFee": 2.0,                  // Solo mining fee (2.0 = 2%)
+        "poolFee": 2.0,                  // Pool mining fee (2.0 = 2%) - applied AFTER rewardRecipients
+        "soloFee": 2.0,                  // Solo mining fee (2.0 = 2%) - applied AFTER rewardRecipients
         "paymentInterval": 3600,         // Payment interval in seconds (3600 = 1 hour)
         "minimumPayment": 0.01,          // Minimum payout for pool miners
         "minimumPayment_solo": 0.01,     // Minimum payout for solo miners
@@ -451,6 +456,47 @@ Each coin has multiple ports with different difficulty ranges:
 - Medium difficulty ports (e.g., 50213): For medium-sized miners
 - High difficulty ports (e.g., 50214): For large mining operations
 - Very high difficulty ports (e.g., 50216): For massive mining farms
+
+**Fee Structure - IMPORTANT:**
+
+Understanding how fees work is crucial for proper pool operation:
+
+1. **rewardRecipients** (Coinbase-level split):
+   - Deducted directly from block reward at coinbase transaction creation
+   - Happens BEFORE any other fee calculations
+   - Example with 6.25 BTC block and 1.0% rewardRecipients:
+     - 0.0625 BTC goes to fee address immediately
+     - Remaining 6.1875 BTC available for pool/solo fee calculations
+   - **CAUTION**: Using this complicates fee accounting!
+   - **RECOMMENDED**: Set to 0.0 and use poolFee/soloFee instead
+
+2. **poolFee** (Pool mining fee):
+   - Applied to pool miners AFTER rewardRecipients deduction
+   - Percentage taken from remaining block reward
+   - Simple and transparent for miners
+   - Example with 2.0% poolFee on 6.25 BTC block (no rewardRecipients):
+     - Pool takes: 0.125 BTC
+     - Miners share: 6.125 BTC
+
+3. **soloFee** (Solo mining fee):
+   - Applied to solo miners AFTER rewardRecipients deduction
+   - Solo miner receives entire block minus this fee
+   - Example with 2.0% soloFee on 6.25 BTC block (no rewardRecipients):
+     - Pool takes: 0.125 BTC
+     - Solo miner receives: 6.125 BTC
+
+**Best Practice Fee Configuration:**
+```javascript
+"rewardRecipients": {
+    "YOUR_FEE_ADDRESS": 0.0   // Keep at 0.0 for simplicity
+},
+"paymentProcessing": {
+    "poolFee": 2.0,           // Your pool fee percentage
+    "soloFee": 2.0            // Your solo mining fee percentage
+}
+```
+
+This approach keeps accounting simple and transparent for your miners.
 
 #### Solo Mining Configuration
 
