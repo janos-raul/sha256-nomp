@@ -335,11 +335,11 @@ var buildUpdatedWebsite = function () {
             next();
     };
 
-    var route = function (req, res, next) {
+var route = function (req, res, next) {
 
         var pageId = req.params.page || '';
-		requestStats.total++;
-		requestStats.pages++;
+        requestStats.total++;
+        requestStats.pages++;
         var acceptLanguage = req.headers['accept-language'];
         let language = 'en';
 
@@ -358,19 +358,53 @@ var buildUpdatedWebsite = function () {
             }
         }
 
-        if (pageId in indexesProcessed) {
-			logger.debug(logSystem, 'Route', 
-				'Page served: ' + (pageId || 'index') + ' [' + language + ']');
+        // FIX: Check if we have a processed page for this route
+        // If pageId is empty (home page), use the home content
+        var pageToServe = pageId || 'home';
+        
+        // Check if this is the index/home page request
+        if (pageId === '' || pageId === 'home') {
+            // Serve the index with home content
+            logger.debug(logSystem, 'Route', 
+                'Page served: home [' + language + ']');
             res.header('Content-Type', 'text/html');
-
-            let pageContent = indexesProcessed[pageId].replace(/<html lang=".*?">/, `<html lang="${language}">`);
-
+            
+            // Use the home page content in the index template
+            var homeIndex = pageTemplates.index({
+                page: pageProcessed['home'] || pageProcessed[''],
+                selected: 'home',
+                stats: portalStats.stats,
+                poolConfigs: poolConfigs,
+                portalConfig: portalConfig,
+                getReadableDifficultyString: getReadableDifficultyString
+            });
+            
+            let pageContent = homeIndex.replace(/<html lang=".*?">/, `<html lang="${language}">`);
             res.end(pageContent);
         }
-		else {
-			logger.debug(logSystem, 'Route', 'Page not found: ' + pageId);
-			next();
-		}
+        else if (pageId in pageProcessed) {
+            // Serve the index with the requested page content
+            logger.debug(logSystem, 'Route', 
+                'Page served: ' + pageId + ' [' + language + ']');
+            res.header('Content-Type', 'text/html');
+            
+            // Generate the index with the correct page content
+            var pageIndex = pageTemplates.index({
+                page: pageProcessed[pageId],
+                selected: pageId,
+                stats: portalStats.stats,
+                poolConfigs: poolConfigs,
+                portalConfig: portalConfig,
+                getReadableDifficultyString: getReadableDifficultyString
+            });
+            
+            let pageContent = pageIndex.replace(/<html lang=".*?">/, `<html lang="${language}">`);
+            res.end(pageContent);
+        }
+        else {
+            logger.debug(logSystem, 'Route', 'Page not found: ' + pageId);
+            next();
+        }
     };
 
 
@@ -380,14 +414,41 @@ var buildUpdatedWebsite = function () {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
-    app.get('/get_page', function (req, res, next) {
-        var requestedPage = getPage(req.query.id);
-        if (requestedPage) {
-            res.end(requestedPage);
-            return;
-        }
-        next();
-    });
+app.get('/get_page', function (req, res, next) {
+    var pageId = req.query.id;
+    var address = req.query.address;
+    
+    // Special handling for workers page with address
+    if (pageId === 'workers' && address) {
+        // Log the request
+        logger.debug(logSystem, 'GetPage', 'Miner stats requested via get_page for: ' + address);
+        
+        // Get balance data for the address
+        portalStats.getBalanceByAddress(address.split(".")[0], function (balanceData) {
+            // Set the address in stats so it's available in the template
+            portalStats.stats.address = address;
+            
+            // Process the miner_stats template with the address
+            var minerStatsPage = pageTemplates['miner_stats']({
+                poolsConfigs: poolConfigs,
+                stats: portalStats.stats,
+                portalConfig: portalConfig,
+                getReadableDifficultyString: getReadableDifficultyString
+            });
+            
+            res.end(minerStatsPage);
+        });
+        return;
+    }
+    
+    // Regular page handling
+    var requestedPage = getPage(pageId);
+    if (requestedPage) {
+        res.end(requestedPage);
+        return;
+    }
+    next();
+});
 	
 	app.get('/api/:method', function (req, res, next) {
 		    requestStats.total++;

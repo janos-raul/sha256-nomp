@@ -11,7 +11,6 @@ var CliListener = require('./libs/cliListener.js');
 var PoolWorker = require('./libs/poolWorker.js');
 var PaymentProcessor = require('./libs/paymentProcessor.js');
 var Website = require('./libs/website.js');
-var ProfitSwitch = require('./libs/profitSwitch.js');
 
 var algos = require('stratum-pool/lib/algoProperties.js');
 
@@ -89,9 +88,6 @@ if (cluster.isWorker) {
             break;
         case 'website':
             new Website(logger);
-            break;
-        case 'profitSwitch':
-            new ProfitSwitch(logger);
             break;
     }
     return;
@@ -616,29 +612,6 @@ var startWebsite = function () {
     });
 };
 
-var startProfitSwitch = function () {
-    if (!portalConfig.profitSwitch || !portalConfig.profitSwitch.enabled) {
-        logger.info('Master', 'ProfitSwitch', 'Profit switching is disabled in configuration');
-        return;
-    }
-
-    logger.info('Master', 'ProfitSwitch', 'Starting profit switching module...');
-    
-    var worker = cluster.fork({
-        workerType: 'profitSwitch',
-        pools: JSON.stringify(poolConfigs),
-        portalConfig: JSON.stringify(portalConfig)
-    });
-    
-    logger.success('Master', 'ProfitSwitch', 'Profit switching started with PID ' + worker.process.pid);
-    
-    worker.on('exit', function (code, signal) {
-        logger.error('Master', 'Profit', 'Profit switching process died (code: ' + code + ', signal: ' + signal + '), spawning replacement...');
-        setTimeout(function () {
-            startProfitSwitch(portalConfig, poolConfigs);
-        }, 2000);
-    });
-};
 
 // Main initialization
 (function init() {
@@ -651,7 +624,6 @@ var startProfitSwitch = function () {
     spawnPoolWorkers();
     startPaymentProcessor();
     startWebsite();
-    startProfitSwitch();
     startCliListener();
     
     logger.special('Master', 'Init', '=== Pool initialization complete ===');
@@ -668,6 +640,5 @@ var startProfitSwitch = function () {
 			}
 		});
 		logger.info('Master', 'Summary', '  - Payment Processor: ' + (paymentEnabled ? 'Enabled' : 'Disabled'));
-        logger.info('Master', 'Summary', '  - Profit Switching: ' + (portalConfig.profitSwitch && portalConfig.profitSwitch.enabled ? 'Enabled' : 'Disabled'));
     }, 1000);
 })();

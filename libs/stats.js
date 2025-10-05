@@ -526,11 +526,12 @@ this.getBlocks = function (cback) {
 				['scard', ':blocksConfirmed:solo'],     // index 15
 				['scard', ':blocksKicked:solo'],        // index 16
 				['smembers', ':blocksPending:solo'],    // index 17
-				['smembers', ':blocksConfirmed:solo']   // index 18
+				['smembers', ':blocksConfirmed:solo'],   // index 18
+				['hgetall', ':shares:timesCurrent:solo'] // index 19
 			];
 
 						//var commandsPerCoin = redisCommandTemplates.length;
-						var commandsPerCoin = 19; // Hardcode this to be sure
+						var commandsPerCoin = 20; // Hardcode this to be sure
 						
 						// ENHANCED: Solo mining data indices
 						var soloSharesIndex = 9;        // :shares:roundCurrent:solo position
@@ -636,8 +637,8 @@ this.getBlocks = function (cback) {
 							symbol: poolConfigs[coinName].coin.symbol.toUpperCase(),
 							algorithm: poolConfigs[coinName].coin.algorithm,
 							blockTime: poolConfigs[coinName].coin.blockTime,
-							poolType: (poolConfigs[coinName]?.paymentProcessing?.soloMining === true) ? "PROP + SOLO" : "PROP",
-							payout_system: "PROP / SOLO",
+							poolType: (poolConfigs[coinName]?.paymentProcessing?.soloMining === true) ? "PROP/SOLO" : "PROP",
+							payout_system: "PROP/SOLO",
 							payout_systems: "[PROP,SOLO]",
 							soloMining: poolConfigs[coinName]?.paymentProcessing?.soloMining || false,
 							paymentMode: poolConfigs[coinName]?.paymentProcessing?.paymentMode || 0,
@@ -648,8 +649,12 @@ this.getBlocks = function (cback) {
 							poolStats: {
 								blockheight: replies[i + 2] ? (replies[i + 2].networkBlocks || 0) : 0,	// Current blockchain height
 								lastblock: blocks.lastblock || null,        							// Last found block number
-								lastblock_time: blocks.lastblock_time || null, 							// Last block timestamp	in seconds
+								lastblock_shared: poolBlocks.lastblock || null,
+								lastblock_solo: soloBlocks.lastblock || null,
+								//lastblock_time: blocks.lastblock_time || null, 							// Last block timestamp	in seconds
 								timesincelast: blocks.lastblock_time ? Math.floor(Date.now() / 1000) - blocks.lastblock_time : null,  // Time since last block in seconds							
+								timesincelast_shared: poolBlocks.lastblock_time ? Math.floor(Date.now() / 1000) - poolBlocks.lastblock_time : null,
+								timesincelast_solo: soloBlocks.lastblock_time ? Math.floor(Date.now() / 1000) - soloBlocks.lastblock_time : null,
 								validBlocks: replies[i + 2] ? (replies[i + 2].validBlocks || 0) : 0,
 								validShares: replies[i + 2] ? (replies[i + 2].validShares || 0) : 0,
 								invalidShares: replies[i + 2] ? (replies[i + 2].invalidShares || 0) : 0,
@@ -685,12 +690,13 @@ this.getBlocks = function (cback) {
 														
                             payments: [],
 							currentRoundShares: (replies[i + 8] || {}),
-							currentRoundSharesSolo: (replies[i + soloSharesIndex] || {}),  // NEW
-							soloHashrates: replies[i + soloHashrateIndex],                 // NEW
-							currentRoundTimes: (replies[i + 11] || {}),
-                            	currentRoundTimes: (replies[i + 11] || {}),
-                            	maxRoundTime: 0,
-                            	shareCount: 0
+							currentRoundSharesSolo: (replies[i + soloSharesIndex] || {}),
+							soloHashrates: replies[i + soloHashrateIndex],
+							currentRoundTimesPool: (replies[i + 13] || {}),  // Pool worker times
+							currentRoundTimesSolo: (replies[i + 19] || {}),  // Solo worker times
+							currentRoundTimes: {},  // Will be populated with actual worker times
+                            maxRoundTime: 0,
+                            shareCount: 0
                         };
 						// Process payments data
 						coinStats.payments = [];
@@ -750,55 +756,83 @@ this.getBlocks = function (cback) {
 				var portalStats = {
 					time: statGatherTime,
 					global:{
-						miners: 0,
-						workers: 0, 						
-						poolMiners: 0,    
-						soloMiners: 0,
-						hashrate: 0,
-						hashrateString: null
+					miners: 0,      // Total active miners only
+					workers: 0,     // Total active workers only
+					hashrate: 0,
+					hashrateString: null
 					},
 					algos: {},
 					pools: allCoinStats
 				};
 
-            Object.keys(allCoinStats).forEach(function(coin){
-                var coinStats = allCoinStats[coin];
-                coinStats.workers = {};
-				coinStats.miners = {};
-				coinStats.soloWorkers = {};  // NEW - Initialize solo workers object
-				coinStats.poolShares = 0;  
-				coinStats.soloShares = 0;  
-                coinStats.shares = 0;
-                coinStats.hashrates.forEach(function(ins){
-                    var parts = ins.split(':');
-                    var workerShares = parseFloat(parts[0]);
+			Object.keys(allCoinStats).forEach(function(coin){
+				var coinStats = allCoinStats[coin];
+				
+				// Initialize all collections
+				coinStats.poolWorkers = {};  // Pool workers only
+				coinStats.soloWorkers = {};  // Solo workers only
+				coinStats.workers = {};      // ALL workers combined
+				coinStats.miners = {};       // ALL miners combined
+				
+				coinStats.poolShares = 0;
+				coinStats.soloShares = 0;
+				coinStats.shares = 0;
+				
+				// Process pool hashrates
+				coinStats.hashrates.forEach(function(ins){
+					var parts = ins.split(':');
+					var workerShares = parseFloat(parts[0]);
 					var miner = parts[1].split('.')[0];
-                    var worker = parts[1];
+					var worker = parts[1];
 					var diff = Math.round(parts[0] * 8192);
-                    if (workerShares > 0) {
+					
+					if (workerShares > 0) {
 						coinStats.poolShares += workerShares;
-                        coinStats.shares += workerShares;
-						// build worker stats
-                        if (worker in coinStats.workers) {
-                            coinStats.workers[worker].shares += workerShares;
-							coinStats.workers[worker].diff = diff;
-                        } else {
-                            coinStats.workers[worker] = {
+						coinStats.shares += workerShares;
+						
+						// Build pool worker stats
+						if (worker in coinStats.poolWorkers) {
+							coinStats.poolWorkers[worker].shares += workerShares;
+							coinStats.poolWorkers[worker].diff = diff;
+						} else {
+							coinStats.poolWorkers[worker] = {
 								name: worker,
 								diff: diff,
-                                shares: workerShares,
-                                invalidshares: 0,
+								shares: workerShares,
+								invalidshares: 0,
 								currRoundShares: 0,
-                                currRoundTime: 0,
+								currRoundTime: 0,
 								hashrate: null,
-                                hashrateString: null,
+								hashrateString: null,
 								luckDays: null,
 								luckHours: null,
 								paid: 0,
 								balance: 0
-                            };
+							};
 						}
-						// build miner stats
+						
+						// Add to combined workers
+						if (worker in coinStats.workers) {
+							coinStats.workers[worker].shares += workerShares;
+							coinStats.workers[worker].diff = diff;
+						} else {
+							coinStats.workers[worker] = {
+								name: worker,
+								diff: diff,
+								shares: workerShares,
+								invalidshares: 0,
+								currRoundShares: 0,
+								currRoundTime: 0,
+								hashrate: null,
+								hashrateString: null,
+								luckDays: null,
+								luckHours: null,
+								paid: 0,
+								balance: 0
+							};
+						}
+						
+						// Build miner stats
 						if (miner in coinStats.miners) {
 							coinStats.miners[miner].shares += workerShares;
 						} else {
@@ -807,98 +841,139 @@ this.getBlocks = function (cback) {
 								shares: workerShares,
 								invalidshares: 0,
 								currRoundShares: 0,
-				                                currRoundTime: 0,
+								currRoundTime: 0,
 								hashrate: null,
 								hashrateString: null,
 								luckDays: null,
 								luckHours: null
 							};
 						}
-                    }
-                    else {
-						// build worker stats
-                        if (worker in coinStats.workers) {
-                            coinStats.workers[worker].invalidshares -= workerShares; // workerShares is negative number!
-							coinStats.workers[worker].diff = diff;
-                        } else {
-                            coinStats.workers[worker] = {
+					}
+					else {
+						// Handle invalid shares
+						if (worker in coinStats.poolWorkers) {
+							coinStats.poolWorkers[worker].invalidshares -= workerShares;
+							coinStats.poolWorkers[worker].diff = diff;
+						} else {
+							coinStats.poolWorkers[worker] = {
 								name: worker,
 								diff: diff,
-                                shares: 0,
+								shares: 0,
 								invalidshares: -workerShares,
 								currRoundShares: 0,
-                                currRoundTime: 0,
+								currRoundTime: 0,
 								hashrate: null,
-                                hashrateString: null,
+								hashrateString: null,
 								luckDays: null,
 								luckHours: null,
 								paid: 0,
 								balance: 0
-                            };
+							};
 						}
-						// build miner stats
+						
+						// Add to combined workers
+						if (worker in coinStats.workers) {
+							coinStats.workers[worker].invalidshares -= workerShares;
+							coinStats.workers[worker].diff = diff;
+						} else {
+							coinStats.workers[worker] = {
+								name: worker,
+								diff: diff,
+								shares: 0,
+								invalidshares: -workerShares,
+								currRoundShares: 0,
+								currRoundTime: 0,
+								hashrate: null,
+								hashrateString: null,
+								luckDays: null,
+								luckHours: null,
+								paid: 0,
+								balance: 0
+							};
+						}
+						
+						// Build miner stats
 						if (miner in coinStats.miners) {
-							coinStats.miners[miner].invalidshares -= workerShares; // workerShares is negative number!
+							coinStats.miners[miner].invalidshares -= workerShares;
 						} else {
 							coinStats.miners[miner] = {
 								name: miner,
 								shares: 0,
 								invalidshares: -workerShares,
 								currRoundShares: 0,
-                                currRoundTime: 0,
+								currRoundTime: 0,
 								hashrate: null,
 								hashrateString: null,
 								luckDays: null,
 								luckHours: null
 							};
 						}
-                    }
-                });
-			//	console.log('Pool:', coinStats.name, 'currentRoundShares:', Object.keys(coinStats.currentRoundShares));
-                // For PROP pools, include all miners with currentRoundShares
-                if (coinStats.paymentMode === 'prop') {
-                    for (var worker in coinStats.currentRoundShares) {
-                        var miner = worker.split(".")[0];
-                        var shareAmount = parseFloat(coinStats.currentRoundShares[worker]);
-                        
-                        // Only add if not already in workers (from hashrate data)
-                        if (!(worker in coinStats.workers)) {
-                            coinStats.workers[worker] = {
-                                name: worker,
-                                diff: 0,
-                                shares: 0,
-                                invalidshares: 0,
-                                currRoundShares: shareAmount,
-                                currRoundTime: 0,
-                                hashrate: 0,
-                                hashrateString: "0 H/s",
-                                luckDays: "Infinity",
-                                luckHours: "Infinity",
-                                luckMinute: "Infinity",
-                                paid: 0,
-                                balance: 0
-                            };
-                        }
-                        
-                        // Add to miners if not already present
-                        if (!(miner in coinStats.miners)) {
-                            coinStats.miners[miner] = {
-                                name: miner,
-                                shares: 0,
-                                invalidshares: 0,
-                                currRoundShares: shareAmount,
-                                currRoundTime: 0,
-                                hashrate: 0,
-                                hashrateString: "0 H/s",
-                                luckDays: "Infinity",
-                                luckHours: "Infinity",
-                                luckMinute: "Infinity"
-                            };
-                        }
-                    }
-                }
+					}
+				});
 				
-								// ENHANCED: Process solo miners
+				// For PROP pools, include all miners with currentRoundShares
+				if (coinStats.paymentMode === 'prop') {
+					for (var worker in coinStats.currentRoundShares) {
+						var miner = worker.split(".")[0];
+						var shareAmount = parseFloat(coinStats.currentRoundShares[worker]);
+						
+						// Add to poolWorkers if not already present
+						if (!(worker in coinStats.poolWorkers)) {
+							coinStats.poolWorkers[worker] = {
+								name: worker,
+								diff: 0,
+								shares: 0,
+								invalidshares: 0,
+								currRoundShares: shareAmount,
+								currRoundTime: 0,
+								hashrate: 0,
+								hashrateString: "0 H/s",
+								luckDays: "Infinity",
+								luckHours: "Infinity",
+								luckMinute: "Infinity",
+								paid: 0,
+								balance: 0
+							};
+						}
+						
+						// Add to combined workers if not already present
+						if (!(worker in coinStats.workers)) {
+							coinStats.workers[worker] = {
+								name: worker,
+								diff: 0,
+								shares: 0,
+								invalidshares: 0,
+								currRoundShares: shareAmount,
+								currRoundTime: 0,
+								hashrate: 0,
+								hashrateString: "0 H/s",
+								luckDays: "Infinity",
+								luckHours: "Infinity",
+								luckMinute: "Infinity",
+								paid: 0,
+								balance: 0
+							};
+						}
+						
+						// Add to miners if not already present
+						if (!(miner in coinStats.miners)) {
+							coinStats.miners[miner] = {
+								name: miner,
+								shares: 0,
+								invalidshares: 0,
+								currRoundShares: shareAmount,
+								currRoundTime: 0,
+								hashrate: 0,
+								hashrateString: "0 H/s",
+								luckDays: "Infinity",
+								luckHours: "Infinity",
+								luckMinute: "Infinity"
+							};
+						}
+					}
+				}
+				
+				// Process solo miners
 				if (coinStats.soloHashrates && coinStats.soloHashrates.length > 0) {
 					coinStats.soloHashrates.forEach(function(ins){
 						var parts = ins.split(':');
@@ -910,7 +985,8 @@ this.getBlocks = function (cback) {
 						if (workerShares > 0) {
 							coinStats.soloShares += workerShares;
 							coinStats.shares += workerShares;
-							// build solo worker stats
+							
+							// Build solo worker stats
 							if (worker in coinStats.soloWorkers) {
 								coinStats.soloWorkers[worker].shares += workerShares;
 								coinStats.soloWorkers[worker].diff = diff;
@@ -928,11 +1004,51 @@ this.getBlocks = function (cback) {
 									luckHours: null,
 									paid: 0,
 									balance: 0,
-									isSolo: true  // Flag to identify solo miners
+									isSolo: true
+								};
+							}
+							
+							// Add/update combined workers
+							if (worker in coinStats.workers) {
+								coinStats.workers[worker].shares += workerShares;
+								coinStats.workers[worker].diff = diff;
+								coinStats.workers[worker].isSolo = true;
+							} else {
+								coinStats.workers[worker] = {
+									name: worker,
+									diff: diff,
+									shares: workerShares,
+									invalidshares: 0,
+									currRoundShares: 0,
+									currRoundTime: 0,
+									hashrate: null,
+									hashrateString: null,
+									luckDays: null,
+									luckHours: null,
+									paid: 0,
+									balance: 0,
+									isSolo: true
+								};
+							}
+							
+							// Add/update miners
+							if (miner in coinStats.miners) {
+								coinStats.miners[miner].shares += workerShares;
+							} else {
+								coinStats.miners[miner] = {
+									name: miner,
+									shares: workerShares,
+									invalidshares: 0,
+									currRoundShares: 0,
+									currRoundTime: 0,
+									hashrate: null,
+									hashrateString: null,
+									luckDays: null,
+									luckHours: null
 								};
 							}
 						} else {
-							// handle invalid solo shares
+							// Handle invalid solo shares
 							if (worker in coinStats.soloWorkers) {
 								coinStats.soloWorkers[worker].invalidshares -= workerShares;
 								coinStats.soloWorkers[worker].diff = diff;
@@ -953,11 +1069,51 @@ this.getBlocks = function (cback) {
 									isSolo: true
 								};
 							}
+							
+							// Update combined workers
+							if (worker in coinStats.workers) {
+								coinStats.workers[worker].invalidshares -= workerShares;
+								coinStats.workers[worker].diff = diff;
+								coinStats.workers[worker].isSolo = true;
+							} else {
+								coinStats.workers[worker] = {
+									name: worker,
+									diff: diff,
+									shares: 0,
+									invalidshares: -workerShares,
+									currRoundShares: 0,
+									currRoundTime: 0,
+									hashrate: null,
+									hashrateString: null,
+									luckDays: null,
+									luckHours: null,
+									paid: 0,
+									balance: 0,
+									isSolo: true
+								};
+							}
+							
+							// Update miners
+							if (miner in coinStats.miners) {
+								coinStats.miners[miner].invalidshares -= workerShares;
+							} else {
+								coinStats.miners[miner] = {
+									name: miner,
+									shares: 0,
+									invalidshares: -workerShares,
+									currRoundShares: 0,
+									currRoundTime: 0,
+									hashrate: null,
+									hashrateString: null,
+									luckDays: null,
+									luckHours: null
+								};
+							}
 						}
 					});
 				}
 
-				// sort miners
+				// Sort miners
 				coinStats.miners = sortMinersByHashrate(coinStats.miners);
 
 				var shareMultiplier = Math.pow(2, 32) / algos[coinStats.algorithm].multiplier;
@@ -967,9 +1123,7 @@ this.getBlocks = function (cback) {
 
                 var _blocktime = coinStats.blockTime || 90;
 				var _networkHashRate = parseFloat(coinStats.poolStats.networkHash);
-				coinStats.luckDays =  ((_networkHashRate / coinStats.hashrate * _blocktime) / (24 * 60 * 60)).toFixed(3);
-                coinStats.luckHours = ((_networkHashRate / coinStats.hashrate * _blocktime) / (60 * 60)).toFixed(3);
-                coinStats.luckMinute = ((_networkHashRate / coinStats.hashrate * _blocktime) / (60)).toFixed(3);
+
 				// Count pool miners (addresses in miners that are not in soloWorkers)
 				var poolMinerCount = 0;
 				for (var miner in coinStats.miners) {
@@ -1017,41 +1171,125 @@ this.getBlocks = function (cback) {
 				portalStats.global.hashrateString = _this.getReadableHashRateString(portalStats.global.hashrate);
 			
 
-			var _shareTotal = parseFloat(0);
-                var _maxTimeShare = parseFloat(0);
-                for (var worker in coinStats.currentRoundShares) {
-                    var miner = worker.split(".")[0];
-                    var shareAmount = parseFloat(coinStats.currentRoundShares[worker]);
-                    
-                    if (miner in coinStats.miners) {
-                        coinStats.miners[miner].currRoundShares = (coinStats.miners[miner].currRoundShares || 0) + shareAmount;
-                    }
-                    if (worker in coinStats.workers) {
-                        coinStats.workers[worker].currRoundShares = shareAmount;
-                    }
-                    _shareTotal += shareAmount;
-                }
-								// ENHANCED: Process solo current round shares
-				for (var worker in coinStats.currentRoundSharesSolo) {
-					if (worker in coinStats.soloWorkers) {
-						coinStats.soloWorkers[worker].currRoundShares += parseFloat(coinStats.currentRoundSharesSolo[worker]);
+				var _shareTotal = parseFloat(0);
+				var _maxTimeShare = parseFloat(0);
+
+				// Process pool current round shares
+				for (var worker in coinStats.currentRoundShares) {
+					var miner = worker.split(".")[0];
+					var shareAmount = parseFloat(coinStats.currentRoundShares[worker]);
+					
+					// Update poolWorkers
+					if (worker in coinStats.poolWorkers) {
+						coinStats.poolWorkers[worker].currRoundShares = shareAmount;
 					}
-					_shareTotal += parseFloat(coinStats.currentRoundSharesSolo[worker]);
+					
+					// Update combined workers
+					if (worker in coinStats.workers) {
+						coinStats.workers[worker].currRoundShares = shareAmount;
+					}
+					
+					// Update miners
+					if (miner in coinStats.miners) {
+						coinStats.miners[miner].currRoundShares = 
+							(coinStats.miners[miner].currRoundShares || 0) + shareAmount;
+					}
+					
+					_shareTotal += shareAmount;
 				}
-                for (var worker in coinStats.currentRoundTimes) {
-                    var time = parseFloat(coinStats.currentRoundTimes[worker]);
-                    if (_maxTimeShare < time)
-                        _maxTimeShare = time;
 
-                    var miner = worker.split(".")[0];
-                    if (miner in coinStats.miners) {
-                        coinStats.miners[miner].currRoundTime += parseFloat(coinStats.currentRoundTimes[worker]);
-                    }
-                }
+				// Process solo current round shares
+				for (var worker in coinStats.currentRoundSharesSolo) {
+					var miner = worker.split(".")[0];
+					var shareAmount = parseFloat(coinStats.currentRoundSharesSolo[worker]);
+					
+					// Update soloWorkers
+					if (worker in coinStats.soloWorkers) {
+						coinStats.soloWorkers[worker].currRoundShares = shareAmount;
+					}
+					
+					// Update combined workers (add to existing if pool+solo)
+					if (worker in coinStats.workers) {
+						coinStats.workers[worker].currRoundShares = 
+							(coinStats.workers[worker].currRoundShares || 0) + shareAmount;
+					}
+					
+					// Update miners
+					if (miner in coinStats.miners) {
+						coinStats.miners[miner].currRoundShares = 
+							(coinStats.miners[miner].currRoundShares || 0) + shareAmount;
+					}
+					
+					_shareTotal += shareAmount;
+				}
 
-                coinStats.shareCount = _shareTotal;
-                coinStats.maxRoundTime = _maxTimeShare;
-                coinStats.maxRoundTimeString = readableSeconds(_maxTimeShare);
+				// Process pool worker round times (from the correct source)
+				for (var worker in coinStats.currentRoundTimesPool) {
+					var time = parseFloat(coinStats.currentRoundTimesPool[worker]);
+					var miner = worker.split(".")[0];
+					
+					// Update poolWorkers
+					if (worker in coinStats.poolWorkers) {
+						coinStats.poolWorkers[worker].currRoundTime = time;
+					}
+					
+					// Update combined workers
+					if (worker in coinStats.workers) {
+						coinStats.workers[worker].currRoundTime = Math.max(
+							coinStats.workers[worker].currRoundTime || 0, 
+							time
+						);
+					}
+					
+					// Update miners
+					if (miner in coinStats.miners) {
+						coinStats.miners[miner].currRoundTime = Math.max(
+							coinStats.miners[miner].currRoundTime || 0,
+							time
+						);
+					}
+					
+					// Add to currentRoundTimes for backward compatibility
+					coinStats.currentRoundTimes[worker] = time;
+					
+					if (_maxTimeShare < time) _maxTimeShare = time;
+				}
+
+				// Process solo worker round times
+				for (var worker in coinStats.currentRoundTimesSolo) {
+					var time = parseFloat(coinStats.currentRoundTimesSolo[worker]);
+					var miner = worker.split(".")[0];
+					
+					// Update soloWorkers
+					if (worker in coinStats.soloWorkers) {
+						coinStats.soloWorkers[worker].currRoundTime = time;
+					}
+					
+					// Update combined workers
+					if (worker in coinStats.workers) {
+						coinStats.workers[worker].currRoundTime = Math.max(
+							coinStats.workers[worker].currRoundTime || 0,
+							time
+						);
+					}
+					
+					// Update miners
+					if (miner in coinStats.miners) {
+						coinStats.miners[miner].currRoundTime = Math.max(
+							coinStats.miners[miner].currRoundTime || 0,
+							time
+						);
+					}
+					
+					// Add to currentRoundTimes for backward compatibility
+					coinStats.currentRoundTimes[worker] = time;
+					
+					if (_maxTimeShare < time) _maxTimeShare = time;
+				}
+
+				coinStats.shareCount = _shareTotal;
+				coinStats.maxRoundTime = _maxTimeShare;
+				coinStats.maxRoundTimeString = readableSeconds(_maxTimeShare);
 
                 for (var worker in coinStats.workers) {
 					var _workerRate = shareMultiplier * coinStats.workers[worker].shares / portalConfig.website.stats.hashrateWindow;
@@ -1061,23 +1299,33 @@ this.getBlocks = function (cback) {
 					coinStats.workers[worker].hashrate = _workerRate;
 					coinStats.workers[worker].hashrateString = _this.getReadableHashRateString(_workerRate);
                 }
+				
+				// Calculate hashrates for poolWorkers
+				for (var worker in coinStats.poolWorkers) {
+					var _workerRate = shareMultiplier * coinStats.poolWorkers[worker].shares / portalConfig.website.stats.hashrateWindow;
+					coinStats.poolWorkers[worker].luckDays = ((_networkHashRate / _workerRate * _blocktime) / (24 * 60 * 60)).toFixed(3);
+					coinStats.poolWorkers[worker].luckHours = ((_networkHashRate / _workerRate * _blocktime) / (60 * 60)).toFixed(3);
+					coinStats.poolWorkers[worker].luckMinute = ((_networkHashRate / _workerRate * _blocktime) / (60)).toFixed(3);
+					coinStats.poolWorkers[worker].hashrate = _workerRate;
+					coinStats.poolWorkers[worker].hashrateString = _this.getReadableHashRateString(_workerRate);
+				}
 
 				// Count only ACTIVE workers and miners (those with hashrate > 0)
-				var activeWorkerCount = 0;
+				var activePoolWorkerCount = 0;
 				var activePoolMinerAddresses = {};
 				var activeSoloWorkerCount = 0;
 				var activeSoloMinerAddresses = {};
 
-				// Count active pool workers/miners
-				for (var worker in coinStats.workers) {
-					if (coinStats.workers[worker].hashrate > 0) {
-						activeWorkerCount++;
+				// Count active pool workers
+				for (var worker in coinStats.poolWorkers) {
+					if (coinStats.poolWorkers[worker].hashrate > 0) {
+						activePoolWorkerCount++;
 						var minerAddress = worker.split('.')[0];
 						activePoolMinerAddresses[minerAddress] = true;
 					}
 				}
 
-				// Count active solo workers/miners  
+				// Count active solo workers
 				for (var worker in coinStats.soloWorkers) {
 					if (coinStats.soloWorkers[worker].hashrate > 0) {
 						activeSoloWorkerCount++;
@@ -1086,22 +1334,32 @@ this.getBlocks = function (cback) {
 					}
 				}
 
-				// Set the counts to only active miners  
+				// Set pool-level counts
+				coinStats.poolMinerCount = Object.keys(activePoolMinerAddresses).length;
+				coinStats.poolWorkerCount = activePoolWorkerCount;
+				coinStats.soloMinerCount = Object.keys(activeSoloMinerAddresses).length;
+				coinStats.soloWorkerCount = activeSoloWorkerCount;
 
-				coinStats.minerCount = Object.keys(activePoolMinerAddresses).length + Object.keys(activeSoloMinerAddresses).length;  // Total of all miners
-				coinStats.workerCount = activeWorkerCount + activeSoloWorkerCount;  // NEW: Total of all workers (pool + solo)
-				
-				coinStats.poolMinerCount = Object.keys(activePoolMinerAddresses).length;  // Pool-only miners for compatibility
-				coinStats.poolWorkerCount = activeWorkerCount;  // Keep this as pool-only workers for backwards compatibility
-				
-				coinStats.soloWorkerCount = activeSoloWorkerCount;  // Solo workers only
-				coinStats.soloMinerCount = Object.keys(activeSoloMinerAddresses).length;  // Solo miners only
+				// Total counts for this pool
+				coinStats.minerCount = coinStats.poolMinerCount + coinStats.soloMinerCount;
+				coinStats.workerCount = coinStats.poolWorkerCount + coinStats.soloWorkerCount;
 				
 				coinStats.poolHashrate = coinStats.hashrate;  // pool total
 				coinStats.poolHashrateString = _this.getReadableHashRateString(coinStats.hashrate);
 				
 				coinStats.hashrate = coinStats.hashrate + coinStats.soloHashrate;  // Combined total
 				coinStats.hashrateString = _this.getReadableHashRateString(coinStats.hashrate);
+				
+				// Calculate luck using combined hashrate
+				if (coinStats.hashrate > 0) {
+					coinStats.luckDays = ((_networkHashRate / coinStats.hashrate * _blocktime) / (24 * 60 * 60)).toFixed(3);
+					coinStats.luckHours = ((_networkHashRate / coinStats.hashrate * _blocktime) / (60 * 60)).toFixed(3);
+					coinStats.luckMinute = ((_networkHashRate / coinStats.hashrate * _blocktime) / (60)).toFixed(3);
+				} else {
+					coinStats.luckDays = "Infinity";
+					coinStats.luckHours = "Infinity";
+					coinStats.luckMinute = "Infinity";
+				}
 				
 					logger.debug(logSystem, coin, 
 					'Active counts - Pool miners: ' + coinStats.poolMinerCount + 
@@ -1128,11 +1386,11 @@ this.getBlocks = function (cback) {
 				var algo = coinStats.algorithm;
 				if (!portalStats.algos.hasOwnProperty(algo)){
 					portalStats.algos[algo] = {
-						activeMiners: 0,
-						activePoolMiners: 0,        	// Active pool miners
-						activeSoloMiners: 0,    		// Active solo miners
-						activeWorkers: 0,             	// Total active workers (pool + solo)
-						activeSoloWorkers: 0,         	// Active solo workers only
+						// Remove generic activeMiners
+						poolMiners: 0,        // Active pool miners
+						poolWorkers: 0,       // Active pool workers  
+						soloMiners: 0,        // Active solo miners
+						soloWorkers: 0,       // Active solo workers
 						hashrate: 0,
 						hashrateString: null,
 						poolHashrate: 0,
@@ -1141,12 +1399,12 @@ this.getBlocks = function (cback) {
 						soloHashrateString: null
 					};
 				}
-				
-				portalStats.algos[algo].activePoolMiners += coinStats.poolMinerCount;
-				portalStats.algos[algo].activeSoloMiners += coinStats.soloMinerCount;
-				portalStats.algos[algo].activeWorkers += coinStats.workerCount;
-				portalStats.algos[algo].activeSoloWorkers += coinStats.soloWorkerCount;
-				portalStats.algos[algo].hashrate += coinStats.hashrate;				
+								
+				portalStats.algos[algo].poolMiners += coinStats.poolMinerCount;
+				portalStats.algos[algo].poolWorkers += coinStats.poolWorkerCount;
+				portalStats.algos[algo].soloMiners += coinStats.soloMinerCount;
+				portalStats.algos[algo].soloWorkers += coinStats.soloWorkerCount;
+				portalStats.algos[algo].hashrate += coinStats.hashrate;
 				portalStats.algos[algo].poolHashrate += coinStats.poolHashrate;
 				portalStats.algos[algo].soloHashrate += (coinStats.soloHashrate || 0);
 				
@@ -1174,8 +1432,12 @@ this.getBlocks = function (cback) {
 					blocktime: coinStats.blockTime,
 					blockheight: coinStats.poolStats.networkBlocks || 0,  // Current blockchain height
 					lastblock: coinStats.blocks.lastblock || null,        // Last found block number
-					lastblock_time: coinStats.blocks.lastblock_time || null, // Last block timestamp in seconds
+					//lastblock_time: coinStats.blocks.lastblock_time || null, // Last block timestamp in seconds
+					lastblock_shared: coinStats.poolBlocks.lastblock || null, 
+					lastblock_solo: coinStats.soloBlocks.lastblock || null, 
 					timesincelast: coinStats.poolStats.timesincelast || null,
+					timesincelast_shared: coinStats.poolStats.timesincelast_shared || null,
+					timesincelast_solo: coinStats.poolStats.timesincelast_solo || null,
 					
 					payout_system: coinStats.payout_system,
 					payout_systems: coinStats.payout_systems,
@@ -1221,9 +1483,10 @@ this.getBlocks = function (cback) {
 					maxRoundTimeString: coinStats.maxRoundTimeString,
 					
 					// Workers and Miners
-					miners: coinStats.miners,
-					workers: coinStats.workers,
-					soloWorkers: coinStats.soloWorkers
+					miners: coinStats.miners,           // ALL miners (pool + solo)
+					workers: coinStats.workers,         // ALL workers (pool + solo)
+					poolWorkers: coinStats.poolWorkers, // Pool workers only
+					soloWorkers: coinStats.soloWorkers  // Solo workers only
 				};
 
 				// Replace the original with reorganized
@@ -1237,61 +1500,36 @@ this.getBlocks = function (cback) {
 			
 				// Reset global workers count before recalculating
 				portalStats.global.workers = 0;
-				portalStats.global.miners = 0;        // ADD THIS
-				portalStats.global.poolMiners = 0;    // ADD THIS  
-				portalStats.global.soloMiners = 0;    // ADD THIS
-				
-				// For tracking unique miners across all pools:
-				var globalUniqueMiners = {
-					pool: new Set(),
-					solo: new Set()
-				};
+				portalStats.global.miners = 0;
 
-				// Properly count active workers across all pools
+				// Track unique active miners globally
+				var globalActiveMiners = new Set();
+
+				// Count active workers and miners across all pools
 				Object.keys(allCoinStats).forEach(function(coinName) {
 					var coin = allCoinStats[coinName];
-					var activePoolWorkers = 0;
-					var activeSoloWorkers = 0;
 					
-					// Count only workers with hashrate > 0
-					for (var worker in coin.workers) {
-						if (coin.workers[worker].hashrate > 0) {
-							activePoolWorkers++;
-							// Add miner address to global unique set
+					// Count active pool workers/miners
+					for (var worker in coin.poolWorkers) {
+						if (coin.poolWorkers[worker].hashrate > 0) {
+							portalStats.global.workers++;
 							var minerAddress = worker.split('.')[0];
-							globalUniqueMiners.pool.add(minerAddress);
+							globalActiveMiners.add(minerAddress);
 						}
 					}
 					
+					// Count active solo workers/miners
 					for (var worker in coin.soloWorkers) {
 						if (coin.soloWorkers[worker].hashrate > 0) {
-							activeSoloWorkers++;
-							// Add miner address to global unique set
+							portalStats.global.workers++;
 							var minerAddress = worker.split('.')[0];
-							globalUniqueMiners.solo.add(minerAddress);
+							globalActiveMiners.add(minerAddress);
 						}
-					}
-					
-					// Add to global count
-					portalStats.global.workers += activePoolWorkers + activeSoloWorkers;
-					
-					// Fix algo-level worker counts
-					var algo = coin.algorithm;
-					if (portalStats.algos[algo]) {
-						// Reset and recalculate algo worker counts
-						if (!portalStats.algos[algo].workersRecounted) {
-							portalStats.algos[algo].activeWorkers = 0;     
-							portalStats.algos[algo].activeSoloWorkers = 0; 
-							portalStats.algos[algo].workersRecounted = true;
-						}
-							portalStats.algos[algo].activeWorkers += activePoolWorkers + activeSoloWorkers;
-							portalStats.algos[algo].activeSoloWorkers += activeSoloWorkers;
 					}
 				});
-				
-				portalStats.global.poolMiners = globalUniqueMiners.pool.size;
-				portalStats.global.soloMiners = globalUniqueMiners.solo.size;
-				portalStats.global.miners = globalUniqueMiners.pool.size + globalUniqueMiners.solo.size;
+
+				// Set global unique active miners
+				portalStats.global.miners = globalActiveMiners.size;
 
 				// Clean up the temporary flag
 				Object.keys(portalStats.algos).forEach(function(algo) {

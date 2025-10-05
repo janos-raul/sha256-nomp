@@ -87,6 +87,31 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 
     var fee = parseFloat(poolOptions.coin.txfee) || parseFloat(0.0004);
 
+    // Dynamic fee estimation function
+    function getEstimatedFee(callback) {
+        // Try estimatesmartfee first (modern Bitcoin Core)
+        daemon.cmd('estimatesmartfee', [6], function(result) {
+            if (result && result[0] && !result[0].error && result[0].response && result[0].response.feerate) {
+                var estimatedFee = parseFloat(result[0].response.feerate);
+                logger.debug(logSystem, logComponent, 'Dynamic fee estimated: ' + estimatedFee + ' ' + coin + '/kB');
+                callback(null, estimatedFee);
+            } else {
+                // Fallback to estimatefee (older method)
+                daemon.cmd('estimatefee', [6], function(result2) {
+                    if (result2 && result2[0] && !result2[0].error && result2[0].response && result2[0].response > 0) {
+                        var fallbackFee = parseFloat(result2[0].response);
+                        logger.debug(logSystem, logComponent, 'Fallback fee estimated: ' + fallbackFee + ' ' + coin + '/kB');
+                        callback(null, fallbackFee);
+                    } else {
+                        // Use static fee as final fallback
+                        logger.debug(logSystem, logComponent, 'Using static fee fallback: ' + fee + ' ' + coin);
+                        callback(null, fee);
+                    }
+                });
+            }
+        });
+    }
+
     logger.debug(logSystem, logComponent, logComponent + ' minConf: ' + minConfShield);
     logger.debug(logSystem, logComponent, logComponent + ' payments txfee reserve: ' + fee);
     logger.debug(logSystem, logComponent, logComponent + ' maxBlocksPerPayment: ' + maxBlocksPerPayment);
@@ -317,7 +342,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
         var endRedisTimer = function () { timeSpentRedis += Date.now() - startTimeRedis };
 
         var startRPCTimer = function () { startTimeRPC = Date.now(); };
-        var endRPCTimer = function () { timeSpentRPC += Date.now() - startTimeRedis };
+        var endRPCTimer = function () { timeSpentRPC += Date.now() - startTimeRPC };
 
         async.waterfall([
             /*
@@ -681,10 +706,28 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                          * pplnt share reductions if needed
             */
             function (workers, soloWorkers, rounds, addressAccount, callback) {
-                // pplnt times lookup
-                var timeLookups = rounds.map(function (r) {
-                    return ['hgetall', coin + ':shares:times' + r.height]
+                // Get dynamic fee estimate before processing rewards
+                getEstimatedFee(function(err, dynamicFee) {
+                    if (err) {
+                        logger.warning(logSystem, logComponent, 'Dynamic fee estimation failed, using static fallback: ' + fee + ' ' + coin);
+                    } else {
+                        var oldFee = fee;
+                        fee = dynamicFee;
+                        logger.special(logSystem, logComponent,
+                            'Dynamic fee estimation successful: ' + fee + ' ' + coin + ' ' +
+                            '(was static: ' + oldFee + ' ' + coin + ', ' +
+                            (fee > oldFee ? 'saving miners: ' + (fee - oldFee).toFixed(8) : 'extra cost: ' + (oldFee - fee).toFixed(8)) + ' ' + coin + ')');
+                    }
+
+                    // Continue with reward calculations using updated fee
+                    processRewardsWithFee();
                 });
+
+                function processRewardsWithFee() {
+                    // pplnt times lookup
+                    var timeLookups = rounds.map(function (r) {
+                        return ['hgetall', coin + ':shares:times' + r.height]
+                    });
                 startRedisTimer();
                 redisClient.multi(timeLookups).exec(function (error, allWorkerTimes) {
                     endRedisTimer();
@@ -723,20 +766,39 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 						var soloOwed = parseInt(0);
 
 						for (var i = 0; i < rounds.length; i++) {
-							// only pay generated blocks, not orphaned, kicked, immature
 							if (rounds[i].category == 'generate') {
 								var blockReward = coinsToSatoshies(rounds[i].reward);
 								
 								if (rounds[i].isSolo) {
-									// Solo mining: miner gets (block reward - solo fee)
-									soloOwed += blockReward;
+									// Solo: miner pays both pool fee AND tx fee
+									var soloFeeAmount = Math.round(blockReward * (soloFeePercent / 100));
+									var txFeeSatoshi = coinsToSatoshies(fee);
+									var minerPayout = blockReward - soloFeeAmount - txFeeSatoshi;
+									soloOwed += minerPayout;
+									
+									logger.debug(logSystem, logComponent,
+										'Solo block ' + rounds[i].height + 
+										' - Reward: ' + satoshisToCoins(blockReward) +
+										', Pool fee: ' + satoshisToCoins(soloFeeAmount) +
+										', TX fee: ' + satoshisToCoins(txFeeSatoshi) +
+										', Miner gets: ' + satoshisToCoins(minerPayout));
 								} else {
-									// Pool mining: distributed among all pool miners
-									poolOwed += blockReward;
+									// Pool blocks - similar logic
+									var poolFeePercent = parseFloat(processingConfig.poolFee || 2.0);
+									var poolFeeAmount = Math.round(blockReward * (poolFeePercent / 100));
+									var txFeeSatoshi = coinsToSatoshies(fee);
+									var distributable = blockReward - poolFeeAmount - txFeeSatoshi;
+									poolOwed += distributable;
+									
+									logger.debug(logSystem, logComponent,
+										'Pool block ' + rounds[i].height + 
+										' - Reward: ' + satoshisToCoins(blockReward) +
+										', Pool fee: ' + satoshisToCoins(poolFeeAmount) +
+										', TX fee: ' + satoshisToCoins(txFeeSatoshi) +
+										', Pool Miners get: ' + satoshisToCoins(distributable));
 								}
 							}
 						}
-
 						// also include balances owed
 						for (var w in workers) {
 							var worker = workers[w];
@@ -816,9 +878,13 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 				switch (round.category) {
 					case 'generate':
 						var blockReward = coinsToSatoshies(round.reward);
-						var additionalFeePercent = Math.max(0, soloFeePercent - 1.0); // compensate for 1% taken at coinbase level
-						var soloFeeAmount = Math.round(blockReward * (additionalFeePercent / 100));
-						var soloReward = blockReward - soloFeeAmount;
+
+						// FIXED: No more coinbase compensation - pool now gets full reward
+						// First deduct transaction fees, then apply solo fee
+						var txFeeSatoshi = coinsToSatoshies(fee);
+						//var netReward = blockReward - txFeeSatoshi;
+						var soloFeeAmount = Math.round(blockReward * (soloFeePercent / 100));
+						var soloReward = blockReward - soloFeeAmount - txFeeSatoshi;
 						var soloMinerAddress = round.minedby;
 												
 						logger.special(logSystem, logComponent, 
@@ -841,16 +907,18 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 						
 					case 'immature':
 						var blockReward = coinsToSatoshies(round.reward);
-						var additionalFeePercent = Math.max(0, soloFeePercent - 1.0); // Same compensation as 'generate'
-						var soloFeeAmount = Math.round(blockReward * (additionalFeePercent / 100));
-						var immatureSoloReward = blockReward - soloFeeAmount;
+
+						// FIXED: Same logic as generate - deduct TX fees first, then solo fee
+						var txFeeSatoshi = coinsToSatoshies(fee);
+						//var netReward = blockReward - txFeeSatoshi;
+						var soloFeeAmount = Math.round(blockReward * (soloFeePercent / 100));
+						var immatureSoloReward = blockReward - soloFeeAmount - txFeeSatoshi;
 						var soloMinerAddress = round.minedby;
 						
 						logger.debug(logSystem, logComponent,
 							'Solo immature block ' + round.height + ' for ' + soloMinerAddress +
 							'. Confirmations: ' + round.confirmations +
-							', Additional fee: ' + additionalFeePercent + '%' +
-							', Total solo fee: ' + soloFeePercent + '%'
+							', Solo fee: ' + soloFeePercent + '%'
 						);
 						
 						if (soloWorkers[soloMinerAddress]) {
@@ -873,12 +941,19 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 					case 'immature':
 						// Check if reward exists
 						if (!round.reward || round.reward === 0) {
-							logger.error(logSystem, logComponent, 
+							logger.error(logSystem, logComponent,
 								'PROP: Block ' + round.height + ' missing reward value');
 							return;
 						}
-						
-						var reward = coinsToSatoshies(round.reward);
+
+						var blockReward = coinsToSatoshies(round.reward);
+
+						// FIXED: PROP now also deducts TX fees and pool fees
+						var txFeeSatoshi = coinsToSatoshies(fee);
+						//var netReward = blockReward - txFeeSatoshi;
+						var poolFeePercent = parseFloat(processingConfig.poolFee || 2.0);
+						var poolFeeAmount = Math.round(blockReward * (poolFeePercent / 100));
+						var reward = blockReward - poolFeeAmount - txFeeSatoshi;
 						var totalShares = 0;
 						
 						// Calculate total shares for the round
@@ -893,9 +968,16 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 						
 						var rewardPerShare = reward / totalShares;
 						
-						// Log with proper check
-						logger.debug(logSystem, logComponent, 
-							'PROP: Block ' + round.height + ', Total shares: ' + totalShares + 
+						// Log fee calculation and distribution
+						logger.debug(logSystem, logComponent,
+							'PROP: Block ' + round.height + ' - ' +
+							'Block reward: ' + satoshisToCoins(blockReward) +
+							', TX fee: ' + satoshisToCoins(txFeeSatoshi) +
+							', Pool fee (' + poolFeePercent + '%): ' + satoshisToCoins(poolFeeAmount) +
+							', Distributable: ' + satoshisToCoins(reward));
+
+						logger.debug(logSystem, logComponent,
+							'PROP: Block ' + round.height + ', Total shares: ' + totalShares +
 							', Reward per share: ' + (isNaN(rewardPerShare) ? 'ERROR' : rewardPerShare.toFixed(8)));
 						
 						// Distribute reward proportionally based on shares in this round only
@@ -982,7 +1064,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 						immature = Math.round(immature - feeSatoshi);
 
 						// find most time spent in this round by single worker
-						maxTime = 0;
+						var maxTime = 0;
 						for (var workerAddress in workerTimes) {
 							if (maxTime < parseFloat(workerTimes[workerAddress]))
 								maxTime = parseFloat(workerTimes[workerAddress]);
@@ -1027,11 +1109,15 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 						var totalShares = parseFloat(0);
 						var sharesLost = parseFloat(0);
 
-						// adjust block reward .. tx fees
-						reward = Math.round(reward); // No fee deduction, already taken in coinbase
+						// FIXED: PPLNT now also deducts TX fees and pool fees consistently
+						var txFeeSatoshi = coinsToSatoshies(fee);
+						var netReward = reward - txFeeSatoshi;
+						var poolFeePercent = parseFloat(processingConfig.poolFee || 2.0);
+						var poolFeeAmount = Math.round(netReward * (poolFeePercent / 100));
+						reward = netReward - poolFeeAmount;
 
 						// find most time spent in this round by single worker
-						maxTime = 0;
+						var maxTime = 0;
 						for (var workerAddress in workerTimes) {
 							if (maxTime < parseFloat(workerTimes[workerAddress]))
 								maxTime = parseFloat(workerTimes[workerAddress]);
@@ -1098,7 +1184,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                         }); // end funds check
                     });// end share lookup
                 }); // end time lookup
-
+                } // end processRewardsWithFee function
             },
 
 

@@ -182,6 +182,8 @@ module.exports = function(logger, poolConfig){
                 // Solo hashrate tracking
                 var hashrateData = [shareData.difficulty, shareData.worker, dateNow];
                 redisCommands.push(['zadd', coin + ':hashrate:solo', dateNow / 1000 | 0, hashrateData.join(':')]);
+				// Track round time for solo workers  
+				redisCommands.push(['hset', coin + ':shares:timesCurrent:solo', shareData.worker, dateNow / 1000 | 0]);
                 
                 // Log solo share
                 if (stats.shares.solo % 100 === 0) {
@@ -207,6 +209,8 @@ module.exports = function(logger, poolConfig){
                 // Pool hashrate tracking
                 var hashrateData = [shareData.difficulty, shareData.worker, dateNow];
                 redisCommands.push(['zadd', coin + ':hashrate', dateNow / 1000 | 0, hashrateData.join(':')]);
+				// Track round time for pool workers
+				redisCommands.push(['hset', coin + ':shares:timesCurrent', shareData.worker, dateNow / 1000 | 0]);
                 
                 // Log pool share milestones
                 if (stats.shares.pool % 1000 === 0) {
@@ -312,6 +316,9 @@ module.exports = function(logger, poolConfig){
                 
                 // Clear solo round shares for new round
                 redisCommands.push(['del', coin + ':shares:roundCurrent:solo']);
+				
+				// Clear solo round times
+				redisCommands.push(['del', coin + ':shares:timesCurrent:solo']);
                 
                 // Update solo block stats
                 redisCommands.push(['hincrby', coin + ':stats:solo', 'validBlocks', 1]);
@@ -425,7 +432,7 @@ module.exports = function(logger, poolConfig){
         if (minutes > 0) return minutes + 'm ' + (seconds % 60) + 's';
         return seconds + 's';
     }
-    
+    /*
     // Log statistics periodically
     setInterval(function() {
         var uptime = Date.now() - stats.startTime;
@@ -451,4 +458,5 @@ module.exports = function(logger, poolConfig){
             }
         });
     }, 300000); // Every 5 minutes
+	*/
 };
