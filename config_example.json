@@ -1,6 +1,7 @@
 {
     "logLevel": "debug",
-    "logColors": false,
+    "logColors": true,
+    "logDir": "logs",
     "cliPort": 17117,
     "clustering": {
         "enabled": true,
@@ -8,8 +9,8 @@
     },
 
     "defaultPoolConfigs": {
-        "blockRefreshInterval": 15000,
-        "jobRebroadcastTimeout": 55,
+        "blockRefreshInterval": 10000,
+        "jobRebroadcastTimeout": 50,
         "connectionTimeout": 600,
         "emitInvalidBlockHashes": false,
         "validateWorkerUsername": true,
@@ -30,11 +31,11 @@
     },
     "website": {
         "enabled": true,
-        "host": "172.19.20.9",
-        "port": 50301,
-        "stratumHost": "sha256-mining.go.ro",
+        "host": "0.0.0.0",
+        "port": 80,
+        "stratumHost": "yourpool.com",
         "stats": {
-            "updateInterval": 90,
+            "updateInterval": 30,
             "historicalRetention": 28800,
             "hashrateWindow": 600
         },
@@ -101,15 +102,5 @@
                 }
             }
         }
-    },
-    "profitSwitch": {
-        "enabled": false,
-        "updateInterval": 600,
-        "depth": 0.90,
-        "usePoloniex": false,
-        "useCryptsy": false,
-        "useMintpal": false,
-        "useBittrex": false
     }
 }
-
