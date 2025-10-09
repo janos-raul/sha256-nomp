@@ -44,7 +44,8 @@ const poolConfigs = {
             port: 18388,
             user: '',
             password: ''
-        }
+        },
+		minConfirmations: 101
     },
     bitcoinsilver: {
         daemon: {
