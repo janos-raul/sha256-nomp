@@ -38,6 +38,14 @@ const poolConfigs = {
         },
         minConfirmations: 101
     },
+	bitcoinii: {
+        daemon: {
+            host: '192.168.188.2',
+            port: 18388,
+            user: '',
+            password: ''
+        }
+    },
     bitcoinsilver: {
         daemon: {
             host: '192.168.188.2',
