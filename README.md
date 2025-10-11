@@ -21,7 +21,7 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 ### Recent Updates (v1.4.4)
 
 * **UPDATE**: Security enhancements
-* **Fixed **: Memory optimization
+* **Fixed**: Memory optimization
 
 ### Recent Updates (v1.4.3)
 
