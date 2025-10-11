@@ -18,6 +18,11 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 * ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
 * ✅ **Dual Mining** - Support pool and solo mining simultaneously
 
+### Recent Updates (v1.4.4)
+
+* **UPDATE**: Security enhancements
+* **Fixed **: Memory optimization
+
 ### Recent Updates (v1.4.3)
 
 * **UPDATE**: Added Whatsminer support
@@ -330,6 +335,33 @@ Pool configurations define operational settings for each coin's mining pool. Eac
     "coin": "bitcoin.json",              // Reference to coin config file
     "asicboost": true,                   // Enable ASICBoost for this pool
     "blockIdentifier": "",               // Optional block identifier
+	
+	  // ============================================================================
+	  // SECURITY MODULE - Advanced DDoS Protection & Rate Limiting
+	  // ============================================================================
+
+	  "security": {
+		"enabled": true,                    // Master switch for security features
+
+		// Rate Limiting Configuration
+		// Tracks and limits connection attempts, malformed messages, and floods per IP
+		"rateLimit": {
+		  "enabled": true,                  // Enable rate limiting
+		  "window": 60000,                  // Time window in ms (60000 = 1 minute)
+		  "maxConnections": 10,             // Max connections per IP per window
+		  "maxMalformed": 3,                // Max malformed messages before ban
+		  "maxFloods": 2                    // Max socket flood detections before ban
+		},
+
+		// Auto-Ban System Configuration
+		// Progressive ban system with escalating durations based on strikes
+		"ban": {
+		  "enabled": true,                  // Enable automatic IP banning
+		  "duration": 600000,               // Initial ban duration in ms (600000 = 10 minutes)
+		  "maxStrikes": 3,                  // Number of strikes before permanent ban
+		  "permanentDuration": 86400000     // Permanent ban duration in ms (86400000 = 24 hours)
+		}
+	  },
 
     // Pool wallet and fee addresses
     "address": "YOUR_POOL_WALLET_ADDRESS",    // Main pool payout address

@@ -9,6 +9,8 @@ var redis = require('redis');
 var dot = require('dot');
 var express = require('express');
 var compress = require('compression');
+var helmet = require('helmet');
+var rateLimit = require('express-rate-limit');
 
 var Stratum = require('stratum-pool');
 var util = require('stratum-pool/lib/util.js');
@@ -280,17 +282,80 @@ var buildUpdatedWebsite = function () {
         }
     };
 
+    // Input validation helper functions
+    var validateAddress = function(address) {
+        if (!address) return false;
+        // Allow alphanumeric characters, dots, and dashes (typical crypto address format)
+        var addressRegex = /^[a-zA-Z0-9.-]+$/;
+        // Limit length to prevent DoS
+        if (address.length > 100) return false;
+        return addressRegex.test(address);
+    };
+
+    var validatePageId = function(pageId) {
+        if (!pageId) return true; // Empty is OK (home page)
+        // Only allow alphanumeric and underscores
+        var pageIdRegex = /^[a-zA-Z0-9_]+$/;
+        // Limit length
+        if (pageId.length > 50) return false;
+        return pageIdRegex.test(pageId);
+    };
+
+    var validateCoinName = function(coin) {
+        if (!coin) return false;
+        // Only allow alphanumeric characters
+        var coinRegex = /^[a-zA-Z0-9]+$/;
+        // Limit length
+        if (coin.length > 20) return false;
+        return coinRegex.test(coin);
+    };
+
+    // Get real client IP address (handles proxies, WSL, etc.)
+    var getRealIP = function(req) {
+        // Check various headers in order of reliability
+        var cfIP = req.headers['cf-connecting-ip'];  // Cloudflare
+        var realIP = req.headers['x-real-ip'];        // Nginx/Apache
+        var forwardedFor = req.headers['x-forwarded-for'];  // Standard proxy
+
+        // X-Forwarded-For can be a comma-separated list, take the first (original client)
+        if (forwardedFor) {
+            return forwardedFor.split(',')[0].trim();
+        }
+
+        // Use Cloudflare IP if available
+        if (cfIP) {
+            return cfIP;
+        }
+
+        // Use X-Real-IP if available
+        if (realIP) {
+            return realIP;
+        }
+
+        // Fallback to Express default
+        return req.ip || req.connection.remoteAddress || 'unknown';
+    };
+
 	var minerpage = function (req, res, next) {
 		var address = req.params.address || null;
 		    requestStats.total++;
 			logger.info(logSystem, 'MinerPage', 'Miner stats requested for: ' + (address || 'unknown'));
+
 		if (address != null) {
+			// Validate address before processing
+			if (!validateAddress(address)) {
+				logger.warning(logSystem, 'MinerPage', 'Invalid address format from IP: ' + getRealIP(req) + ' - Address: ' + address);
+				requestStats.errors++;
+				res.status(400).json({ error: 'Invalid address format' });
+				return;
+			}
+
 			address = address.split(".")[0];
 			var fetchStart = Date.now();
-			
+
 			portalStats.getBalanceByAddress(address, function (balanceData) {
 				            var fetchTime = Date.now() - fetchStart;
-								logger.debug(logSystem, 'MinerPage', 
+								logger.debug(logSystem, 'MinerPage',
 									'Retrieved balance for ' + address + ' in ' + fetchTime + 'ms');
 				// Set the address in stats so it's available in the template
 				portalStats.stats.address = address;
@@ -306,6 +371,14 @@ var buildUpdatedWebsite = function () {
     var payout = function (req, res, next) {
         var address = req.params.address || null;
         if (address != null) {
+            // Validate address before processing
+            if (!validateAddress(address)) {
+                logger.warning(logSystem, 'Payout', 'Invalid address format from IP: ' + getRealIP(req) + ' - Address: ' + address);
+                requestStats.errors++;
+                res.status(400).json({ error: 'Invalid address format' });
+                return;
+            }
+
             portalStats.getPayout(address, function (data) {
                 res.write(data.toString());
                 res.end();
@@ -326,6 +399,14 @@ var buildUpdatedWebsite = function () {
     var usershares = function (req, res, next) {
         var coin = req.params.coin || null;
         if (coin != null) {
+            // Validate coin name before processing
+            if (!validateCoinName(coin)) {
+                logger.warning(logSystem, 'UserShares', 'Invalid coin name from IP: ' + getRealIP(req) + ' - Coin: ' + coin);
+                requestStats.errors++;
+                res.status(400).json({ error: 'Invalid coin name format' });
+                return;
+            }
+
             portalStats.getCoinTotals(coin, null, function () {
                 processTemplates();
                 res.end(indexesProcessed['user_shares']);
@@ -338,6 +419,15 @@ var buildUpdatedWebsite = function () {
 var route = function (req, res, next) {
 
         var pageId = req.params.page || '';
+
+        // Validate pageId before processing
+        if (!validatePageId(pageId)) {
+            logger.warning(logSystem, 'Route', 'Invalid page ID from IP: ' + getRealIP(req) + ' - PageID: ' + pageId);
+            requestStats.errors++;
+            res.status(400).json({ error: 'Invalid page identifier' });
+            return;
+        }
+
         requestStats.total++;
         requestStats.pages++;
         var acceptLanguage = req.headers['accept-language'];
@@ -411,23 +501,89 @@ var route = function (req, res, next) {
 
     var app = express();
 
+    // Security middleware configuration
+    // Helmet helps protect from common web vulnerabilities
+    app.use(helmet({
+        contentSecurityPolicy: false, // Disable CSP for now to avoid breaking existing functionality
+        crossOriginEmbedderPolicy: false
+    }));
+
+    // Rate limiting configuration
+    const generalLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // Limit each IP to 100 requests per windowMs
+        message: 'Too many requests from this IP, please try again later.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        handler: function(req, res) {
+            requestStats.errors++;
+            logger.warning(logSystem, 'RateLimit', 'Rate limit exceeded for IP: ' + getRealIP(req));
+            res.status(429).json({ error: 'Too many requests, please try again later.' });
+        }
+    });
+
+    const apiLimiter = rateLimit({
+        windowMs: 1 * 60 * 1000, // 1 minute
+        max: 30, // Limit each IP to 30 API requests per minute
+        message: 'Too many API requests, please slow down.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        handler: function(req, res) {
+            requestStats.errors++;
+            logger.warning(logSystem, 'RateLimit', 'API rate limit exceeded for IP: ' + getRealIP(req));
+            res.status(429).json({ error: 'Too many API requests, please try again later.' });
+        }
+    });
+
+    const adminLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 5, // Limit admin attempts to 5 per 15 minutes
+        message: 'Too many admin requests, please try again later.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        handler: function(req, res) {
+            requestStats.errors++;
+            logger.warning(logSystem, 'RateLimit', 'Admin rate limit exceeded for IP: ' + getRealIP(req));
+            res.status(429).json({ error: 'Too many admin authentication attempts.' });
+        }
+    });
+
+    // Apply general rate limiter to all routes
+    app.use(generalLimiter);
+
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
 app.get('/get_page', function (req, res, next) {
     var pageId = req.query.id;
     var address = req.query.address;
-    
+
+    // Validate pageId
+    if (pageId && !validatePageId(pageId)) {
+        logger.warning(logSystem, 'GetPage', 'Invalid page ID from IP: ' + getRealIP(req) + ' - PageID: ' + pageId);
+        requestStats.errors++;
+        res.status(400).json({ error: 'Invalid page identifier' });
+        return;
+    }
+
     // Special handling for workers page with address
     if (pageId === 'workers' && address) {
+        // Validate address
+        if (!validateAddress(address)) {
+            logger.warning(logSystem, 'GetPage', 'Invalid address format from IP: ' + getRealIP(req) + ' - Address: ' + address);
+            requestStats.errors++;
+            res.status(400).json({ error: 'Invalid address format' });
+            return;
+        }
+
         // Log the request
         logger.debug(logSystem, 'GetPage', 'Miner stats requested via get_page for: ' + address);
-        
+
         // Get balance data for the address
         portalStats.getBalanceByAddress(address.split(".")[0], function (balanceData) {
             // Set the address in stats so it's available in the template
             portalStats.stats.address = address;
-            
+
             // Process the miner_stats template with the address
             var minerStatsPage = pageTemplates['miner_stats']({
                 poolsConfigs: poolConfigs,
@@ -435,12 +591,12 @@ app.get('/get_page', function (req, res, next) {
                 portalConfig: portalConfig,
                 getReadableDifficultyString: getReadableDifficultyString
             });
-            
+
             res.end(minerStatsPage);
         });
         return;
     }
-    
+
     // Regular page handling
     var requestedPage = getPage(pageId);
     if (requestedPage) {
@@ -450,35 +606,35 @@ app.get('/get_page', function (req, res, next) {
     next();
 });
 	
-	app.get('/api/:method', function (req, res, next) {
+	app.get('/api/:method', apiLimiter, function (req, res, next) {
 		    requestStats.total++;
 			requestStats.api++;
 			var apiStart = Date.now();
 			var method = req.params.method;
-			
+
 			logger.debug(logSystem, 'API', 'API request: ' + method);
-			
+
 			// Wrap the original handler:
 			var originalEnd = res.end;
 			res.end = function() {
 				var apiTime = Date.now() - apiStart;
-				logger.debug(logSystem, 'API', 
+				logger.debug(logSystem, 'API',
 					'API response: ' + method + ' (' + apiTime + 'ms)');
 				originalEnd.apply(res, arguments);
 			};
         portalApi.handleApiRequest(req, res, next);
     });
 	
-    app.post('/api/admin/:method', function (req, res, next) {
+    app.post('/api/admin/:method', adminLimiter, function (req, res, next) {
 		var method = req.params.method;
-		logger.warning(logSystem, 'Admin', 'Admin API request: ' + method);
-		
+		logger.warning(logSystem, 'Admin', 'Admin API request: ' + method + ' from IP: ' + getRealIP(req));
+
 		if (portalConfig.website && portalConfig.website.adminCenter && portalConfig.website.adminCenter.enabled) {
 			if (portalConfig.website.adminCenter.password === req.body.password) {
 				logger.info(logSystem, 'Admin', 'Admin authenticated for: ' + method);
 				portalApi.handleAdminApiRequest(req, res, next);
 			} else {
-				logger.warning(logSystem, 'Admin', 'Failed admin authentication for: ' + method);
+				logger.warning(logSystem, 'Admin', 'Failed admin authentication for: ' + method + ' from IP: ' + getRealIP(req));
 				res.status(401).json({ error: 'Incorrect Password' });
 			}
 		}
@@ -486,7 +642,7 @@ app.get('/get_page', function (req, res, next) {
             next();
 
     });
-	
+
 	app.use(compress());
     app.get('/stats/shares/:coin', usershares);
     app.get('/stats/shares', shares);
@@ -499,8 +655,27 @@ app.get('/get_page', function (req, res, next) {
 
     app.use(function (err, req, res, next) {
 		requestStats.errors++;
+
+		// Log full error details for debugging
 		logger.error(logSystem, 'Server', 'Express error: ' + err.stack);
-        res.status(500).send('Something broke!');
+
+		// Don't expose sensitive error details to clients
+		var errorResponse = {
+			error: 'Internal server error',
+			message: 'An error occurred while processing your request'
+		};
+
+		// Handle specific error types
+		if (err instanceof URIError) {
+			logger.warning(logSystem, 'Server', 'URI decode error from IP: ' + getRealIP(req) + ' - URL: ' + req.url);
+			errorResponse.error = 'Invalid request';
+			errorResponse.message = 'The request contains invalid characters';
+			res.status(400).json(errorResponse);
+		} else if (err.status === 400) {
+			res.status(400).json(errorResponse);
+		} else {
+			res.status(500).json(errorResponse);
+		}
     });
 
     try {

@@ -19,18 +19,19 @@ module.exports = function(logger, poolConfig){
     var stats = {
         shares: { pool: 0, solo: 0, invalid: 0 },
         blocks: { pool: 0, solo: 0, orphaned: 0 },
-        workers: new Set(),
+        workers: new Map(), // Changed to Map to track timestamps
         lastBlock: null,
         startTime: Date.now()
     };
-    
+
     // Performance tracking
     var perfStats = {
         redisWrites: 0,
         redisErrors: 0,
         avgProcessTime: 0,
         totalProcessTime: 0,
-        processCount: 0
+        processCount: 0,
+        lastReset: Date.now()
     };
     
     var connection = redis.createClient(redisConfig.port, redisConfig.host);
@@ -154,8 +155,8 @@ module.exports = function(logger, poolConfig){
         var minerAddress = workerAddressParts[0];
         var workerName = workerAddressParts[1] || 'default';
         
-        // Track unique workers
-        stats.workers.add(workerAddress);
+        // Track unique workers with timestamp
+        stats.workers.set(workerAddress, dateNow);
         
         // Log share processing start
         logger.debug(logSystem, logComponent, logSubCat, 
@@ -426,37 +427,51 @@ module.exports = function(logger, poolConfig){
         var minutes = Math.floor(seconds / 60);
         var hours = Math.floor(minutes / 60);
         var days = Math.floor(hours / 24);
-        
+
         if (days > 0) return days + 'd ' + (hours % 24) + 'h ' + (minutes % 60) + 'm';
         if (hours > 0) return hours + 'h ' + (minutes % 60) + 'm ' + (seconds % 60) + 's';
         if (minutes > 0) return minutes + 'm ' + (seconds % 60) + 's';
         return seconds + 's';
     }
-    /*
-    // Log statistics periodically
+
+    // Cleanup inactive workers periodically (every 6 hours)
     setInterval(function() {
-        var uptime = Date.now() - stats.startTime;
-        var totalShares = stats.shares.pool + stats.shares.solo;
-        
-        logger.info(logSystem, logComponent, logSubCat, 
-            'Share Processor Stats - Uptime: ' + formatDuration(uptime) + 
-            ', Pool shares: ' + stats.shares.pool + 
-            ', Solo shares: ' + stats.shares.solo + 
-            ', Invalid: ' + stats.shares.invalid + 
-            ', Pool blocks: ' + stats.blocks.pool + 
-            ', Solo blocks: ' + stats.blocks.solo + 
-            ', Workers: ' + stats.workers.size + 
-            ', Redis writes: ' + perfStats.redisWrites + 
-            ', Redis errors: ' + perfStats.redisErrors + 
-            ', Avg process time: ' + perfStats.avgProcessTime.toFixed(2) + 'ms');
-            
-        // Check Redis connection health
-        connection.ping(function(err) {
-            if (err) {
-                logger.error(logSystem, logComponent, logSubCat, 
-                    'Redis health check failed: ' + err.message);
+        var now = Date.now();
+        var inactiveThreshold = 48 * 60 * 60 * 1000; // 48 hours
+        var beforeCount = stats.workers.size;
+
+        // Remove workers inactive for more than 48 hours
+        for (var [workerAddress, lastSeen] of stats.workers) {
+            if (now - lastSeen > inactiveThreshold) {
+                stats.workers.delete(workerAddress);
             }
-        });
-    }, 300000); // Every 5 minutes
-	*/
+        }
+
+        var afterCount = stats.workers.size;
+        if (beforeCount > afterCount) {
+            logger.info(logSystem, logComponent, logSubCat,
+                'Worker cleanup: removed ' + (beforeCount - afterCount) +
+                ' inactive workers (48h+ idle), ' + afterCount + ' remain');
+        }
+    }, 6 * 60 * 60 * 1000); // Every 6 hours
+
+    // Reset performance stats periodically (every 24 hours)
+    setInterval(function() {
+        var timeSinceReset = Date.now() - perfStats.lastReset;
+
+        logger.info(logSystem, logComponent, logSubCat,
+            'Performance stats (24h) - Redis writes: ' + perfStats.redisWrites +
+            ', Errors: ' + perfStats.redisErrors +
+            ', Avg process time: ' + perfStats.avgProcessTime.toFixed(2) + 'ms');
+
+        // Reset counters but keep running totals in logs
+        perfStats.redisWrites = 0;
+        perfStats.redisErrors = 0;
+        perfStats.avgProcessTime = 0;
+        perfStats.totalProcessTime = 0;
+        perfStats.processCount = 0;
+        perfStats.lastReset = Date.now();
+
+        logger.debug(logSystem, logComponent, logSubCat, 'Performance stats reset');
+    }, 24 * 60 * 60 * 1000); // Every 24 hours
 };

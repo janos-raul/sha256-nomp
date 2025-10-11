@@ -30,8 +30,8 @@
   },
 
   "explorer": {
-        "txURL": "http://explorer.btcs.pools4mining.com:3001/tx/",
-        "blockURL": "http://explorer.btcs.pools4mining.com:3001/block/"
+        "txURL": "https://explorer.bitcoinsilver.top/tx/",
+        "blockURL": "https://explorer.bitcoinsilver.top/block/"
   },
 	
   "rpc": {

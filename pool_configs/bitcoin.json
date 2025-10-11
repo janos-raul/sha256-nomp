@@ -3,6 +3,25 @@
   "coin": "bitcoin.json",
   "asicboost": true,
   "blockIdentifier":"",
+  
+  "security": {
+    "enabled": true,
+
+    "rateLimit": {
+      "enabled": true,
+      "window": 60000,
+      "maxConnections": 10,
+      "maxMalformed": 3,
+      "maxFloods": 2
+    },
+
+    "ban": {
+      "enabled": true,
+      "duration": 600000,
+      "maxStrikes": 3,
+      "permanentDuration": 86400000
+    }
+  },
 
   "address": "YOUR_POOL_WALLET_ADDRESS",
 

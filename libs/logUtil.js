@@ -99,27 +99,32 @@ var PoolLogger = function (configuration) {
     
 	var rotateLogs = function() {
 		if (!logToFile) return;
-		
+
 		var dateStr = dateFormat(new Date(), 'yyyy-mm-dd');
-		
+
 		// Log rotation message
-		log('info', 'Logger', 'Rotation', 'Starting log rotation for ' + dateStr);
-		
+		console.log('[LOG ROTATION] Starting log rotation for ' + dateStr);
+
 		// Create archive directory if it doesn't exist
 		var archiveDir = path.join(logDir, 'archive');
 		if (!fs.existsSync(archiveDir)) {
 			fs.mkdirSync(archiveDir, { recursive: true });
+			console.log('[LOG ROTATION] Created archive directory');
 		}
-		
+
 		// Close all current streams first
 		var streamsClosed = new Promise(function(resolve) {
 			var closedCount = 0;
 			var totalStreams = Object.keys(logStreams).length;
-			
+
+			console.log('[LOG ROTATION] Closing ' + totalStreams + ' log streams...');
+
 			Object.keys(logStreams).forEach(function(key) {
-				if (logStreams[key]) {
+				if (logStreams[key] && !logStreams[key].destroyed) {
+					// Ensure all data is flushed before closing
 					logStreams[key].end(function() {
 						closedCount++;
+						console.log('[LOG ROTATION] Closed stream: ' + key + '.log (' + closedCount + '/' + totalStreams + ')');
 						if (closedCount === totalStreams) {
 							resolve();
 						}
@@ -132,86 +137,200 @@ var PoolLogger = function (configuration) {
 				}
 			});
 		});
-		
-		// Wait for streams to close, then create zip archive
+
+		// Wait for streams to close, then wait additional time for WSL file system flush
 		streamsClosed.then(function() {
-			// Create zip archive with all current log files
-			createZipArchive(dateStr, function(err) {
-				if (err) {
-					console.error('Failed to create zip archive:', err);
-				} else {
-					// Clear/truncate log files after successful archive
-					clearLogFiles();
-				}
-				
-				// Recreate streams
-				setTimeout(function() {
-					Object.keys(logStreams).forEach(function(key) {
-						var logPath = path.join(logDir, key + '.log');
-						logStreams[key] = fs.createWriteStream(logPath, { flags: 'a' });
-					});
-					
-					// Clean old archives and log summary
-					cleanOldArchives();
-					logDailySummary();
-				}, 500);
-			});
+			console.log('[LOG ROTATION] All streams closed. Waiting 2 seconds for file system flush...');
+
+			// Wait 2 seconds for WSL file system to fully flush buffers to disk
+			setTimeout(function() {
+				console.log('[LOG ROTATION] Starting archive creation...');
+
+				// Create zip archive with all current log files
+				createZipArchive(dateStr, function(err) {
+					if (err) {
+						console.error('[LOG ROTATION] Failed to create zip archive:', err);
+						console.error('[LOG ROTATION] Log files will NOT be cleared to prevent data loss');
+					} else {
+						console.log('[LOG ROTATION] Archive created successfully');
+						// Clear/truncate log files after successful archive
+						clearLogFiles();
+					}
+
+					// Recreate streams after another delay
+					setTimeout(function() {
+						console.log('[LOG ROTATION] Recreating log streams...');
+						Object.keys(logStreams).forEach(function(key) {
+							var logPath = path.join(logDir, key + '.log');
+							logStreams[key] = fs.createWriteStream(logPath, { flags: 'a' });
+						});
+
+						console.log('[LOG ROTATION] Log streams recreated. Rotation complete.');
+
+						// Clean old archives and log summary
+						cleanOldArchives();
+						console.log('[LOG ROTATION] Generating daily summary...');
+						logDailySummary();
+					}, 1000);
+				});
+			}, 2000);
 		});
 	};
 	
 	var createZipArchive = function(dateStr, callback) {
 		var archiveDir = path.join(logDir, 'archive');
 		var zipFilePath = path.join(archiveDir, dateStr + '.zip');
-		
+
+		console.log('[ARCHIVE] Creating archive: ' + zipFilePath);
+
+		// Pre-check: Verify all log files are accessible and get their sizes
+		var fileSizesBeforeArchive = {};
+		var totalSize = 0;
+		Object.keys(logStreams).forEach(function(key) {
+			var logPath = path.join(logDir, key + '.log');
+			if (fs.existsSync(logPath)) {
+				try {
+					var stats = fs.statSync(logPath);
+					fileSizesBeforeArchive[key] = stats.size;
+					totalSize += stats.size;
+				} catch (err) {
+					console.warn('[ARCHIVE] Warning: Cannot read ' + key + '.log: ' + err.message);
+					fileSizesBeforeArchive[key] = 0;
+				}
+			} else {
+				fileSizesBeforeArchive[key] = 0;
+			}
+		});
+
+		console.log('[ARCHIVE] Total data to archive: ' + formatBytes(totalSize));
+
 		// Create output stream for zip file
 		var output = fs.createWriteStream(zipFilePath);
 		var archive = archiver('zip', {
-			zlib: { level: 9 } // Maximum compression
+			zlib: { level: 9 }, // Maximum compression
+			store: false // Use compression, not just storage
 		});
-		
-		// Handle stream events
-		output.on('close', function() {
-			console.log('Archive created: ' + zipFilePath + ' (' + formatBytes(archive.pointer()) + ')');
-			callback(null);
-		});
-		
-		output.on('end', function() {
-			console.log('Archive stream ended');
-		});
-		
-		archive.on('warning', function(err) {
-			if (err.code === 'ENOENT') {
-				console.warn('Archive warning:', err);
-			} else {
+
+		var hasError = false;
+		var callbackCalled = false;
+
+		var safeCallback = function(err) {
+			if (!callbackCalled) {
+				callbackCalled = true;
 				callback(err);
 			}
+		};
+
+		// Handle stream events
+		output.on('close', function() {
+			if (!hasError) {
+				var archiveSize = archive.pointer();
+				var compressionRatio = totalSize > 0 ? (totalSize / archiveSize).toFixed(2) : 0;
+				console.log('[ARCHIVE] Successfully created: ' + zipFilePath);
+				console.log('[ARCHIVE] Archive size: ' + formatBytes(archiveSize) + ' (compression ratio: ' + compressionRatio + ':1)');
+
+				// Verify the archive file exists and has reasonable size
+				try {
+					var archiveStats = fs.statSync(zipFilePath);
+					if (archiveStats.size < 100) {
+						console.error('[ARCHIVE] WARNING: Archive size suspiciously small (' + archiveStats.size + ' bytes)');
+					}
+					console.log('[ARCHIVE] Verification: Archive file confirmed on disk');
+				} catch (err) {
+					console.error('[ARCHIVE] ERROR: Cannot verify archive file:', err.message);
+				}
+
+				safeCallback(null);
+			}
 		});
-		
+
+		output.on('end', function() {
+			console.log('[ARCHIVE] Output stream ended');
+		});
+
+		output.on('error', function(err) {
+			hasError = true;
+			console.error('[ARCHIVE] Output stream error:', err.message);
+			safeCallback(err);
+		});
+
+		archive.on('warning', function(err) {
+			if (err.code === 'ENOENT') {
+				console.warn('[ARCHIVE] Warning (file not found):', err.message);
+			} else {
+				console.warn('[ARCHIVE] Warning:', err.message);
+				if (err.code !== 'ENOENT') {
+					hasError = true;
+					safeCallback(err);
+				}
+			}
+		});
+
 		archive.on('error', function(err) {
-			callback(err);
+			hasError = true;
+			console.error('[ARCHIVE] Archiver error:', err.message);
+			safeCallback(err);
 		});
-		
+
 		// Pipe archive data to the output file
 		archive.pipe(output);
-		
+
+		var filesAdded = 0;
+		var totalBytesAdded = 0;
+
 		// Add all log files to the archive
 		Object.keys(logStreams).forEach(function(key) {
 			var logPath = path.join(logDir, key + '.log');
 			if (fs.existsSync(logPath)) {
-				var stats = fs.statSync(logPath);
-				if (stats.size > 0) {
-					// Add file to archive with its name
-					archive.file(logPath, { name: key + '.log' });
+				try {
+					var stats = fs.statSync(logPath);
+
+					// Double-check file size didn't change (race condition detection)
+					if (fileSizesBeforeArchive[key] !== stats.size) {
+						console.warn('[ARCHIVE] WARNING: File size changed during archive: ' + key + '.log (was ' +
+							fileSizesBeforeArchive[key] + ', now ' + stats.size + ')');
+					}
+
+					if (stats.size > 0) {
+						// Add file to archive with its name
+						archive.file(logPath, { name: key + '.log' });
+						filesAdded++;
+						totalBytesAdded += stats.size;
+						console.log('[ARCHIVE] Added: ' + key + '.log (' + formatBytes(stats.size) + ')');
+					} else {
+						console.log('[ARCHIVE] Skipped empty: ' + key + '.log');
+					}
+				} catch (err) {
+					console.warn('[ARCHIVE] Error accessing ' + key + '.log: ' + err.message);
 				}
 			}
 		});
-		
+
 		// Add the daily summary to the archive as a separate file
-		var summaryContent = generateDailySummaryText();
-		archive.append(summaryContent, { name: 'daily-summary.txt' });
-		
+		try {
+			var summaryContent = generateDailySummaryText();
+			archive.append(summaryContent, { name: 'daily-summary.txt' });
+			filesAdded++;
+			console.log('[ARCHIVE] Added: daily-summary.txt');
+		} catch (err) {
+			console.warn('[ARCHIVE] Error creating daily summary: ' + err.message);
+		}
+
+		if (filesAdded === 0) {
+			console.warn('[ARCHIVE] WARNING: No files were added to archive');
+		} else {
+			console.log('[ARCHIVE] Total files added: ' + filesAdded + ' (' + formatBytes(totalBytesAdded) + ')');
+		}
+
 		// Finalize the archive
-		archive.finalize();
+		try {
+			console.log('[ARCHIVE] Finalizing archive...');
+			archive.finalize();
+		} catch (err) {
+			hasError = true;
+			console.error('[ARCHIVE] Error finalizing archive:', err.message);
+			safeCallback(err);
+		}
 	};
 	
 	var clearLogFiles = function() {

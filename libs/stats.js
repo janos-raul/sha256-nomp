@@ -196,6 +196,19 @@ this.getBlocks = function (cback) {
             _this.statHistory.forEach(function(stats){
                 addStatPoolHistory(stats);
             });
+
+            // Hard limit: keep only last 1000 entries to prevent unbounded growth
+            var maxHistoryEntries = 1000;
+            if (_this.statHistory.length > maxHistoryEntries) {
+                var excess = _this.statHistory.length - maxHistoryEntries;
+                _this.statHistory = _this.statHistory.slice(excess);
+                logger.warning(logSystem, 'Historics',
+                    'Stats history exceeded ' + maxHistoryEntries + ' entries, trimmed ' + excess + ' oldest entries');
+            }
+            if (_this.statPoolHistory.length > maxHistoryEntries) {
+                var excess = _this.statPoolHistory.length - maxHistoryEntries;
+                _this.statPoolHistory = _this.statPoolHistory.slice(excess);
+            }
         });
     }
 
@@ -1144,7 +1157,8 @@ this.getBlocks = function (cback) {
 				coinStats.minerCount = coinStats.poolMinerCount;  // Keep for compatibility
                 coinStats.workerCount = Object.keys(coinStats.workers).length;
 				
-				// ENHANCED: Calculate solo worker hashrates and luck
+				// ENHANCED: Calculate solo worker hashrates and luck, clean up inactive
+				var inactiveSoloWorkers = [];
 				for (var worker in coinStats.soloWorkers) {
 					var _workerRate = shareMultiplier * coinStats.soloWorkers[worker].shares / portalConfig.website.stats.hashrateWindow;
 					coinStats.soloWorkers[worker].luckDays = ((_networkHashRate / _workerRate * _blocktime) / (24 * 60 * 60)).toFixed(3);
@@ -1152,6 +1166,16 @@ this.getBlocks = function (cback) {
 					coinStats.soloWorkers[worker].luckMinute = ((_networkHashRate / _workerRate * _blocktime) / (60)).toFixed(3);
 					coinStats.soloWorkers[worker].hashrate = _workerRate;
 					coinStats.soloWorkers[worker].hashrateString = _this.getReadableHashRateString(_workerRate);
+
+					// Mark solo workers with 0 hashrate and 0 shares for cleanup
+					if (_workerRate === 0 && coinStats.soloWorkers[worker].shares === 0 &&
+						coinStats.soloWorkers[worker].currRoundShares === 0) {
+						inactiveSoloWorkers.push(worker);
+					}
+				}
+				// Remove inactive solo workers
+				for (var i = 0; i < inactiveSoloWorkers.length; i++) {
+					delete coinStats.soloWorkers[inactiveSoloWorkers[i]];
 				}
 				
 				// Calculate total solo hashrate and count 
@@ -1291,16 +1315,29 @@ this.getBlocks = function (cback) {
 				coinStats.maxRoundTime = _maxTimeShare;
 				coinStats.maxRoundTimeString = readableSeconds(_maxTimeShare);
 
-                for (var worker in coinStats.workers) {
+                // Calculate worker hashrates and clean up inactive workers
+				var inactiveWorkers = [];
+				for (var worker in coinStats.workers) {
 					var _workerRate = shareMultiplier * coinStats.workers[worker].shares / portalConfig.website.stats.hashrateWindow;
 					coinStats.workers[worker].luckDays = ((_networkHashRate / _workerRate * _blocktime) / (24 * 60 * 60)).toFixed(3);
                     coinStats.workers[worker].luckHours = ((_networkHashRate / _workerRate * _blocktime) / (60 * 60)).toFixed(3);
                     coinStats.workers[worker].luckMinute = ((_networkHashRate / _workerRate * _blocktime) / (60)).toFixed(3);
 					coinStats.workers[worker].hashrate = _workerRate;
 					coinStats.workers[worker].hashrateString = _this.getReadableHashRateString(_workerRate);
+
+					// Mark completely inactive workers for cleanup
+					if (_workerRate === 0 && coinStats.workers[worker].shares === 0 &&
+						coinStats.workers[worker].currRoundShares === 0) {
+						inactiveWorkers.push(worker);
+					}
                 }
+				// Remove inactive workers
+				for (var i = 0; i < inactiveWorkers.length; i++) {
+					delete coinStats.workers[inactiveWorkers[i]];
+				}
 				
-				// Calculate hashrates for poolWorkers
+				// Calculate hashrates for poolWorkers and clean up inactive ones
+				var inactivePoolWorkers = [];
 				for (var worker in coinStats.poolWorkers) {
 					var _workerRate = shareMultiplier * coinStats.poolWorkers[worker].shares / portalConfig.website.stats.hashrateWindow;
 					coinStats.poolWorkers[worker].luckDays = ((_networkHashRate / _workerRate * _blocktime) / (24 * 60 * 60)).toFixed(3);
@@ -1308,6 +1345,16 @@ this.getBlocks = function (cback) {
 					coinStats.poolWorkers[worker].luckMinute = ((_networkHashRate / _workerRate * _blocktime) / (60)).toFixed(3);
 					coinStats.poolWorkers[worker].hashrate = _workerRate;
 					coinStats.poolWorkers[worker].hashrateString = _this.getReadableHashRateString(_workerRate);
+
+					// Mark workers with 0 hashrate and 0 shares for cleanup
+					if (_workerRate === 0 && coinStats.poolWorkers[worker].shares === 0 &&
+						coinStats.poolWorkers[worker].currRoundShares === 0) {
+						inactivePoolWorkers.push(worker);
+					}
+				}
+				// Remove inactive workers to prevent memory buildup
+				for (var i = 0; i < inactivePoolWorkers.length; i++) {
+					delete coinStats.poolWorkers[inactivePoolWorkers[i]];
 				}
 
 				// Count only ACTIVE workers and miners (those with hashrate > 0)
@@ -1367,6 +1414,8 @@ this.getBlocks = function (cback) {
 					', Pool workers: ' + coinStats.workerCount + 
 					', Solo workers: ' + coinStats.soloWorkerCount);
 								
+				// Calculate miner hashrates and clean up inactive miners
+				var inactiveMiners = [];
 				for (var miner in coinStats.miners) {
 					var _workerRate = shareMultiplier * coinStats.miners[miner].shares / portalConfig.website.stats.hashrateWindow;
 					coinStats.miners[miner].luckDays = ((_networkHashRate / _workerRate * _blocktime) / (24 * 60 * 60)).toFixed(3);
@@ -1374,7 +1423,17 @@ this.getBlocks = function (cback) {
                     coinStats.miners[miner].luckMinute = ((_networkHashRate / _workerRate * _blocktime) / (60)).toFixed(3);
 					coinStats.miners[miner].hashrate = _workerRate;
 					coinStats.miners[miner].hashrateString = _this.getReadableHashRateString(_workerRate);
+
+					// Mark inactive miners for cleanup
+					if (_workerRate === 0 && coinStats.miners[miner].shares === 0 &&
+						coinStats.miners[miner].currRoundShares === 0) {
+						inactiveMiners.push(miner);
+					}
                 }
+				// Remove inactive miners
+				for (var i = 0; i < inactiveMiners.length; i++) {
+					delete coinStats.miners[inactiveMiners[i]];
+				}
 
 				// sort workers by name
 				coinStats.workers = sortWorkersByName(coinStats.workers);
@@ -1584,6 +1643,7 @@ this.getBlocks = function (cback) {
 
             var retentionTime = (((Date.now() / 1000) - portalConfig.website.stats.historicalRetention) | 0);
 
+            // Time-based cleanup
             for (var i = 0; i < _this.statHistory.length; i++){
                 if (retentionTime < _this.statHistory[i].time){
                     if (i > 0) {
@@ -1592,6 +1652,16 @@ this.getBlocks = function (cback) {
                     }
                     break;
                 }
+            }
+
+            // Hard limit cleanup - keep only last 1000 entries
+            var maxHistoryEntries = 1000;
+            if (_this.statHistory.length > maxHistoryEntries) {
+                var excess = _this.statHistory.length - maxHistoryEntries;
+                _this.statHistory = _this.statHistory.slice(excess);
+                _this.statPoolHistory = _this.statPoolHistory.slice(excess);
+                logger.debug(logSystem, 'Historics',
+                    'Trimmed ' + excess + ' excess history entries (keeping last ' + maxHistoryEntries + ')');
             }
 
             redisStats.multi([
