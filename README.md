@@ -14,9 +14,17 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 
 * ✅ **Solo Mining Support** - Miners can mine solo with `m=solo` password parameter
 * ✅ **ASICBoost Support** - Full support with version rolling for mining optimization
+* ✅ **Multi-Version Support** - `mining.multi_version` extension for overt AsicBoost
 * ✅ **Fixed Payment System** - Resolved double fee deduction issue (v1.4.1)
 * ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
 * ✅ **Dual Mining** - Support pool and solo mining simultaneously
+* ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
+
+### Recent Updates (v1.4.5)
+
+* **NEW**: Added `mining.multi_version` stratum extension for overt AsicBoost
+* **NEW**: Admin Center with secure bcrypt password hashing
+* **IMPROVED**: Enhanced stratum protocol handling
 
 ### Recent Updates (v1.4.4)
 
@@ -208,10 +216,10 @@ Explanation for each field:
             /* How many seconds worth of shares should be gathered to generate hashrate. */
             "hashrateWindow": 300
         },
-        /* Not done yet. */
+        /* Admin Center - Web-based pool administration panel */
         "adminCenter": {
             "enabled": true,
-            "password": "password"
+            "passwordHash": "$2a$10$YourBcryptHashHere..."  // Use generate-password-hash.js
         }
     },
 
@@ -542,6 +550,147 @@ Example connections:
 * **CGMiner**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo`
 * **With custom difficulty**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo,d=65536`
 
+#### Multi-Version Support (mining.multi_version)
+
+SHA256-NOMP supports the `mining.multi_version` stratum extension for overt AsicBoost mining. This is an alternative to `mining.configure` version rolling.
+
+##### Enabling Multi-Version
+
+Add the `multiVersion` configuration to your coin config (`coins/*.json`):
+
+```javascript
+{
+    "name": "bitcoin",
+    "symbol": "BTC",
+    "algorithm": "sha256",
+    // ... other settings ...
+
+    "multiVersion": {
+        "enabled": true,        // Enable mining.multi_version support
+        "maxVersions": 4,       // Maximum versions a miner can request (1-16)
+        "mode": "sequential"    // Version generation mode
+    }
+}
+```
+
+##### How It Works
+
+1. Miner sends: `{"method": "mining.multi_version", "params": [4]}`
+2. Pool responds with `result: true` if enabled
+3. Pool sends jobs with multiple versions in `mining.notify`
+4. Miner can use any of the provided versions for share submission
+
+##### Miner Compatibility
+
+Miners supporting `mining.multi_version`:
+- Custom firmware with multi_version support
+- Some Bitmain firmware variants
+- Mining proxies with multi_version capability
+
+---
+
+#### Admin Center
+
+SHA256-NOMP includes a web-based administration panel for managing your pool. Access it at `http://yourpool.com/admin`.
+
+##### Features
+
+- View and manage active pools
+- Monitor pool statistics
+- Add/modify pool configurations
+- Secure bcrypt password authentication
+
+##### Setting Up Admin Center
+
+**Step 1: Generate a Password Hash**
+
+For security, admin passwords are stored as bcrypt hashes, not plain text. Use the included tool to generate your hash:
+
+```bash
+cd nomp-password
+node generate-password-hash.js
+```
+
+The tool will:
+1. Prompt you to enter your desired password
+2. Generate a secure bcrypt hash
+3. Show you the hash to use in your config
+
+Example output:
+```
+================================================================================
+SHA256-NOMP Admin Password Hash Generator
+================================================================================
+
+Enter your desired admin password: ********
+
+Generating bcrypt hash (this may take a moment)...
+
+================================================================================
+Password Hash Generated Successfully!
+================================================================================
+
+Your bcrypt hash is:
+
+  $2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqvZjCn4Y5XpLz8DJDm7X8NlZPvDK
+
+================================================================================
+```
+
+**Step 2: Configure config.json**
+
+Add the hash to your `config.json`:
+
+```javascript
+"website": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 80,
+    "stratumHost": "yourpool.com",
+    "stats": {
+        "updateInterval": 15,
+        "historicalRetention": 43200,
+        "hashrateWindow": 300
+    },
+    "adminCenter": {
+        "enabled": true,
+        "passwordHash": "$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqvZjCn4Y5XpLz8DJDm7X8NlZPvDK"
+    }
+}
+```
+
+> **IMPORTANT:** Use `"passwordHash"` (not `"password"`) to enable secure bcrypt authentication.
+
+**Step 3: Access Admin Panel**
+
+1. Navigate to `http://yourpool.com/admin`
+2. Enter your original password (not the hash!)
+3. Optionally check "Stay Logged In" to save session
+
+##### Security Notes
+
+- **Never share your password hash publicly** (though it's much safer than plain text)
+- Use a strong password (20+ characters recommended)
+- Each hash generation produces a different result (this is normal and secure)
+- If you forget your password, simply generate a new hash
+- The admin panel uses cookies for session management
+- For production, always use HTTPS to protect credentials in transit
+
+##### Legacy Plain Text Password (Not Recommended)
+
+For backwards compatibility, you can still use plain text passwords:
+
+```javascript
+"adminCenter": {
+    "enabled": true,
+    "password": "your-plain-text-password"  // NOT RECOMMENDED
+}
+```
+
+> **WARNING:** Plain text passwords are stored in your config file and could be exposed. Always use `passwordHash` for production deployments.
+
+---
+
 ##### [Optional, recommended] Setting up blocknotify
 1. In `config.json` set the port and password for `blockNotifyListener`
 2. In your daemon conf file set the `blocknotify` command to use:
@@ -723,6 +872,23 @@ the `node-stratum-pool` and `node-multi-hashing` modules, and any config files t
 * Remove the dependencies by deleting the `node_modules` directory with `rm -r node_modules`.
 * Run `npm update` to force updating/reinstalling of the dependencies.
 * Compare your `config.json` and `pool_configs/coin.json` configurations to the latest example ones in this repo or the ones in the setup instructions where each config field is explained. <b>You may need to modify or add any new changes.</b>
+
+---
+
+<div align="center">
+
+## Maintained By
+
+### **janos-raul**
+#### Developer & Maintainer
+
+[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:50300)
+
+*Building high-performance SHA256 mining infrastructure*
+
+</div>
+
+---
 
 Donations
 -------

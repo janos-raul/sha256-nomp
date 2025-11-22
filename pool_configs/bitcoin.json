@@ -2,8 +2,8 @@
   "enabled": true,
   "coin": "bitcoin.json",
   "asicboost": true,
-  "blockIdentifier":"",
-  
+  "blockIdentifier": "",
+
   "security": {
     "enabled": true,
 
@@ -25,94 +25,94 @@
 
   "address": "YOUR_POOL_WALLET_ADDRESS",
 
-    "rewardRecipients": {
-        "YOUR_FEE_ADDRESS": 0.0
-    },
+  "rewardRecipients": {
+    "YOUR_FEE_ADDRESS": 0.0
+  },
 
   "paymentProcessing": {
-	"txfee": 0.0004,
-	"minConf": 101,
+    "txfee": 0.0004,
+    "minConf": 101,
     "enabled": true,
-	"soloMining": true, 
-    "paymentMode": "prop", 	
+    "soloMining": true,
+    "paymentMode": "prop",
     "poolFee": 2.0,
-    "soloFee": 2.0,  
+    "soloFee": 2.0,
     "_comment_paymentMode": "prop, pplnt",
     "paymentInterval": 3600,
     "minimumPayment": 0.01,
-	"minimumPayment_solo": 0.01,
+    "minimumPayment_solo": 0.01,
     "maxBlocksPerPayment": 5,
-      "daemon": {
+    "daemon": {
       "host": "127.0.0.1",
       "port": 8332,
       "user": "rpcuser",
       "password": "rpcpassword"
-        }
-    },
+    }
+  },
 
-    "tlsOptions": {
-        "enabled": false,
-        "serverKey": "",
-        "serverCert": "",
-        "ca": ""
+  "tlsOptions": {
+    "enabled": false,
+    "serverKey": "",
+    "serverCert": "",
+    "ca": ""
+  },
+
+  "ports": {
+    "50212": {
+      "diff": 25000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 10000,
+        "maxDiff": 500000,
+        "targetTime": 15,
+        "retargetTime": 90,
+        "variancePercent": 30
+      }
     },
-	
-	  "ports": {
-		"50212": {
-		  "diff": 25000,
-		  "tls": false,
-		  "soloMining": true,
-		  "varDiff": {
-			"minDiff": 10000,
-			"maxDiff": 500000,
-			"targetTime": 15,
-			"retargetTime": 90,
-			"variancePercent": 30
-		   }
-		  },
-		  "50213": {
-		  "diff": 50000,
-		  "tls": false,
-		  "soloMining": true,
-		  "varDiff": {
-			"minDiff": 50000,
-			"maxDiff": 5000000,
-			"targetTime": 25,
-			"retargetTime": 180,
-			"variancePercent": 35
-		  }
-		},
-		  "50214": {
-		  "diff": 100000,
-		  "tls": false,
-		  "soloMining": true,
-		  "varDiff": {
-			"minDiff": 50000,
-			"maxDiff": 5000000,
-			"targetTime": 25,
-			"retargetTime": 180,
-			"variancePercent": 35
-		  }
-		},
-		  "50216": {
-		  "diff": 1500000,
-		  "tls": false,
-		  "soloMining": true,
-		  "varDiff": {
-			"minDiff": 500000,      
-			"maxDiff": 50000000,     
-			"targetTime": 30,
-			"retargetTime": 300,
-			"variancePercent": 40
-		  }
-		} 	
-	  },
-  
-    "poolId": "main",
-    "_comment_poolId": "use it for region identification: eu, us, asia or keep default if you have one stratum instance for one coin",
+    "50213": {
+      "diff": 50000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 50000,
+        "maxDiff": 5000000,
+        "targetTime": 25,
+        "retargetTime": 180,
+        "variancePercent": 35
+      }
+    },
+    "50214": {
+      "diff": 100000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 50000,
+        "maxDiff": 5000000,
+        "targetTime": 25,
+        "retargetTime": 180,
+        "variancePercent": 35
+      }
+    },
+    "50216": {
+      "diff": 1500000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 500000,
+        "maxDiff": 50000000,
+        "targetTime": 30,
+        "retargetTime": 300,
+        "variancePercent": 40
+      }
+    }
+  },
+
+  "poolId": "main",
+  "_comment_poolId": "use it for region identification: eu, us, asia or keep default if you have one stratum instance for one coin",
 
   "daemons": [
-	{
+    {
       "host": "127.0.0.1",
       "port": 8332,
       "user": "rpcuser",
@@ -120,22 +120,21 @@
     }
   ],
 
-    "p2p": {
-        "enabled": false,
-        "host": "127.0.0.1",
-        "port": 34230,
-        "disableTransactions": true
-    },
+  "p2p": {
+    "enabled": false,
+    "host": "127.0.0.1",
+    "port": 34230,
+    "disableTransactions": true
+  },
 
-    "mposMode": {
-        "enabled": false,
-        "host": "127.0.0.1",
-        "port": 3306,
-        "user": "",
-        "password": "",
-        "database": "",
-        "checkPassword": true,
-        "autoCreateWorker": false
-    }
+  "mposMode": {
+    "enabled": false,
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "",
+    "password": "",
+    "database": "",
+    "checkPassword": true,
+    "autoCreateWorker": false
+  }
 }
-

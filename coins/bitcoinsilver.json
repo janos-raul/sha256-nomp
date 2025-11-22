@@ -2,13 +2,18 @@
   "name": "bitcoinsilver",
   "symbol": "BTCS",
   "algorithm": "sha256",
-  "reward": "POW",							
-  "asicboost": true,                    
-  "versionMask": "0x3fffe000",           
-  "enforcePoolVersionMask": true,       
-  "versionRollingMinBits": 16,        									
-  "asicboostMinDifficulty": 1000,      
-  "asicboostMaxClients": 1000,         
+  "reward": "POW",
+  "asicboost": true,
+  "versionMask": "0x3fffe000",
+  "enforcePoolVersionMask": true,
+  "versionRollingMinBits": 16,
+  "asicboostMinDifficulty": 1000,
+  "asicboostMaxClients": 1000,
+  "multiVersion": {
+    "enabled": true,
+    "maxVersions": 4,
+    "generationMode": "sequential"
+  },
   "coinbase": "yourpool.com",
   "txMessages": false,
   "segwit": true,
@@ -21,24 +26,23 @@
   "rpcTimeout": 5000,
   "blockTime": 300,
   "minConf": 201,
-  
+
   "addressValidation": {
-		"validateWorkerUsername": true,
-		"addressPrefix": "bs",
-		"minLength": 26,
-		"maxLength": 46
+    "validateWorkerUsername": true,
+    "addressPrefix": "bs1",
+    "minLength": 26,
+    "maxLength": 46
   },
 
   "explorer": {
-        "txURL": "https://explorer.bitcoinsilver.top/tx/",
-        "blockURL": "https://explorer.bitcoinsilver.top/block/"
+    "txURL": "https://explorer.bitcoinsilver.top/tx/",
+    "blockURL": "https://explorer.bitcoinsilver.top/block/"
   },
-	
+
   "rpc": {
-		"host": "127.0.0.1",
-		"port": 10013,
-		"user": "rpcuser",
-		"password": "rpcpassword"
+    "host": "127.0.0.1",
+    "port": 10013,
+    "user": "rpcuser",
+    "password": "rpcpassword"
   }
 }
-

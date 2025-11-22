@@ -391,7 +391,7 @@
             <i class="fas fa-server"></i>
             Total Pools
         </div>
-        <div class="summary-value" id="totalPools">{{=Object.keys(it.stats.pools).length}}</div>
+        <div class="summary-value" id="totalPools">{{=(it.stats && it.stats.pools) ? Object.keys(it.stats.pools).length : 0}}</div>
     </div>
     <div class="summary-card">
         <div class="summary-label">

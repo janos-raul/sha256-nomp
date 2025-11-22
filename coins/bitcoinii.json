@@ -9,6 +9,11 @@
   "versionRollingMinBits": 16,
   "asicboostMinDifficulty": 1000,
   "asicboostMaxClients": 1000,
+  "multiVersion": {
+    "enabled": true,
+    "maxVersions": 4,
+    "generationMode": "sequential"
+  },
   "coinbase": "yourpool.com",
   "txMessages": false,
   "segwit": true,
@@ -21,23 +26,23 @@
   "rpcTimeout": 5000,
   "blockTime": 600,
   "minConf": 101,
-  
+
   "addressValidation": {
-		"validateWorkerUsername": true,
-		"addressPrefix": "bc",
-		"minLength": 26,
-		"maxLength": 46
+    "validateWorkerUsername": true,
+    "addressPrefix": "bc1",
+    "minLength": 26,
+    "maxLength": 46
   },
-  
+
   "explorer": {
-		"txURL": "https://bitcoinii.ddns.net/explorer/tx/",
-		"blockURL": "https://bitcoinii.ddns.net/explorer/block/"
+    "txURL": "https://bitcoinii.ddns.net/explorer/tx/",
+    "blockURL": "https://bitcoinii.ddns.net/explorer/block/"
   },
-  
+
   "rpc": {
-		"host": "127.0.0.1",
-		"port": 18388,
-		"user": "rpcuser",
-		"password": "rpcpassword"
+    "host": "127.0.0.1",
+    "port": 18388,
+    "user": "rpcuser",
+    "password": "rpcpassword"
   }
 }

@@ -2,13 +2,18 @@
   "name": "mytherra",
   "symbol": "MYT",
   "algorithm": "sha256",
-  "reward": "POW",								
-  "asicboost": true,                    
-  "versionMask": "0x3fffe000",           
-  "enforcePoolVersionMask": true,      
-  "versionRollingMinBits": 16,         										
-  "asicboostMinDifficulty": 1000,     
-  "asicboostMaxClients": 1000,         
+  "reward": "POW",
+  "asicboost": true,
+  "versionMask": "0x3fffe000",
+  "enforcePoolVersionMask": true,
+  "versionRollingMinBits": 16,
+  "asicboostMinDifficulty": 1000,
+  "asicboostMaxClients": 1000,
+  "multiVersion": {
+    "enabled": true,
+    "maxVersions": 4,
+    "generationMode": "sequential"
+  },
   "coinbase": "yourpool.com",
   "txMessages": false,
   "segwit": true,
@@ -21,25 +26,23 @@
   "rpcTimeout": 5000,
   "blockTime": 300,
   "minConf": 101,
-	
+
   "addressValidation": {
-		"validateWorkerUsername": true,
-		"addressPrefix": "myt",
-		"minLength": 26,
-		"maxLength": 46
+    "validateWorkerUsername": true,
+    "addressPrefix": "myt1",
+    "minLength": 26,
+    "maxLength": 46
   },
 
   "explorer": {
-        "txURL": "https://explorer.mytherrablockchain.org/tx/",
-        "blockURL": "https://explorer.mytherrablockchain.org/block/"
-    },
-	
+    "txURL": "https://explorerspace.mytherrablockchain.org/tx/",
+    "blockURL": "https://explorerspace.mytherrablockchain.org/block/"
+  },
+
   "rpc": {
-		"host": "127.0.0.1",
-		"port": 24013,
-		"user": "rpcuser",
-		"password": "rpcpassword"
+    "host": "127.0.0.1",
+    "port": 24013,
+    "user": "rpcuser",
+    "password": "rpcpassword"
   }
 }
-
-
