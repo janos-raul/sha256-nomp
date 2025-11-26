@@ -69,17 +69,21 @@ All coins support:
 
 If your pool uses SHA256-NOMP let us know and we will list your website here.
 
+<div align="center">
+
 ### Some pools using SHA256-NOMP:
 
-* [sha256-mining.go.ro - Mining Pool](https://sha256-mining.go.ro:50300)
+[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:50300)
 
-* [UGPOOL.lol - Mining Pool](https://ugpool.lol/)
+*Building high-performance SHA256 mining infrastructure*
+
+</div>
 
 Usage
 =====
 
 #### Requirements
-* Coin daemon(s) (find the coin's repo and build latest version from source)
+* Coin daemon(s) (find the coin's repo and build latest version from source or use the already built ones)
 * [Node.js](http://nodejs.org/) v16+ ([follow these installation instructions](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager))
 * [Redis](http://redis.io/) key-value store v2.6+ ([follow these instructions](http://redis.io/topics/quickstart))
 
