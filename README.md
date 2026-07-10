@@ -1,5 +1,4 @@
 # SHA256-NOMP - Node Open Mining Portal
-[![GitHub CI](https://github.com/janos-raul/sha256-nomp/actions/workflows/node.js.yml/badge.svg)](https://github.com/janos-raul/sha256-nomp/actions/workflows/node.js.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This is a SHA256 mining pool with solo mining support and ASICBoost with version rolling, based on Node Open Mining Portal.
