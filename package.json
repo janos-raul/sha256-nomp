@@ -18,7 +18,7 @@
   "bugs": {
     "url": "https://github.com/janos-raul/sha256-nomp/issues"
   },
-  "license": "MIT",
+  "license": "GPL-2.0",
   "author": "JANOS-RAUL",
   "contributors": [
     "Janos-Raul",
