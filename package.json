@@ -60,7 +60,7 @@
     "node-watch": "^0.7.4",
     "nonce": "^1.0.4",
     "redis": "^3.1.2",
-    "stratum-pool": "https://github.com/janos-raul/node-stratum-pool.git#sha256-nomp-node-stratum-pool"
+    "stratum-pool": "https://github.com/janos-raul/node-stratum-pool.git#main"
   },
   "engines": {
     "node": ">=18",
