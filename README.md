@@ -1,63 +1,67 @@
 # SHA256-NOMP - Node Open Mining Portal
+
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 This is a SHA256 mining pool with solo mining support and ASICBoost with version rolling, based on Node Open Mining Portal.
-  
+
 #### Production Usage Notice
-This is beta software. All of the following are things that can change and break an existing SHA256-NOMP setup: functionality of any feature, structure of configuration files and structure of redis data. If you use this software in production then *DO NOT* pull new code straight into production usage because it can and often will break your setup and require you to tweak things like config files or redis data. *Only tagged releases are considered stable.*
+
+This is beta software. All of the following are things that can change and break an existing SHA256-NOMP setup: functionality of any feature, structure of configuration files and structure of redis data. If you use this software in production then _DO NOT_ pull new code straight into production usage because it can and often will break your setup and require you to tweak things like config files or redis data. _Only tagged releases are considered stable._
 
 #### Paid Solution
+
 Usage of this software requires abilities with sysadmin, database admin, coin daemons, and sometimes a bit of programming. Running a production pool can literally be more work than a full-time job.
 
 ### Features
 
-* ✅ **Solo Mining Support** - Miners can mine solo with `m=solo` password parameter
-* ✅ **ASICBoost Support** - Full support with version rolling for mining optimization
-* ✅ **Multi-Version Support** - `mining.multi_version` extension for overt AsicBoost
-* ✅ **Fixed Payment System** - Resolved double fee deduction issue (v1.4.1)
-* ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
-* ✅ **Dual Mining** - Support pool and solo mining simultaneously
-* ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
+- ✅ **Solo Mining Support** - Miners can mine solo with `m=solo` password parameter
+- ✅ **ASICBoost Support** - Full support with version rolling for mining optimization
+- ✅ **Multi-Version Support** - `mining.multi_version` extension for overt AsicBoost
+- ✅ **Fixed Payment System** - Resolved double fee deduction issue (v1.4.1)
+- ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
+- ✅ **Dual Mining** - Support pool and solo mining simultaneously
+- ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 
 ### Recent Updates (v1.4.5)
 
-* **NEW**: Added `mining.multi_version` stratum extension for overt AsicBoost
-* **NEW**: Admin Center with secure bcrypt password hashing
-* **IMPROVED**: Enhanced stratum protocol handling
+- **NEW**: Added `mining.multi_version` stratum extension for overt AsicBoost
+- **NEW**: Admin Center with secure bcrypt password hashing
+- **IMPROVED**: Enhanced stratum protocol handling
 
 ### Recent Updates (v1.4.4)
 
-* **UPDATE**: Security enhancements
-* **Fixed**: Memory optimization
+- **UPDATE**: Security enhancements
+- **Fixed**: Memory optimization
 
 ### Recent Updates (v1.4.3)
 
-* **UPDATE**: Added Whatsminer support
+- **UPDATE**: Added Whatsminer support
 
 ### Recent Updates (v1.4.2)
 
-* **UPDATE**: Updated package.json dependencies
-* **FIXED**: Logging and added log rotation, log archive 
+- **UPDATE**: Updated package.json dependencies
+- **FIXED**: Logging and added log rotation, log archive
 
 ### Recent Updates (v1.4.1)
 
-* **FIXED**: Double fee deduction bug in solo mining payment processing
-* **IMPROVED**: Solo mining fees now correctly compensate for coinbase rewardRecipients
-* **ENHANCED**: Consistent fee handling for both 'generate' and 'immature' blocks
-* **OPTIMIZED**: Payment processor efficiency improvements
+- **FIXED**: Double fee deduction bug in solo mining payment processing
+- **IMPROVED**: Solo mining fees now correctly compensate for coinbase rewardRecipients
+- **ENHANCED**: Consistent fee handling for both 'generate' and 'immature' blocks
+- **OPTIMIZED**: Payment processor efficiency improvements
 
 ### Supported Coins
 
 SHA256-NOMP comes pre-configured with the following coins:
 
-| Coin | Symbol | Algorithm | Ports | Min Confirmations | Block Time |
-|------|--------|-----------|-------|-------------------|------------|
-| Bitcoin | BTC | SHA256 | 50212-50216 | 101 | 10 min |
-| Bitcoin Silver | BTCS | SHA256 | 50220-50226 | 201 | 5 min |
-| Mytherra | MYT | SHA256 | 50232-50236 | 101 | 5 min |
-| Bitcoin II | BC2 | SHA256 | 50242-50246 | 101 | 10 min |
+| Coin           | Symbol | Algorithm | Ports       | Min Confirmations | Block Time |
+| -------------- | ------ | --------- | ----------- | ----------------- | ---------- |
+| Bitcoin        | BTC    | SHA256    | 50212-50216 | 101               | 10 min     |
+| Bitcoin Silver | BTCS   | SHA256    | 50220-50226 | 201               | 5 min      |
+| Mytherra       | MYT    | SHA256    | 50232-50236 | 101               | 5 min      |
+| Bitcoin II     | BC2    | SHA256    | 50242-50246 | 101               | 10 min     |
 
 All coins support:
+
 - ✅ ASICBoost with version rolling
 - ✅ SegWit and Taproot
 - ✅ Solo and pool mining modes
@@ -72,21 +76,22 @@ If your pool uses SHA256-NOMP let us know and we will list your website here.
 
 ### Some pools using SHA256-NOMP:
 
-[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:50300)
+[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:55000)
 
-*Building high-performance SHA256 mining infrastructure*
+_Building high-performance SHA256 mining infrastructure_
 
 </div>
 
-Usage
-=====
+# Usage
 
 #### Requirements
-* Coin daemon(s) (find the coin's repo and build latest version from source or use the already built ones)
-* [Node.js](http://nodejs.org/) v16+ ([follow these installation instructions](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager))
-* [Redis](http://redis.io/) key-value store v2.6+ ([follow these instructions](http://redis.io/topics/quickstart))
+
+- Coin daemon(s) (find the coin's repo and build latest version from source or use the already built ones)
+- [Node.js](http://nodejs.org/) v16+ ([follow these installation instructions](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager))
+- [Redis](http://redis.io/) key-value store v2.6+ ([follow these instructions](http://redis.io/topics/quickstart))
 
 ##### Seriously
+
 Those are legitimate requirements. If you use old versions of Node.js or Redis that may come with your system package manager then you will have problems. Follow the linked instructions to get the last stable versions.
 
 [**Redis security warning**](http://redis.io/topics/security): be sure firewall access to redis - an easy way is to
@@ -94,22 +99,26 @@ include `bind 127.0.0.1` in your `redis.conf` file. Also it's a good idea to lea
 you are using - a good place to start with redis is [data persistence](http://redis.io/topics/persistence).
 
 #### 0) Setting up coin daemon
+
 Follow the build/install instructions for your coin daemon. Your coin.conf file should end up looking something like this:
+
 ```
 daemon=1
 rpcuser=username
 rpcpassword=password
 rpcport=8332
 ```
+
 For redundancy, its recommended to have at least two daemon instances running in case one drops out-of-sync or offline,
 all instances will be polled for block/transaction updates and be used for submitting blocks. Creating a backup daemon
 involves spawning a daemon using the `-datadir=/backup` command-line argument which creates a new daemon instance with
 it's own config directory and coin.conf file. Learn about the daemon, how to use it and how it works if you want to be
 a good pool operator. For starters be sure to read:
-   * https://en.bitcoin.it/wiki/Running_bitcoind
-   * https://en.bitcoin.it/wiki/Data_directory
-   * https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_Calls_list
-   * https://en.bitcoin.it/wiki/Difficulty
+
+- https://en.bitcoin.it/wiki/Running_bitcoind
+- https://en.bitcoin.it/wiki/Data_directory
+- https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_Calls_list
+- https://en.bitcoin.it/wiki/Difficulty
 
 #### 1) Downloading & Installing
 
@@ -129,23 +138,26 @@ npm install
 #### 2) Configuration
 
 SHA256-NOMP uses three types of configuration files:
+
 - **config.json** - Main portal configuration
-- **coins/*.json** - Coin-specific configurations (blockchain settings)
-- **pool_configs/*.json** - Pool operational configurations (ports, fees, payments)
+- **coins/\*.json** - Coin-specific configurations (blockchain settings)
+- **pool_configs/\*.json** - Pool operational configurations (ports, fees, payments)
 
 ##### Portal config
+
 Inside the `config_example.json` file, ensure the default configuration will work for your environment, then copy the file to `config.json`.
 
 Explanation for each field:
-````javascript
+
+```javascript
 {
     /* Specifies the level of log output verbosity. Anything more severe than the level specified
        will also be logged. */
     "logLevel": "debug", //or "warning", "error"
-    
+
     /* By default the server logs to console and gives pretty colors. If you direct that output to a
        log file then disable this feature to avoid nasty characters in your log file. */
-    "logColors": true, 
+    "logColors": true,
 
     /* The server CLI (command-line interface) will listen for commands on this port. For example,
        blocknotify messages are sent to the server through this. */
@@ -159,30 +171,30 @@ Explanation for each field:
         "enabled": true,
         "forks": "auto"
     },
-    
+
     /* Pool config file will inherit these default values if they are not set. */
     "defaultPoolConfigs": {
-    
+
         /* Poll RPC daemons for new blocks every this many milliseconds. */
         "blockRefreshInterval": 1000,
-        
+
         /* If no new blocks are available for this many seconds update and rebroadcast job. */
         "jobRebroadcastTimeout": 55,
-        
+
         /* Disconnect workers that haven't submitted shares for this many seconds. */
         "connectionTimeout": 600,
-        
+
         /* (For MPOS mode) Store the block hashes for shares that aren't block candidates. */
         "emitInvalidBlockHashes": false,
-        
+
         /* This option will only authenticate miners using an address or mining key. */
         "validateWorkerUsername": true,
-        
+
         /* Enable for client IP addresses to be detected when using a load balancer with TCP
            proxy protocol enabled, such as HAProxy with 'send-proxy' param:
            http://haproxy.1wt.eu/download/1.5/doc/configuration.txt */
         "tcpProxyProtocol": false,
-        
+
         /* If under low-diff share attack we can ban their IP to reduce system/network load. If
            running behind HAProxy be sure to enable 'tcpProxyProtocol', otherwise you'll end up
            banning your own IP address (and therefore all workers). */
@@ -193,7 +205,7 @@ Explanation for each field:
             "checkThreshold": 500, //Perform check when this many shares have been submitted
             "purgeInterval": 300 //Every this many seconds clear out the list of old bans
         },
-        
+
         /* Used for storing share and block submission data and payment processing. */
         "redis": {
             "host": "127.0.0.1",
@@ -254,19 +266,22 @@ Explanation for each field:
         }
     },
 }
-````
+```
 
 ##### Coin config
+
 Inside the `coins` directory, ensure a json file exists for your coin. The coin configuration defines blockchain-specific settings and daemon connection parameters.
 
 **Available Coins:**
+
 - `bitcoin.json` - Bitcoin (BTC)
 - `bitcoinsilver.json` - Bitcoin Silver (BTCS)
 - `mytherra.json` - Mytherra (MYT)
 - `bitcoinii.json` - Bitcoin II (BC2)
 
 **Coin Configuration Fields:**
-````javascript
+
+```javascript
 {
     // Basic coin information
     "name": "bitcoin",
@@ -320,18 +335,21 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
         "password": "rpcpassword"         // RPC password
     }
 }
-````
+```
 
 **Important Notes:**
+
 - The `minConf` value determines how many confirmations are required before blocks are paid out
 - Bitcoin typically uses 101 confirmations, Bitcoin Silver uses 201
 - ASICBoost is enabled by default for optimal performance with modern ASIC miners
 - The `rpc` section is used by maintenance scripts like `blockConfirmations.js`
 
 ##### Pool config
+
 Pool configurations define operational settings for each coin's mining pool. Each coin has its own pool config file in `pool_configs/`.
 
 **Available Pool Configurations:**
+
 - `pool_configs/bitcoin.json` - Bitcoin pool (ports 50212-50216)
 - `pool_configs/bitcoinsilver.json` - Bitcoin Silver pool (ports 50220-50226)
 - `pool_configs/mytherra.json` - Mytherra pool (ports 50232-50236)
@@ -346,7 +364,7 @@ Pool configurations define operational settings for each coin's mining pool. Eac
     "coin": "bitcoin.json",              // Reference to coin config file
     "asicboost": true,                   // Enable ASICBoost for this pool
     "blockIdentifier": "",               // Optional block identifier
-	
+
 	  // ============================================================================
 	  // SECURITY MODULE - Advanced DDoS Protection & Rate Limiting
 	  // ============================================================================
@@ -481,20 +499,25 @@ Pool configurations define operational settings for each coin's mining pool. Eac
 ```
 
 **Difficulty Notes:**
+
 > **Important:** Pool difficulty is NOT the same as network difficulty!
+>
 > - 1.0 pool difficulty = 8192 network difficulty
 > - 0.125 pool difficulty = 1024 network difficulty
 >
 > When miners submit shares, the pool accumulates the difficulty:
+>
 > - Miner 1 at 0.1 difficulty finding 10 shares = 1 accumulated share
 > - Miner 2 at 0.5 difficulty finding 5 shares = 2.5 accumulated shares
 
 **Payment Modes:**
+
 - **PROP (Proportional)**: Miners are paid proportionally to their shares when a block is found
 - **PPLNT (Pay Per Last N Time)**: Payment based on shares in the last N time window
 
 **Port Configuration Strategy:**
 Each coin has multiple ports with different difficulty ranges:
+
 - Low difficulty ports (e.g., 50212): For small miners and testing
 - Medium difficulty ports (e.g., 50213): For medium-sized miners
 - High difficulty ports (e.g., 50214): For large mining operations
@@ -529,6 +552,7 @@ Understanding how fees work is crucial for proper pool operation:
      - Solo miner receives: 6.125 BTC
 
 **Best Practice Fee Configuration:**
+
 ```javascript
 "rewardRecipients": {
     "YOUR_FEE_ADDRESS": 0.0   // Keep at 0.0 for simplicity
@@ -544,14 +568,16 @@ This approach keeps accounting simple and transparent for your miners.
 #### Solo Mining Configuration
 
 Miners connect for solo mining using the password parameter:
+
 ```
 Username: YOUR_BITCOIN_ADDRESS
 Password: m=solo
 ```
 
 Example connections:
-* **CGMiner**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo`
-* **With custom difficulty**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo,d=65536`
+
+- **CGMiner**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo`
+- **With custom difficulty**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo,d=65536`
 
 #### Multi-Version Support (mining.multi_version)
 
@@ -586,6 +612,7 @@ Add the `multiVersion` configuration to your coin config (`coins/*.json`):
 ##### Miner Compatibility
 
 Miners supporting `mining.multi_version`:
+
 - Custom firmware with multi_version support
 - Some Bitmain firmware variants
 - Mining proxies with multi_version capability
@@ -615,11 +642,13 @@ node generate-password-hash.js
 ```
 
 The tool will:
+
 1. Prompt you to enter your desired password
 2. Generate a secure bcrypt hash
 3. Show you the hash to use in your config
 
 Example output:
+
 ```
 ================================================================================
 SHA256-NOMP Admin Password Hash Generator
@@ -695,12 +724,16 @@ For backwards compatibility, you can still use plain text passwords:
 ---
 
 ##### [Optional, recommended] Setting up blocknotify
+
 1. In `config.json` set the port and password for `blockNotifyListener`
 2. In your daemon conf file set the `blocknotify` command to use:
+
 ```
 node [path to cli.js] [coin name in config] [block hash symbol]
 ```
+
 Example: inside `bitcoin.conf` add the line
+
 ```
 blocknotify=node /home/user/sha256-nomp/scripts/cli.js blocknotify bitcoin %s
 ```
@@ -715,6 +748,7 @@ SHA256-NOMP includes a utility script for monitoring block confirmations: `libs/
 ##### What is blockConfirmations.js?
 
 This script checks the confirmation status of pending blocks (both pool and solo) and updates their status in Redis. It's useful for:
+
 - Monitoring block maturity before payouts
 - Detecting orphaned blocks
 - Tracking confirmation progress
@@ -738,25 +772,25 @@ Edit `libs/blockConfirmations.js` and update the `poolConfigs` object with your 
 
 ```javascript
 const poolConfigs = {
-    bitcoin: {
-        daemon: {
-            host: "127.0.0.1",
-            port: 8332,
-            user: "rpcuser",
-            password: "rpcpassword"
-        },
-        minConfirmations: 101  // Must match your pool config minConf
+  bitcoin: {
+    daemon: {
+      host: "127.0.0.1",
+      port: 8332,
+      user: "rpcuser",
+      password: "rpcpassword",
     },
-    bitcoinsilver: {
-        daemon: {
-            host: "127.0.0.1",
-            port: 10013,
-            user: "rpcuser",
-            password: "rpcpassword"
-        },
-        minConfirmations: 201
-    }
-    // Add more coins as needed
+    minConfirmations: 101, // Must match your pool config minConf
+  },
+  bitcoinsilver: {
+    daemon: {
+      host: "127.0.0.1",
+      port: 10013,
+      user: "rpcuser",
+      password: "rpcpassword",
+    },
+    minConfirmations: 201,
+  },
+  // Add more coins as needed
 };
 ```
 
@@ -811,21 +845,25 @@ For regular monitoring, add to your crontab:
 ##### Understanding Block Confirmations
 
 **What are confirmations?**
+
 - Each new block added to the blockchain after your block counts as one confirmation
 - Confirmations make blocks more secure and less likely to be orphaned
 - Most pools require 101-201 confirmations before paying out miners
 
 **Block States:**
+
 - **Pending**: Block found but not yet confirmed (0 - minConf confirmations)
 - **Confirmed**: Block has reached required confirmations (≥ minConf)
 - **Orphaned**: Block no longer in the main chain (confirmations = -1)
 
 **Why blocks get orphaned:**
+
 - Another miner found a competing block at the same height
 - Network propagation delays
 - Chain reorganizations
 
 **Confirmation Requirements by Coin:**
+
 - Bitcoin (BTC): 101 confirmations (~16.8 hours)
 - Bitcoin Silver (BTCS): 201 confirmations (~16.8 hours, 5 min blocks)
 - Mytherra (MYT): 101 confirmations (~8.4 hours, 5 min blocks)
@@ -834,6 +872,7 @@ For regular monitoring, add to your crontab:
 ##### Troubleshooting
 
 **Script can't connect to Redis:**
+
 ```bash
 # Check if Redis is running
 sudo systemctl status redis
@@ -843,12 +882,14 @@ sudo systemctl start redis
 ```
 
 **RPC connection errors:**
+
 - Verify daemon is running and synced
 - Check RPC credentials in blockConfirmations.js
 - Ensure firewall allows RPC connections
 - Verify RPC port is correct for each coin
 
 **No pending blocks found:**
+
 - Normal if no recent blocks were found
 - Check that pool has been running and miners are connected
 - Verify Redis contains block data: `redis-cli keys "*blocksPending*"`
@@ -860,21 +901,24 @@ npm start
 ```
 
 ###### Optional enhancements for your awesome new mining pool server setup:
-* Use something like [forever](https://github.com/nodejitsu/forever) to keep the node script running
-in case the master process crashes.
-* Use something like [redis-commander](https://github.com/joeferner/redis-commander) to have a nice GUI
-for exploring your redis database.
-* Use something like [logrotator](http://www.thegeekstuff.com/2010/07/logrotate-examples/) to rotate log
-output from SHA256-NOMP.
-* Use [New Relic](http://newrelic.com/) to monitor your SHA256-NOMP instance and server performance.
+
+- Use something like [forever](https://github.com/nodejitsu/forever) to keep the node script running
+  in case the master process crashes.
+- Use something like [redis-commander](https://github.com/joeferner/redis-commander) to have a nice GUI
+  for exploring your redis database.
+- Use something like [logrotator](http://www.thegeekstuff.com/2010/07/logrotate-examples/) to rotate log
+  output from SHA256-NOMP.
+- Use [New Relic](http://newrelic.com/) to monitor your SHA256-NOMP instance and server performance.
 
 #### Upgrading SHA256-NOMP
+
 When updating SHA256-NOMP to the latest code its important to not only `git pull` the latest from this repo, but to also update
 the `node-stratum-pool` and `node-multi-hashing` modules, and any config files that may have been changed.
-* Inside your SHA256-NOMP directory (where the init.js script is) do `git pull` to get the latest SHA256-NOMP code.
-* Remove the dependencies by deleting the `node_modules` directory with `rm -r node_modules`.
-* Run `npm update` to force updating/reinstalling of the dependencies.
-* Compare your `config.json` and `pool_configs/coin.json` configurations to the latest example ones in this repo or the ones in the setup instructions where each config field is explained. <b>You may need to modify or add any new changes.</b>
+
+- Inside your SHA256-NOMP directory (where the init.js script is) do `git pull` to get the latest SHA256-NOMP code.
+- Remove the dependencies by deleting the `node_modules` directory with `rm -r node_modules`.
+- Run `npm update` to force updating/reinstalling of the dependencies.
+- Compare your `config.json` and `pool_configs/coin.json` configurations to the latest example ones in this repo or the ones in the setup instructions where each config field is explained. <b>You may need to modify or add any new changes.</b>
 
 ---
 
@@ -883,63 +927,71 @@ the `node-stratum-pool` and `node-multi-hashing` modules, and any config files t
 ## Maintained By
 
 ### **janos-raul**
+
 #### Developer & Maintainer
 
-[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:50300)
+[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:55000)
 
-*Building high-performance SHA256 mining infrastructure*
+_Building high-performance SHA256 mining infrastructure_
 
 </div>
 
 ---
 
-Donations
--------
+## Donations
+
 Donations for development are greatly appreciated!
 
-* BTC:  `bc1q0aa3k39ww33z24p3wpk72jjn32h2n5rfr85pnx`
-* BTCS: `bs1q8dnz4q52czdusl8hy04fw3jryj2kc3earck3y2`
-* BCH:  `qzhpajyfz7yvl8963rre5zqdp72pqy47ysttst0wmr`
+- BTC: `bc1q0aa3k39ww33z24p3wpk72jjn32h2n5rfr85pnx`
+- BTCS: `bs1q8dnz4q52czdusl8hy04fw3jryj2kc3earck3y2`
+- BCH: `qzhpajyfz7yvl8963rre5zqdp72pqy47ysttst0wmr`
 
-Credits
--------
+## Credits
+
 ### SHA256-NOMP
-* [Janos-Raul](https://github.com/janos-raul) - maintainer, fixed payment processing
+
+- [Janos-Raul](https://github.com/janos-raul) - maintainer, fixed payment processing
 
 ### ZNY-NOMP (Original Fork Base)
-* [ROZ](https://github.com/ROZ-MOFUMOFU-ME)
-* [zinntikumugai](https://github.com/zinntikumugai)
+
+- [ROZ](https://github.com/ROZ-MOFUMOFU-ME)
+- [zinntikumugai](https://github.com/zinntikumugai)
 
 ### cryptocurrency-stratum-pool
-* [Invader444](//github.com/Invader444)
+
+- [Invader444](//github.com/Invader444)
 
 ### S-NOMP
-* [egyptianbman](https://github.com/egyptianbman)
-* [nettts](https://github.com/nettts)
-* [potato](https://github.com/zzzpotato)
+
+- [egyptianbman](https://github.com/egyptianbman)
+- [nettts](https://github.com/nettts)
+- [potato](https://github.com/zzzpotato)
 
 ### K-NOMP
-* [yoshuki43](https://github.com/yoshuki43)
+
+- [yoshuki43](https://github.com/yoshuki43)
 
 ### Z-NOMP
-* [Joshua Yabut / movrcx](https://github.com/joshuayabut)
-* [Aayan L / anarch3](https://github.com/aayanl)
-* [hellcatz](https://github.com/hellcatz)
+
+- [Joshua Yabut / movrcx](https://github.com/joshuayabut)
+- [Aayan L / anarch3](https://github.com/aayanl)
+- [hellcatz](https://github.com/hellcatz)
 
 ### NOMP
-* [Matthew Little / zone117x](https://github.com/zone117x) - developer of NOMP
-* [Jerry Brady / mintyfresh68](https://github.com/bluecircle) - got coin-switching fully working and developed proxy-per-algo feature
-* [Tony Dobbs](http://anthonydobbs.com) - designs for front-end and created the NOMP logo
-* [LucasJones](//github.com/LucasJones) - got p2p block notify working and implemented additional hashing algos
-* [vekexasia](//github.com/vekexasia) - co-developer & great tester
-* [TheSeven](//github.com/TheSeven) - answering an absurd amount of my questions and being a very helpful gentleman
-* [UdjinM6](//github.com/UdjinM6) - helped implement fee withdrawal in payment processing
-* [Alex Petrov / sysmanalex](https://github.com/sysmanalex) - contributed the pure C block notify script
-* [svirusxxx](//github.com/svirusxxx) - sponsored development of MPOS mode
-* [icecube45](//github.com/icecube45) - helping out with the repo wiki
-* [Fcases](//github.com/Fcases) - ordered me a pizza <3
-* Those that contributed to [node-stratum-pool](//github.com/zone117x/node-stratum-pool#credits)
 
-License
--------
+- [Matthew Little / zone117x](https://github.com/zone117x) - developer of NOMP
+- [Jerry Brady / mintyfresh68](https://github.com/bluecircle) - got coin-switching fully working and developed proxy-per-algo feature
+- [Tony Dobbs](http://anthonydobbs.com) - designs for front-end and created the NOMP logo
+- [LucasJones](//github.com/LucasJones) - got p2p block notify working and implemented additional hashing algos
+- [vekexasia](//github.com/vekexasia) - co-developer & great tester
+- [TheSeven](//github.com/TheSeven) - answering an absurd amount of my questions and being a very helpful gentleman
+- [UdjinM6](//github.com/UdjinM6) - helped implement fee withdrawal in payment processing
+- [Alex Petrov / sysmanalex](https://github.com/sysmanalex) - contributed the pure C block notify script
+- [svirusxxx](//github.com/svirusxxx) - sponsored development of MPOS mode
+- [icecube45](//github.com/icecube45) - helping out with the repo wiki
+- [Fcases](//github.com/Fcases) - ordered me a pizza <3
+- Those that contributed to [node-stratum-pool](//github.com/zone117x/node-stratum-pool#credits)
+
+## License
+
 Released under the MIT License. See LICENSE file.
