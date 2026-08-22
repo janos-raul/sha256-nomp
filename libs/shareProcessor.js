@@ -10,6 +10,23 @@ module.exports = function (logger, poolConfig) {
   var coin = poolConfig.coin.name;
   var forkId = process.env.forkId;
 
+  function formatCompactNumber(value) {
+    var n = Number(value);
+    if (!isFinite(n)) return String(value);
+
+    var sign = n < 0 ? "-" : "";
+    n = Math.abs(n);
+
+    var units = ["", "K", "M", "G", "T", "P", "E"];
+    var unitIndex = 0;
+    while (n >= 1000 && unitIndex < units.length - 1) {
+      n /= 1000;
+      unitIndex++;
+    }
+
+    return sign + n.toFixed(2) + units[unitIndex];
+  }
+
   var logSystem = "ShareProcessor";
   var logComponent = coin;
   var logSubCat = "Thread " + (parseInt(forkId) + 1);
@@ -33,11 +50,11 @@ module.exports = function (logger, poolConfig) {
     lastReset: Date.now(),
   };
 
-var connection = redis.createClient({
-  host: redisConfig.host,
-  port: redisConfig.port,
-  password: redisConfig.password,
-});
+  var connection = redis.createClient({
+    host: redisConfig.host,
+    port: redisConfig.port,
+    password: redisConfig.password,
+  });
 
   connection.on("ready", function () {
     logger.success(
@@ -47,7 +64,7 @@ var connection = redis.createClient({
       "Share processor connected to Redis at " +
         redisConfig.host +
         ":" +
-        redisConfig.port
+        redisConfig.port,
     );
 
     // Get initial stats from Redis
@@ -60,7 +77,7 @@ var connection = redis.createClient({
       logSystem,
       logComponent,
       logSubCat,
-      "Redis error (#" + perfStats.redisErrors + "): " + JSON.stringify(err)
+      "Redis error (#" + perfStats.redisErrors + "): " + JSON.stringify(err),
     );
   });
 
@@ -69,7 +86,7 @@ var connection = redis.createClient({
       logSystem,
       logComponent,
       logSubCat,
-      "Redis connection lost - shares may not be recorded!"
+      "Redis connection lost - shares may not be recorded!",
     );
   });
 
@@ -78,7 +95,7 @@ var connection = redis.createClient({
       logSystem,
       logComponent,
       logSubCat,
-      "Attempting to reconnect to Redis..."
+      "Attempting to reconnect to Redis...",
     );
   });
 
@@ -89,7 +106,7 @@ var connection = redis.createClient({
         logSystem,
         logComponent,
         logSubCat,
-        "Redis version check failed: " + error.message
+        "Redis version check failed: " + error.message,
       );
       return;
     }
@@ -123,7 +140,7 @@ var connection = redis.createClient({
         logSystem,
         logComponent,
         logSubCat,
-        "Could not detect Redis version - may be incompatible"
+        "Could not detect Redis version - may be incompatible",
       );
     } else if (version < 2.6) {
       logger.error(
@@ -132,7 +149,7 @@ var connection = redis.createClient({
         logSubCat,
         "Redis version " +
           versionString +
-          " detected - minimum required is 2.6!"
+          " detected - minimum required is 2.6!",
       );
     } else {
       logger.info(
@@ -144,7 +161,7 @@ var connection = redis.createClient({
           " - Memory: " +
           memoryUsed +
           ", Clients: " +
-          connectedClients
+          connectedClients,
       );
     }
   });
@@ -180,7 +197,7 @@ var connection = redis.createClient({
               " (pending: " +
               pendingSolo +
               "), Active miners: " +
-              activeMiners
+              activeMiners,
           );
         }
       });
@@ -217,7 +234,7 @@ var connection = redis.createClient({
         ", Block: " +
         isValidBlock +
         ", Diff: " +
-        shareData.difficulty
+        formatCompactNumber(shareData.difficulty),
     );
 
     if (isValidShare) {
@@ -288,7 +305,7 @@ var connection = redis.createClient({
             logSystem,
             logComponent,
             logSubCat,
-            "[SOLO Milestone] " + stats.shares.solo + " solo shares processed"
+            "[SOLO Milestone] " + stats.shares.solo + " solo shares processed",
           );
         }
       } else {
@@ -358,7 +375,7 @@ var connection = redis.createClient({
             logSystem,
             logComponent,
             logSubCat,
-            "[POOL Milestone] " + stats.shares.pool + " pool shares processed"
+            "[POOL Milestone] " + stats.shares.pool + " pool shares processed",
           );
         }
       }
@@ -413,7 +430,7 @@ var connection = redis.createClient({
           logSystem,
           logComponent,
           logSubCat,
-          "[SOLO Invalid] Worker " + workerAddress + " submitted invalid share"
+          "[SOLO Invalid] Worker " + workerAddress + " submitted invalid share",
         );
       } else {
         redisCommands.push([
@@ -436,7 +453,7 @@ var connection = redis.createClient({
           logSystem,
           logComponent,
           logSubCat,
-          "[POOL Invalid] Worker " + workerAddress + " submitted invalid share"
+          "[POOL Invalid] Worker " + workerAddress + " submitted invalid share",
         );
       }
 
@@ -445,7 +462,7 @@ var connection = redis.createClient({
         var totalShares =
           stats.shares.pool + stats.shares.solo + stats.shares.invalid;
         var invalidRate = ((stats.shares.invalid / totalShares) * 100).toFixed(
-          2
+          2,
         );
         if (invalidRate > 5) {
           logger.warning(
@@ -458,7 +475,7 @@ var connection = redis.createClient({
               stats.shares.invalid +
               "/" +
               totalShares +
-              ")"
+              ")",
           );
         }
       }
@@ -487,7 +504,7 @@ var connection = redis.createClient({
             ", Worker: " +
             blockInfo.worker +
             ", Hash: " +
-            blockInfo.hash
+            blockInfo.hash,
         );
 
         // Log to structured data for monitoring
@@ -578,7 +595,7 @@ var connection = redis.createClient({
             ", Worker: " +
             blockInfo.worker +
             ", Hash: " +
-            blockInfo.hash
+            blockInfo.hash,
         );
 
         // Log to structured data
@@ -658,7 +675,7 @@ var connection = redis.createClient({
           logSystem,
           logComponent,
           logSubCat,
-          "Time since last block: " + formatDuration(timeSince * 1000)
+          "Time since last block: " + formatDuration(timeSince * 1000),
         );
       }
       stats.lastBlockTime = dateNow;
@@ -688,7 +705,7 @@ var connection = redis.createClient({
             redisCommands.length +
             ", Process time: " +
             processTime +
-            "ms"
+            "ms",
         );
       } else {
         // Log slow operations
@@ -701,7 +718,7 @@ var connection = redis.createClient({
               processTime +
               "ms for " +
               redisCommands.length +
-              " Redis commands"
+              " Redis commands",
           );
         }
 
@@ -718,7 +735,7 @@ var connection = redis.createClient({
               redisCommands.length +
               " commands, " +
               processTime +
-              "ms)"
+              "ms)",
           );
         }
       }
@@ -741,58 +758,69 @@ var connection = redis.createClient({
   }
 
   // Cleanup inactive workers periodically (every 6 hours)
-  setInterval(function () {
-    var now = Date.now();
-    var inactiveThreshold = 48 * 60 * 60 * 1000; // 48 hours
-    var beforeCount = stats.workers.size;
+  setInterval(
+    function () {
+      var now = Date.now();
+      var inactiveThreshold = 48 * 60 * 60 * 1000; // 48 hours
+      var beforeCount = stats.workers.size;
 
-    // Remove workers inactive for more than 48 hours
-    for (var [workerAddress, lastSeen] of stats.workers) {
-      if (now - lastSeen > inactiveThreshold) {
-        stats.workers.delete(workerAddress);
+      // Remove workers inactive for more than 48 hours
+      for (var [workerAddress, lastSeen] of stats.workers) {
+        if (now - lastSeen > inactiveThreshold) {
+          stats.workers.delete(workerAddress);
+        }
       }
-    }
 
-    var afterCount = stats.workers.size;
-    if (beforeCount > afterCount) {
+      var afterCount = stats.workers.size;
+      if (beforeCount > afterCount) {
+        logger.info(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "Worker cleanup: removed " +
+            (beforeCount - afterCount) +
+            " inactive workers (48h+ idle), " +
+            afterCount +
+            " remain",
+        );
+      }
+    },
+    6 * 60 * 60 * 1000,
+  ); // Every 6 hours
+
+  // Reset performance stats periodically (every 24 hours)
+  setInterval(
+    function () {
+      var timeSinceReset = Date.now() - perfStats.lastReset;
+
       logger.info(
         logSystem,
         logComponent,
         logSubCat,
-        "Worker cleanup: removed " +
-          (beforeCount - afterCount) +
-          " inactive workers (48h+ idle), " +
-          afterCount +
-          " remain"
+        "Performance stats (24h) - Redis writes: " +
+          perfStats.redisWrites +
+          ", Errors: " +
+          perfStats.redisErrors +
+          ", Avg process time: " +
+          perfStats.avgProcessTime.toFixed(2) +
+          "ms",
       );
-    }
-  }, 6 * 60 * 60 * 1000); // Every 6 hours
 
-  // Reset performance stats periodically (every 24 hours)
-  setInterval(function () {
-    var timeSinceReset = Date.now() - perfStats.lastReset;
+      // Reset counters but keep running totals in logs
+      perfStats.redisWrites = 0;
+      perfStats.redisErrors = 0;
+      perfStats.avgProcessTime = 0;
+      perfStats.totalProcessTime = 0;
+      perfStats.processCount = 0;
+      perfStats.lastReset = Date.now();
 
-    logger.info(
-      logSystem,
-      logComponent,
-      logSubCat,
-      "Performance stats (24h) - Redis writes: " +
-        perfStats.redisWrites +
-        ", Errors: " +
-        perfStats.redisErrors +
-        ", Avg process time: " +
-        perfStats.avgProcessTime.toFixed(2) +
-        "ms"
-    );
-
-    // Reset counters but keep running totals in logs
-    perfStats.redisWrites = 0;
-    perfStats.redisErrors = 0;
-    perfStats.avgProcessTime = 0;
-    perfStats.totalProcessTime = 0;
-    perfStats.processCount = 0;
-    perfStats.lastReset = Date.now();
-
-    logger.debug(logSystem, logComponent, logSubCat, "Performance stats reset");
-  }, 24 * 60 * 60 * 1000); // Every 24 hours
+      logger.debug(
+        logSystem,
+        logComponent,
+        logSubCat,
+        "Performance stats reset",
+      );
+    },
+    24 * 60 * 60 * 1000,
+  ); // Every 24 hours
 };

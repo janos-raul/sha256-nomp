@@ -36,7 +36,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     logger.debug(
       logSystem,
       "Request",
-      "Method: " + method + ", IP: " + (req.ip || req.connection.remoteAddress)
+      "Method: " + method + ", IP: " + (req.ip || req.connection.remoteAddress),
     );
 
     switch (method) {
@@ -49,7 +49,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         logger.debug(
           logSystem,
           "Response",
-          "Stats served in " + duration + "ms"
+          "Stats served in " + duration + "ms",
         );
         trackRequest("stats", duration);
         return;
@@ -63,7 +63,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         logger.debug(
           logSystem,
           "Response",
-          "Pool stats served in " + duration + "ms"
+          "Pool stats served in " + duration + "ms",
         );
         trackRequest("pool_stats", duration);
         return;
@@ -111,7 +111,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           logger.debug(
             logSystem,
             "Response",
-            "Blocks data served - " + totalBlocks + " blocks"
+            "Blocks data served - " + totalBlocks + " blocks",
           );
           trackRequest("blocks", duration);
         });
@@ -142,7 +142,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         logger.debug(
           logSystem,
           "Response",
-          "Payments served in " + duration + "ms (" + blockCount + " payments)"
+          "Payments served in " + duration + "ms (" + blockCount + " payments)",
         );
         trackRequest("payments", duration);
         return;
@@ -175,7 +175,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           logger.info(
             logSystem,
             "WorkerStats",
-            "Stats requested for address: " + address
+            "Stats requested for address: " + address,
           );
 
           // make sure it is just the miners address
@@ -303,7 +303,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   paid: balances.totalPaid,
                   workers: workers,
                   history: history,
-                })
+                }),
               );
 
               // Log completion
@@ -322,8 +322,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   soloWorkerCount +
                   " solo, " +
                   "Hashrate: " +
-                  (totalHash / 1000000).toFixed(2) +
-                  " MH/s"
+                  portalStats.getReadableHashRateString(totalHash),
               );
               trackRequest("worker_stats", duration);
             });
@@ -333,10 +332,10 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           logger.warning(
             logSystem,
             "WorkerStats",
-            "Invalid or missing address parameter"
+            "Invalid or missing address parameter",
           );
           res.end(
-            JSON.stringify({ result: "error", message: "Invalid address" })
+            JSON.stringify({ result: "error", message: "Invalid address" }),
           );
           trackRequest("worker_stats", Date.now() - requestStart, true);
         }
@@ -352,7 +351,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         });
 
         // Send initial comment to establish connection
-        //res.write('***sha256-mining.go.ro***\n*******mining pool*******\n       live stats\n\n');
+        res.write('***sha256-mining.go.ro***\n*******mining pool*******\n       live stats\n\n');
 
         var uid = Math.random().toString();
         _this.liveStatConnections[uid] = res;
@@ -367,7 +366,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             (req.ip || req.connection.remoteAddress) +
             " (Total connections: " +
             Object.keys(_this.liveStatConnections).length +
-            ")"
+            ")",
         );
 
         // Send initial stats if available
@@ -391,7 +390,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               uid +
               " (Remaining: " +
               Object.keys(_this.liveStatConnections).length +
-              ")"
+              ")",
           );
         });
 
@@ -415,7 +414,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.error(
                 logSystem,
                 "Response",
-                "Failed to read pool message: " + err
+                "Failed to read pool message: " + err,
               );
               res.end(JSON.stringify({ result: null }));
             }
@@ -436,7 +435,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             logger.error(
               logSystem,
               "Response",
-              "Failed to parse pool message: " + parseErr
+              "Failed to parse pool message: " + parseErr,
             );
             res.end(JSON.stringify({ result: null }));
             trackRequest("pool_message", Date.now() - requestStart, true);
@@ -463,7 +462,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
       "Admin API request: " +
         method +
         " from " +
-        (req.ip || req.connection.remoteAddress)
+        (req.ip || req.connection.remoteAddress),
     );
 
     switch (method) {
@@ -515,7 +514,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         logger.info(
           logSystem,
           "Admin",
-          "Enhanced pool data served in " + duration + "ms"
+          "Enhanced pool data served in " + duration + "ms",
         );
         trackRequest("admin_pools", duration);
         return;
@@ -541,7 +540,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               status: "operational",
               requests: Object.values(apiStats.requests).reduce(
                 (a, b) => a + b,
-                0
+                0,
               ),
               errors: apiStats.errors,
               errorRate: 0,
@@ -644,7 +643,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         // Calculate API error rate
         var totalRequests = Object.values(apiStats.requests).reduce(
           (a, b) => a + b,
-          0
+          0,
         );
         if (totalRequests > 0) {
           overviewData.systemHealth.api.errorRate = (
@@ -657,7 +656,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         if (apiStats.lastHour.length > 0) {
           overviewData.systemHealth.api.avgResponseTime = Math.round(
             apiStats.lastHour.reduce((sum, r) => sum + r.duration, 0) /
-              apiStats.lastHour.length
+              apiStats.lastHour.length,
           );
         }
 
@@ -716,7 +715,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
           // Recent connections (from live stats connections)
           overviewData.recentActivity.connections = Object.keys(
-            _this.liveStatConnections
+            _this.liveStatConnections,
           ).length;
 
           res.end(JSON.stringify({ result: overviewData }));
@@ -726,7 +725,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           logger.info(
             logSystem,
             "Admin",
-            "Overview data served in " + duration + "ms"
+            "Overview data served in " + duration + "ms",
           );
           trackRequest("admin_overview", duration);
         });
@@ -750,7 +749,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.warning(
                 logSystem,
                 "Admin",
-                "Failed to read config.json, using cached values: " + err
+                "Failed to read config.json, using cached values: " + err,
               );
               currentConfig = portalConfig;
             } else {
@@ -761,7 +760,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   logSystem,
                   "Admin",
                   "Failed to parse config.json, using cached values: " +
-                    parseErr
+                    parseErr,
                 );
                 currentConfig = portalConfig;
               }
@@ -809,7 +808,9 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             logger.info(
               logSystem,
               "Admin",
-              "Settings configs served in " + (Date.now() - requestStart) + "ms"
+              "Settings configs served in " +
+                (Date.now() - requestStart) +
+                "ms",
             );
             trackRequest("admin_settings_get", Date.now() - requestStart);
           });
@@ -823,7 +824,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             trackRequest(
               "admin_settings_update",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -834,7 +835,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             trackRequest(
               "admin_settings_update",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -843,7 +844,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           var updatedConfig = Object.assign(
             {},
             poolConfigs[poolName],
-            newConfig
+            newConfig,
           );
 
           // Validate critical fields
@@ -851,23 +852,23 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             var pp = updatedConfig.paymentProcessing;
             if (pp.poolFee < 0 || pp.poolFee > 100) {
               res.end(
-                JSON.stringify({ error: "Pool fee must be between 0 and 100" })
+                JSON.stringify({ error: "Pool fee must be between 0 and 100" }),
               );
               trackRequest(
                 "admin_settings_update",
                 Date.now() - requestStart,
-                true
+                true,
               );
               return;
             }
             if (pp.soloFee < 0 || pp.soloFee > 100) {
               res.end(
-                JSON.stringify({ error: "Solo fee must be between 0 and 100" })
+                JSON.stringify({ error: "Solo fee must be between 0 and 100" }),
               );
               trackRequest(
                 "admin_settings_update",
                 Date.now() - requestStart,
-                true
+                true,
               );
               return;
             }
@@ -875,12 +876,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               res.end(
                 JSON.stringify({
                   error: "Minimum payment must be greater than 0",
-                })
+                }),
               );
               trackRequest(
                 "admin_settings_update",
                 Date.now() - requestStart,
-                true
+                true,
               );
               return;
             }
@@ -891,7 +892,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             __dirname,
             "..",
             "pool_configs",
-            poolName + ".json"
+            poolName + ".json",
           );
           var backupDir = path.join(__dirname, "..", "pool_configs", "backups");
 
@@ -908,7 +909,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             .split(".")[0];
           var backupPath = path.join(
             backupDir,
-            poolName + ".json." + timestamp
+            poolName + ".json." + timestamp,
           );
 
           // Read current config and create backup
@@ -919,7 +920,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   logger.error(
                     logSystem,
                     "Admin",
-                    "Failed to create backup: " + backupErr
+                    "Failed to create backup: " + backupErr,
                   );
                 }
               });
@@ -934,15 +935,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   logger.error(
                     logSystem,
                     "Admin",
-                    "Failed to write config: " + writeErr
+                    "Failed to write config: " + writeErr,
                   );
                   res.end(
-                    JSON.stringify({ error: "Failed to save configuration" })
+                    JSON.stringify({ error: "Failed to save configuration" }),
                   );
                   trackRequest(
                     "admin_settings_update",
                     Date.now() - requestStart,
-                    true
+                    true,
                   );
                   return;
                 }
@@ -956,7 +957,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   "Configuration updated for pool: " +
                     poolName +
                     " by " +
-                    (req.ip || req.connection.remoteAddress)
+                    (req.ip || req.connection.remoteAddress),
                 );
 
                 res.end(
@@ -965,14 +966,14 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     message:
                       "Configuration updated successfully. Restart required to apply changes.",
                     restartRequired: true,
-                  })
+                  }),
                 );
 
                 trackRequest(
                   "admin_settings_update",
-                  Date.now() - requestStart
+                  Date.now() - requestStart,
                 );
-              }
+              },
             );
           });
           return;
@@ -984,7 +985,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             trackRequest(
               "admin_settings_restart",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -994,20 +995,20 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             logSystem,
             "Admin",
             "!!! POOL RESTART INITIATED by " +
-              (req.ip || req.connection.remoteAddress)
+              (req.ip || req.connection.remoteAddress),
           );
           logger.warning(
             logSystem,
             "Admin",
             "Active miners at restart: " +
-              (portalStats.stats.global ? portalStats.stats.global.miners : 0)
+              (portalStats.stats.global ? portalStats.stats.global.miners : 0),
           );
           logger.warning(
             logSystem,
             "Admin",
             "Active pools: " +
               Object.keys(poolConfigs).filter((p) => poolConfigs[p].enabled)
-                .length
+                .length,
           );
 
           // Send response before restart
@@ -1016,7 +1017,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               result: "success",
               message:
                 "Pool restart initiated. System will be back online shortly.",
-            })
+            }),
           );
 
           // Delay restart to allow response to be sent
@@ -1028,7 +1029,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.info(
                 logSystem,
                 "Admin",
-                "PM2 detected - using process.exit(0) for graceful restart"
+                "PM2 detected - using process.exit(0) for graceful restart",
               );
               process.exit(0);
             }
@@ -1037,7 +1038,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.info(
                 logSystem,
                 "Admin",
-                "systemd detected - using process.exit(0) for graceful restart"
+                "systemd detected - using process.exit(0) for graceful restart",
               );
               process.exit(0);
             }
@@ -1046,12 +1047,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.warning(
                 logSystem,
                 "Admin",
-                "No process manager detected! Manual restart may be required."
+                "No process manager detected! Manual restart may be required.",
               );
               logger.warning(
                 logSystem,
                 "Admin",
-                "Attempting restart with process.exit(0)..."
+                "Attempting restart with process.exit(0)...",
               );
               process.exit(0);
             }
@@ -1073,12 +1074,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             res.end(
               JSON.stringify({
                 error: "Update interval must be between 10 and 300 seconds",
-              })
+              }),
             );
             trackRequest(
               "admin_settings_website",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -1091,12 +1092,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               JSON.stringify({
                 error:
                   "Historical retention must be between 3600 and 86400 seconds",
-              })
+              }),
             );
             trackRequest(
               "admin_settings_website",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -1108,12 +1109,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             res.end(
               JSON.stringify({
                 error: "Hashrate window must be between 60 and 1800 seconds",
-              })
+              }),
             );
             trackRequest(
               "admin_settings_website",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -1126,15 +1127,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.error(
                 logSystem,
                 "Admin",
-                "Failed to read config.json: " + err
+                "Failed to read config.json: " + err,
               );
               res.end(
-                JSON.stringify({ error: "Failed to read configuration file" })
+                JSON.stringify({ error: "Failed to read configuration file" }),
               );
               trackRequest(
                 "admin_settings_website",
                 Date.now() - requestStart,
-                true
+                true,
               );
               return;
             }
@@ -1146,15 +1147,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.error(
                 logSystem,
                 "Admin",
-                "Failed to parse config.json: " + parseErr
+                "Failed to parse config.json: " + parseErr,
               );
               res.end(
-                JSON.stringify({ error: "Failed to parse configuration file" })
+                JSON.stringify({ error: "Failed to parse configuration file" }),
               );
               trackRequest(
                 "admin_settings_website",
                 Date.now() - requestStart,
-                true
+                true,
               );
               return;
             }
@@ -1186,7 +1187,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 logger.warning(
                   logSystem,
                   "Admin",
-                  "Failed to create config backup: " + backupErr
+                  "Failed to create config backup: " + backupErr,
                 );
               }
 
@@ -1199,15 +1200,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     logger.error(
                       logSystem,
                       "Admin",
-                      "Failed to write config.json: " + writeErr
+                      "Failed to write config.json: " + writeErr,
                     );
                     res.end(
-                      JSON.stringify({ error: "Failed to save configuration" })
+                      JSON.stringify({ error: "Failed to save configuration" }),
                     );
                     trackRequest(
                       "admin_settings_website",
                       Date.now() - requestStart,
-                      true
+                      true,
                     );
                     return;
                   }
@@ -1222,7 +1223,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                       ", historicalRetention: " +
                       historicalRetention +
                       ", hashrateWindow: " +
-                      hashrateWindow
+                      hashrateWindow,
                   );
 
                   res.end(
@@ -1231,14 +1232,14 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                       message:
                         "Website configuration updated successfully. Restart required to apply changes.",
                       restartRequired: true,
-                    })
+                    }),
                   );
 
                   trackRequest(
                     "admin_settings_website",
-                    Date.now() - requestStart
+                    Date.now() - requestStart,
                   );
-                }
+                },
               );
             });
           });
@@ -1264,10 +1265,10 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.error(
                 logSystem,
                 "Admin",
-                "Failed to read logs directory: " + err
+                "Failed to read logs directory: " + err,
               );
               res.end(
-                JSON.stringify({ error: "Failed to read logs directory" })
+                JSON.stringify({ error: "Failed to read logs directory" }),
               );
               trackRequest("admin_logs", Date.now() - requestStart, true);
               return;
@@ -1300,7 +1301,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     logger.info(
                       logSystem,
                       "Admin",
-                      "Log files list served in " + duration + "ms"
+                      "Log files list served in " + duration + "ms",
                     );
                     trackRequest("admin_logs_list", duration);
                   }
@@ -1329,7 +1330,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           fs.realpath(filePath, function (err, resolvedPath) {
             if (err || !resolvedPath.startsWith(logsDir)) {
               res.end(
-                JSON.stringify({ error: "File not found or access denied" })
+                JSON.stringify({ error: "File not found or access denied" }),
               );
               trackRequest("admin_logs_read", Date.now() - requestStart, true);
               return;
@@ -1341,13 +1342,13 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 logger.error(
                   logSystem,
                   "Admin",
-                  "Failed to read log file: " + err
+                  "Failed to read log file: " + err,
                 );
                 res.end(JSON.stringify({ error: "Failed to read log file" }));
                 trackRequest(
                   "admin_logs_read",
                   Date.now() - requestStart,
-                  true
+                  true,
                 );
                 return;
               }
@@ -1362,7 +1363,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     lines: lastLines,
                     totalLines: allLines.length,
                   },
-                })
+                }),
               );
 
               var duration = Date.now() - requestStart;
@@ -1375,7 +1376,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   lastLines.length +
                   " lines) in " +
                   duration +
-                  "ms"
+                  "ms",
               );
               trackRequest("admin_logs_read", duration);
             });
@@ -1404,21 +1405,21 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 logger.debug(
                   logSystem,
                   "Admin",
-                  "Pool message file not found - no message set"
+                  "Pool message file not found - no message set",
                 );
               } else {
                 logger.error(
                   logSystem,
                   "Admin",
-                  "Failed to read pool message: " + err
+                  "Failed to read pool message: " + err,
                 );
                 res.end(
-                  JSON.stringify({ error: "Failed to read pool message" })
+                  JSON.stringify({ error: "Failed to read pool message" }),
                 );
                 trackRequest(
                   "admin_pool_message_get",
                   Date.now() - requestStart,
-                  true
+                  true,
                 );
               }
               return;
@@ -1433,15 +1434,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.error(
                 logSystem,
                 "Admin",
-                "Failed to parse pool message: " + parseErr
+                "Failed to parse pool message: " + parseErr,
               );
               res.end(
-                JSON.stringify({ error: "Failed to parse pool message" })
+                JSON.stringify({ error: "Failed to parse pool message" }),
               );
               trackRequest(
                 "admin_pool_message_get",
                 Date.now() - requestStart,
-                true
+                true,
               );
             }
           });
@@ -1458,7 +1459,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             trackRequest(
               "admin_pool_message_set",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -1467,12 +1468,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             res.end(
               JSON.stringify({
                 error: "Message text must be 500 characters or less",
-              })
+              }),
             );
             trackRequest(
               "admin_pool_message_set",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -1482,12 +1483,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             res.end(
               JSON.stringify({
                 error: "Invalid color. Must be blue, green, yellow, or red",
-              })
+              }),
             );
             trackRequest(
               "admin_pool_message_set",
               Date.now() - requestStart,
-              true
+              true,
             );
             return;
           }
@@ -1528,15 +1529,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   logger.error(
                     logSystem,
                     "Admin",
-                    "Failed to save pool message: " + writeErr
+                    "Failed to save pool message: " + writeErr,
                   );
                   res.end(
-                    JSON.stringify({ error: "Failed to save pool message" })
+                    JSON.stringify({ error: "Failed to save pool message" }),
                   );
                   trackRequest(
                     "admin_pool_message_set",
                     Date.now() - requestStart,
-                    true
+                    true,
                   );
                   return;
                 }
@@ -1553,21 +1554,21 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     ", Color: " +
                     color +
                     ", Enabled: " +
-                    enabled
+                    enabled,
                 );
 
                 res.end(
                   JSON.stringify({
                     result: "success",
                     message: "Pool message saved successfully",
-                  })
+                  }),
                 );
 
                 trackRequest(
                   "admin_pool_message_set",
-                  Date.now() - requestStart
+                  Date.now() - requestStart,
                 );
-              }
+              },
             );
           });
           return;
@@ -1578,15 +1579,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.error(
                 logSystem,
                 "Admin",
-                "Failed to delete pool message: " + err
+                "Failed to delete pool message: " + err,
               );
               res.end(
-                JSON.stringify({ error: "Failed to delete pool message" })
+                JSON.stringify({ error: "Failed to delete pool message" }),
               );
               trackRequest(
                 "admin_pool_message_delete",
                 Date.now() - requestStart,
-                true
+                true,
               );
               return;
             }
@@ -1595,19 +1596,19 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logSystem,
               "Admin",
               "Pool message deleted by " +
-                (req.ip || req.connection.remoteAddress)
+                (req.ip || req.connection.remoteAddress),
             );
 
             res.end(
               JSON.stringify({
                 result: "success",
                 message: "Pool message cleared successfully",
-              })
+              }),
             );
 
             trackRequest(
               "admin_pool_message_delete",
-              Date.now() - requestStart
+              Date.now() - requestStart,
             );
           });
           return;
@@ -1629,7 +1630,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     if (Object.keys(apiStats.requests).length > 0) {
       var totalRequests = Object.values(apiStats.requests).reduce(
         (a, b) => a + b,
-        0
+        0,
       );
       var topMethods = Object.entries(apiStats.requests)
         .sort((a, b) => b[1] - a[1])
@@ -1656,7 +1657,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           avgResponseTime.toFixed(0) +
           "ms" +
           ", Live connections: " +
-          Object.keys(_this.liveStatConnections).length
+          Object.keys(_this.liveStatConnections).length,
       );
     }
   }, 300000); // Every 5 minutes

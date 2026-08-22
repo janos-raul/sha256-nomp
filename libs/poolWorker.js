@@ -6,6 +6,23 @@ var ShareProcessor = require("./shareProcessor.js");
 module.exports = function (logger) {
   var _this = this;
 
+  function formatCompactNumber(value) {
+    var n = Number(value);
+    if (!isFinite(n)) return String(value);
+
+    var sign = n < 0 ? "-" : "";
+    n = Math.abs(n);
+
+    var units = ["", "K", "M", "G", "T", "P", "E"];
+    var unitIndex = 0;
+    while (n >= 1000 && unitIndex < units.length - 1) {
+      n /= 1000;
+      unitIndex++;
+    }
+
+    return sign + n.toFixed(2) + units[unitIndex];
+  }
+
   var poolConfigs = JSON.parse(process.env.pools);
   var portalConfig = JSON.parse(process.env.portalConfig);
 
@@ -629,7 +646,10 @@ module.exports = function (logger) {
             logSystem,
             logComponent,
             logSubCat,
-            "[HIGH DIFF SHARE] Diff: " + data.shareDiff + " by " + data.worker,
+            "[HIGH DIFF SHARE] Diff: " +
+              formatCompactNumber(data.shareDiff) +
+              " by " +
+              data.worker,
           );
         }
 
@@ -643,9 +663,9 @@ module.exports = function (logger) {
             " Share] Accepted - Worker: " +
             data.worker +
             ", Diff: " +
-            data.difficulty +
+            formatCompactNumber(data.difficulty) +
             "/" +
-            data.shareDiff +
+            formatCompactNumber(data.shareDiff) +
             ", Time: " +
             shareTime +
             "ms",
