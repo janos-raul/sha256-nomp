@@ -18,13 +18,13 @@ JSON.minify = JSON.minify || require("node-json-minify");
 
 if (!fs.existsSync("config.json")) {
   console.log(
-    "config.json file does not exist. Read the installation/setup instructions."
+    "config.json file does not exist. Read the installation/setup instructions.",
   );
   process.exit(0);
 }
 
 var portalConfig = JSON.parse(
-  JSON.minify(fs.readFileSync("config.json", { encoding: "utf8" }))
+  JSON.minify(fs.readFileSync("config.json", { encoding: "utf8" })),
 );
 var poolConfigs;
 
@@ -44,7 +44,7 @@ logger.info("Master", "Platform", "OS: " + os.platform() + " " + os.release());
 logger.info(
   "Master",
   "Memory",
-  "Total: " + (os.totalmem() / 1024 / 1024 / 1024).toFixed(2) + " GB"
+  "Total: " + (os.totalmem() / 1024 / 1024 / 1024).toFixed(2) + " GB",
 );
 logger.info("Master", "CPUs", "Available: " + os.cpus().length);
 
@@ -54,7 +54,7 @@ try {
     logger.success(
       "NewRelic",
       "Monitor",
-      "New Relic monitoring initiated successfully"
+      "New Relic monitoring initiated successfully",
     );
   }
 } catch (e) {
@@ -69,14 +69,14 @@ try {
     logger.success(
       "POSIX",
       "Limits",
-      "File descriptor limit raised to 100,000"
+      "File descriptor limit raised to 100,000",
     );
   } catch (e) {
     if (cluster.isMaster)
       logger.warning(
         "POSIX",
         "Connection Limit",
-        "(Safe to ignore) Must be ran as root to increase resource limits"
+        "(Safe to ignore) Must be ran as root to increase resource limits",
       );
   } finally {
     // Find out which user used sudo through the environment variable
@@ -88,7 +88,7 @@ try {
         "POSIX",
         "Connection Limit",
         "Raised to 100K concurrent connections, now running as non-root user: " +
-          process.getuid()
+          process.getuid(),
       );
     }
   }
@@ -97,7 +97,7 @@ try {
     logger.debug(
       "POSIX",
       "Connection Limit",
-      "(Safe to ignore) POSIX module not installed and resource (connection) limit was not raised"
+      "(Safe to ignore) POSIX module not installed and resource (connection) limit was not raised",
     );
 }
 
@@ -106,7 +106,7 @@ if (cluster.isWorker) {
   logger.info(
     "Worker",
     workerType,
-    "Worker process started with PID: " + process.pid
+    "Worker process started with PID: " + process.pid,
   );
 
   switch (workerType) {
@@ -141,13 +141,13 @@ var buildPoolConfigs = function () {
 
     try {
       var poolOptions = JSON.parse(
-        JSON.minify(fs.readFileSync(configDir + file, { encoding: "utf8" }))
+        JSON.minify(fs.readFileSync(configDir + file, { encoding: "utf8" })),
       );
       if (!poolOptions.enabled) {
         logger.debug(
           "Master",
           "Config",
-          "Pool config " + file + " exists but is disabled"
+          "Pool config " + file + " exists but is disabled",
         );
         return;
       }
@@ -158,7 +158,7 @@ var buildPoolConfigs = function () {
       logger.error(
         "Master",
         "Config",
-        "Error parsing pool config " + file + ": " + e.message
+        "Error parsing pool config " + file + ": " + e.message,
       );
     }
   });
@@ -166,7 +166,7 @@ var buildPoolConfigs = function () {
   logger.info(
     "Master",
     "Config",
-    "Found " + poolConfigFiles.length + " enabled pool configs"
+    "Found " + poolConfigFiles.length + " enabled pool configs",
   );
 
   /* Ensure no pool uses any of the same ports as another pool */
@@ -183,7 +183,7 @@ var buildPoolConfigs = function () {
             "Has same configured port of " +
               portsF[g] +
               " as " +
-              poolConfigFiles[i].fileName
+              poolConfigFiles[i].fileName,
           );
           process.exit(1);
           return;
@@ -198,7 +198,7 @@ var buildPoolConfigs = function () {
             poolConfigFiles[f].coin +
             " as " +
             poolConfigFiles[i].fileName +
-            " pool"
+            " pool",
         );
         process.exit(1);
         return;
@@ -214,14 +214,14 @@ var buildPoolConfigs = function () {
       logger.error(
         "Master",
         poolOptions.coinFileName,
-        "could not find file: " + coinFilePath
+        "could not find file: " + coinFilePath,
       );
       return;
     }
 
     try {
       var coinProfile = JSON.parse(
-        JSON.minify(fs.readFileSync(coinFilePath, { encoding: "utf8" }))
+        JSON.minify(fs.readFileSync(coinFilePath, { encoding: "utf8" })),
       );
       poolOptions.coin = coinProfile;
       poolOptions.coin.name = poolOptions.coin.name.toLowerCase();
@@ -230,20 +230,20 @@ var buildPoolConfigs = function () {
       if (coinProfile.mainnet) {
         poolOptions.coin.mainnet.bip32.public = Buffer.from(
           coinProfile.mainnet.bip32.public,
-          "hex"
+          "hex",
         ).readUInt32LE(0);
         poolOptions.coin.mainnet.pubKeyHash = Buffer.from(
           coinProfile.mainnet.pubKeyHash,
-          "hex"
+          "hex",
         ).readUInt8(0);
         poolOptions.coin.mainnet.scriptHash = Buffer.from(
           coinProfile.mainnet.scriptHash,
-          "hex"
+          "hex",
         ).readUInt8(0);
         logger.debug(
           "Master",
           poolOptions.coin.name,
-          "Mainnet configuration processed"
+          "Mainnet configuration processed",
         );
       }
 
@@ -251,20 +251,20 @@ var buildPoolConfigs = function () {
       if (coinProfile.testnet) {
         poolOptions.coin.testnet.bip32.public = Buffer.from(
           coinProfile.testnet.bip32.public,
-          "hex"
+          "hex",
         ).readUInt32LE(0);
         poolOptions.coin.testnet.pubKeyHash = Buffer.from(
           coinProfile.testnet.pubKeyHash,
-          "hex"
+          "hex",
         ).readUInt8(0);
         poolOptions.coin.testnet.scriptHash = Buffer.from(
           coinProfile.testnet.scriptHash,
-          "hex"
+          "hex",
         ).readUInt8(0);
         logger.debug(
           "Master",
           poolOptions.coin.name,
-          "Testnet configuration processed"
+          "Testnet configuration processed",
         );
       }
 
@@ -279,7 +279,7 @@ var buildPoolConfigs = function () {
             " as coins/" +
             configs[poolOptions.coin.name].coinFileName +
             " used by pool config " +
-            configs[poolOptions.coin.name].fileName
+            configs[poolOptions.coin.name].fileName,
         );
         process.exit(1);
         return;
@@ -297,7 +297,7 @@ var buildPoolConfigs = function () {
           logger.debug(
             "Master",
             poolOptions.coin.name,
-            "Applied default config for: " + option
+            "Applied default config for: " + option,
           );
         }
       }
@@ -312,7 +312,7 @@ var buildPoolConfigs = function () {
         "Pool configured - Algorithm: " +
           coinProfile.algorithm +
           ", Block Identifier: " +
-          poolOptions.blockIdentifier
+          poolOptions.blockIdentifier,
       );
 
       configs[poolOptions.coin.name] = poolOptions;
@@ -323,21 +323,21 @@ var buildPoolConfigs = function () {
           coinProfile.name,
           'Cannot run a pool for unsupported algorithm "' +
             coinProfile.algorithm +
-            '"'
+            '"',
         );
         delete configs[poolOptions.coin.name];
       } else {
         logger.success(
           "Master",
           coinProfile.name,
-          "Pool configuration complete"
+          "Pool configuration complete",
         );
       }
     } catch (e) {
       logger.error(
         "Master",
         "Config",
-        "Error processing coin profile " + coinFilePath + ": " + e.message
+        "Error processing coin profile " + coinFilePath + ": " + e.message,
       );
     }
   });
@@ -345,7 +345,7 @@ var buildPoolConfigs = function () {
   logger.info(
     "Master",
     "Config",
-    "Successfully configured " + Object.keys(configs).length + " pool(s)"
+    "Successfully configured " + Object.keys(configs).length + " pool(s)",
   );
   return configs;
 };
@@ -375,18 +375,23 @@ var spawnPoolWorkers = function () {
       logger.error(
         "Master",
         coin,
-        "No daemons configured so a pool cannot be started for this coin."
+        "No daemons configured so a pool cannot be started for this coin.",
       );
       delete poolConfigs[coin];
     } else if (!connection) {
       redisConfig = pcfg.redis;
-      connection = redis.createClient(redisConfig.port, redisConfig.host);
+
+      connection = redis.createClient({
+        host: redisConfig.host,
+        port: redisConfig.port,
+        password: redisConfig.password,
+      });
 
       connection.on("ready", function () {
         logger.success(
           "Redis",
           coin,
-          "Connected to Redis at " + redisConfig.host + ":" + redisConfig.port
+          "Connected to Redis at " + redisConfig.host + ":" + redisConfig.port,
         );
       });
 
@@ -404,7 +409,7 @@ var spawnPoolWorkers = function () {
     logger.warning(
       "Master",
       "PoolSpawner",
-      "No pool configs exists or are enabled in pool_configs folder. No pools spawned."
+      "No pool configs exists or are enabled in pool_configs folder. No pools spawned.",
     );
     process.exit(0);
   }
@@ -416,7 +421,7 @@ var spawnPoolWorkers = function () {
       logger.info(
         "Master",
         "Clustering",
-        "Clustering disabled, using single process"
+        "Clustering disabled, using single process",
       );
       return 1;
     }
@@ -425,7 +430,7 @@ var spawnPoolWorkers = function () {
       logger.info(
         "Master",
         "Clustering",
-        "Auto-clustering enabled, using " + cpuCount + " processes"
+        "Auto-clustering enabled, using " + cpuCount + " processes",
       );
       return cpuCount;
     }
@@ -436,7 +441,7 @@ var spawnPoolWorkers = function () {
       logger.warning(
         "Master",
         "Clustering",
-        "Invalid fork count specified, defaulting to 1"
+        "Invalid fork count specified, defaulting to 1",
       );
       return 1;
     }
@@ -445,7 +450,7 @@ var spawnPoolWorkers = function () {
       "Clustering",
       "Manual clustering enabled, using " +
         portalConfig.clustering.forks +
-        " processes"
+        " processes",
     );
     return portalConfig.clustering.forks;
   })();
@@ -456,7 +461,7 @@ var spawnPoolWorkers = function () {
     logger.debug(
       "Master",
       "PoolSpawner",
-      "Creating pool worker fork " + forkId
+      "Creating pool worker fork " + forkId,
     );
 
     var worker = cluster.fork({
@@ -473,7 +478,7 @@ var spawnPoolWorkers = function () {
     logger.success(
       "Master",
       "PoolSpawner",
-      "Pool worker " + forkId + " created with PID " + worker.process.pid
+      "Pool worker " + forkId + " created with PID " + worker.process.pid,
     );
 
     worker
@@ -487,7 +492,7 @@ var spawnPoolWorkers = function () {
             code +
             ", signal: " +
             signal +
-            "), spawning replacement worker..."
+            "), spawning replacement worker...",
         );
         setTimeout(function () {
           createPoolWorker(forkId);
@@ -499,7 +504,7 @@ var spawnPoolWorkers = function () {
             logger.warning(
               "Security",
               "Ban",
-              "Banning IP across all workers: " + msg.ip
+              "Banning IP across all workers: " + msg.ip,
             );
             Object.keys(cluster.workers).forEach(function (id) {
               if (cluster.workers[id].type === "pool") {
@@ -548,7 +553,7 @@ var spawnPoolWorkers = function () {
                       workerAddress +
                       " (worker: " +
                       workerName +
-                      ")"
+                      ")",
                   );
                 }
 
@@ -564,7 +569,7 @@ var spawnPoolWorkers = function () {
                 var redisCommands = [];
                 var timeChangeSec = roundTo(
                   Math.max(now - lastShareTime, 0) / 1000,
-                  4
+                  4,
                 );
 
                 if (timeChangeSec < 900) {
@@ -581,7 +586,7 @@ var spawnPoolWorkers = function () {
                         modeLabel,
                         msg.coin,
                         "Redis error updating time shares: " +
-                          JSON.stringify(err)
+                          JSON.stringify(err),
                       );
                     } else {
                       logger.debug(
@@ -591,7 +596,7 @@ var spawnPoolWorkers = function () {
                           workerAddress +
                           ": +" +
                           timeChangeSec +
-                          "s"
+                          "s",
                       );
                     }
                   });
@@ -604,7 +609,7 @@ var spawnPoolWorkers = function () {
                     "Miner rejoined after " +
                       timeChangeSec +
                       "s: " +
-                      workerAddress
+                      workerAddress,
                   );
                 }
 
@@ -616,7 +621,7 @@ var spawnPoolWorkers = function () {
                 logger.success(
                   modeLabel,
                   msg.coin,
-                  "Block found! Resetting PPLNT shares for next round"
+                  "Block found! Resetting PPLNT shares for next round",
                 );
                 _lastShareTimes[msg.coin] = {};
                 _lastStartTimes[msg.coin] = {};
@@ -638,7 +643,7 @@ var spawnPoolWorkers = function () {
                       workerAddress +
                       " (worker: " +
                       workerName +
-                      ")"
+                      ")",
                   );
                   _lastShareTimes[msg.coin][workerAddress] = Date.now();
                 }
@@ -646,14 +651,14 @@ var spawnPoolWorkers = function () {
 
               if (msg.isValidBlock) {
                 var minerCount = Object.keys(
-                  _lastShareTimes[msg.coin] || {}
+                  _lastShareTimes[msg.coin] || {},
                 ).length;
                 logger.success(
                   "PROP",
                   msg.coin,
                   "Block found! Round had " +
                     minerCount +
-                    " miners. Resetting for next round"
+                    " miners. Resetting for next round",
                 );
                 _lastShareTimes[msg.coin] = {};
               }
@@ -692,7 +697,7 @@ var spawnPoolWorkers = function () {
           Object.keys(poolConfigs).length +
           " pool(s) on " +
           numForks +
-          " thread(s)"
+          " thread(s)",
       );
     }
   }, 250);
@@ -715,7 +720,7 @@ var startCliListener = function () {
         "Received command: " +
           command +
           " with params: " +
-          JSON.stringify(params)
+          JSON.stringify(params),
       );
 
       switch (command) {
@@ -730,13 +735,12 @@ var startCliListener = function () {
           logger.info(
             "Master",
             "CLI",
-            "Block notification sent for " + params[0] + " - hash: " + params[1]
+            "Block notification sent for " +
+              params[0] +
+              " - hash: " +
+              params[1],
           );
           reply("Pool workers notified");
-          break;
-
-        case "coinswitch":
-          processCoinSwitchCommand(params, options, reply);
           break;
 
         case "reloadpool":
@@ -746,7 +750,7 @@ var startCliListener = function () {
           logger.info(
             "Master",
             "CLI",
-            "Pool reload requested for " + params[0]
+            "Pool reload requested for " + params[0],
           );
           reply("reloaded pool " + params[0]);
           break;
@@ -767,106 +771,8 @@ var startCliListener = function () {
   logger.success(
     "Master",
     "CLI",
-    "CLI listener started successfully on port " + cliPort
+    "CLI listener started successfully on port " + cliPort,
   );
-};
-
-var processCoinSwitchCommand = function (params, options, reply) {
-  var logSystem = "CLI";
-  var logComponent = "coinswitch";
-
-  var replyError = function (msg) {
-    reply(msg);
-    logger.error(logSystem, logComponent, msg);
-  };
-
-  if (!params[0]) {
-    replyError("Coin name required");
-    return;
-  }
-
-  if (!params[1] && !options.algorithm) {
-    replyError(
-      "If switch key is not provided then algorithm options must be specified"
-    );
-    return;
-  } else if (params[1] && !portalConfig.switching[params[1]]) {
-    replyError("Switch key not recognized: " + params[1]);
-    return;
-  } else if (
-    options.algorithm &&
-    !Object.keys(portalConfig.switching).filter(function (s) {
-      return portalConfig.switching[s].algorithm === options.algorithm;
-    })[0]
-  ) {
-    replyError(
-      "No switching options contain the algorithm " + options.algorithm
-    );
-    return;
-  }
-
-  var messageCoin = params[0].toLowerCase();
-  var newCoin = Object.keys(poolConfigs).filter(function (p) {
-    return p.toLowerCase() === messageCoin;
-  })[0];
-
-  if (!newCoin) {
-    replyError("Switch message to coin that is not recognized: " + messageCoin);
-    return;
-  }
-
-  var switchNames = [];
-
-  if (params[1]) {
-    switchNames.push(params[1]);
-  } else {
-    for (var name in portalConfig.switching) {
-      if (
-        portalConfig.switching[name].enabled &&
-        portalConfig.switching[name].algorithm === options.algorithm
-      )
-        switchNames.push(name);
-    }
-  }
-
-  switchNames.forEach(function (name) {
-    if (
-      poolConfigs[newCoin].coin.algorithm !==
-      portalConfig.switching[name].algorithm
-    ) {
-      replyError(
-        "Cannot switch a " +
-          portalConfig.switching[name].algorithm +
-          " algo pool to coin " +
-          newCoin +
-          " with " +
-          poolConfigs[newCoin].coin.algorithm +
-          " algo"
-      );
-      return;
-    }
-
-    logger.info(
-      logSystem,
-      logComponent,
-      "Switching " + name + " to coin " + newCoin
-    );
-
-    Object.keys(cluster.workers).forEach(function (id) {
-      cluster.workers[id].send({
-        type: "coinswitch",
-        coin: newCoin,
-        switchName: name,
-      });
-    });
-  });
-
-  logger.success(
-    logSystem,
-    logComponent,
-    "Switch message sent to all pool workers"
-  );
-  reply("Switch message sent to pool workers");
 };
 
 var startPaymentProcessor = function () {
@@ -885,7 +791,7 @@ var startPaymentProcessor = function () {
     logger.info(
       "Master",
       "PaymentProcessor",
-      "Payment processing is not enabled for any pools"
+      "Payment processing is not enabled for any pools",
     );
     return;
   }
@@ -900,7 +806,7 @@ var startPaymentProcessor = function () {
   logger.success(
     "Master",
     "PaymentProcessor",
-    "Payment processor started with PID " + worker.process.pid
+    "Payment processor started with PID " + worker.process.pid,
   );
 
   worker.on("exit", function (code, signal) {
@@ -911,7 +817,7 @@ var startPaymentProcessor = function () {
         code +
         ", signal: " +
         signal +
-        "), spawning replacement..."
+        "), spawning replacement...",
     );
     setTimeout(function () {
       startPaymentProcessor(poolConfigs);
@@ -928,7 +834,7 @@ var startWebsite = function () {
   logger.info(
     "Master",
     "Website",
-    "Starting website on port " + (portalConfig.website.port || 8080)
+    "Starting website on port " + (portalConfig.website.port || 8080),
   );
 
   var worker = cluster.fork({
@@ -940,7 +846,7 @@ var startWebsite = function () {
   logger.success(
     "Master",
     "Website",
-    "Website started with PID " + worker.process.pid
+    "Website started with PID " + worker.process.pid,
   );
 
   worker.on("exit", function (code, signal) {
@@ -951,7 +857,7 @@ var startWebsite = function () {
         code +
         ", signal: " +
         signal +
-        "), spawning replacement..."
+        "), spawning replacement...",
     );
     setTimeout(function () {
       startWebsite(portalConfig, poolConfigs);
@@ -980,12 +886,12 @@ var startWebsite = function () {
     logger.info(
       "Master",
       "Summary",
-      "  - Pools: " + Object.keys(poolConfigs).length
+      "  - Pools: " + Object.keys(poolConfigs).length,
     );
     logger.info(
       "Master",
       "Summary",
-      "  - Workers: " + Object.keys(cluster.workers).length
+      "  - Workers: " + Object.keys(cluster.workers).length,
     );
     var paymentEnabled = false;
     Object.keys(poolConfigs).forEach(function (coin) {
@@ -999,7 +905,7 @@ var startWebsite = function () {
     logger.info(
       "Master",
       "Summary",
-      "  - Payment Processor: " + (paymentEnabled ? "Enabled" : "Disabled")
+      "  - Payment Processor: " + (paymentEnabled ? "Enabled" : "Disabled"),
     );
   }, 1000);
 })();

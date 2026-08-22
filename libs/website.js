@@ -64,6 +64,10 @@ module.exports = function (logger) {
   var keyScriptProcessed = "";
 
   function getReadableDifficultyString(difficulty) {
+    difficulty = parseFloat(difficulty);
+    if (isNaN(difficulty) || difficulty <= 0) {
+      return "1.00";
+    }
     if (difficulty >= 1e24) return (difficulty / 1e24).toFixed(2) + " Y";
     if (difficulty >= 1e21) return (difficulty / 1e21).toFixed(2) + " Z";
     if (difficulty >= 1e18) return (difficulty / 1e18).toFixed(2) + " E";
@@ -81,7 +85,7 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "Templates",
-        "Stats not yet available, skipping template processing"
+        "Stats not yet available, skipping template processing",
       );
       return;
     }
@@ -109,7 +113,7 @@ module.exports = function (logger) {
         logger.error(
           logSystem,
           "Templates",
-          "Error processing template " + pageName + ": " + err.message
+          "Error processing template " + pageName + ": " + err.message,
         );
       }
     }
@@ -119,13 +123,13 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "Templates",
-        "Slow template processing: " + processTime + "ms"
+        "Slow template processing: " + processTime + "ms",
       );
     }
     logger.debug(
       logSystem,
       "Templates",
-      "Website templates updated (" + processTime + "ms)"
+      "Website templates updated (" + processTime + "ms)",
     );
   };
 
@@ -140,7 +144,7 @@ module.exports = function (logger) {
             logger.error(
               logSystem,
               "Files",
-              "Error reading file: " + filePath + " - " + err
+              "Error reading file: " + filePath + " - " + err,
             );
             return callback(err);
           }
@@ -152,13 +156,13 @@ module.exports = function (logger) {
             logger.debug(
               logSystem,
               "Files",
-              "Compiled template: " + fileName + ' as "' + templateKey + '"'
+              "Compiled template: " + fileName + ' as "' + templateKey + '"',
             );
           } catch (compileErr) {
             logger.error(
               logSystem,
               "Files",
-              "Error compiling template " + fileName + ": " + compileErr
+              "Error compiling template " + fileName + ": " + compileErr,
             );
             return callback(compileErr);
           }
@@ -170,22 +174,22 @@ module.exports = function (logger) {
           logger.error(
             logSystem,
             "Files",
-            "Error reading template files: " + JSON.stringify(err)
+            "Error reading template files: " + JSON.stringify(err),
           );
           return;
         }
         logger.info(
           logSystem,
           "Files",
-          "All template files loaded successfully"
+          "All template files loaded successfully",
         );
         logger.info(
           logSystem,
           "Files",
-          "Available templates: " + Object.keys(pageTemplates).join(", ")
+          "Available templates: " + Object.keys(pageTemplates).join(", "),
         );
         processTemplates();
-      }
+      },
     );
   };
 
@@ -207,7 +211,7 @@ module.exports = function (logger) {
   logger.info(
     logSystem,
     "Init",
-    "Loading " + Object.keys(pageFiles).length + " template files..."
+    "Loading " + Object.keys(pageFiles).length + " template files...",
   );
   readPageFiles(Object.keys(pageFiles));
 
@@ -218,13 +222,13 @@ module.exports = function (logger) {
       logger.error(
         logSystem,
         "Init",
-        "Error getting initial global stats: " + error
+        "Error getting initial global stats: " + error,
       );
     } else {
       logger.info(
         logSystem,
         "Init",
-        "Initial global stats loaded, processing templates..."
+        "Initial global stats loaded, processing templates...",
       );
       // Now that we have stats, process templates
       if (Object.keys(pageTemplates).length > 0) {
@@ -255,7 +259,7 @@ module.exports = function (logger) {
           logger.error(
             logSystem,
             "LiveStats",
-            "Error writing to connection " + uid + ": " + e.message
+            "Error writing to connection " + uid + ": " + e.message,
           );
           delete portalApi.liveStatConnections[uid];
           failedConnections++;
@@ -272,7 +276,7 @@ module.exports = function (logger) {
             failedConnections +
             ", Time: " +
             updateTime +
-            "ms"
+            "ms",
         );
       }
     });
@@ -284,19 +288,17 @@ module.exports = function (logger) {
     async.waterfall(
       [
         function (callback) {
-          var client = redis.createClient(
-            portalConfig.redis.port,
-            portalConfig.redis.host
-          );
-          if (portalConfig.redis.password) {
-            client.auth(portalConfig.redis.password);
-          }
+          var client = redis.createClient({
+            host: portalConfig.redis.host,
+            port: portalConfig.redis.port,
+            password: portalConfig.redis.password,
+          });
           client.hgetall("coinVersionBytes", function (err, coinBytes) {
             if (err) {
               client.quit();
               return callback(
                 "Failed grabbing coin version bytes from redis " +
-                  JSON.stringify(err)
+                  JSON.stringify(err),
               );
             }
             callback(null, client, coinBytes || {});
@@ -330,7 +332,7 @@ module.exports = function (logger) {
                 [coinInfo.daemon],
                 function (severity, message) {
                   logger[severity](logSystem, c, message);
-                }
+                },
               );
               daemon.cmd("dumpprivkey", [coinInfo.address], function (result) {
                 if (result[0].error) {
@@ -342,7 +344,7 @@ module.exports = function (logger) {
                       " address " +
                       coinInfo.address +
                       " - " +
-                      JSON.stringify(result[0].error)
+                      JSON.stringify(result[0].error),
                   );
                   cback();
                   return;
@@ -350,7 +352,7 @@ module.exports = function (logger) {
                 logger.debug(
                   logSystem,
                   "KeyScript",
-                  "Retrieved key for coin: " + c
+                  "Retrieved key for coin: " + c,
                 );
 
                 var vBytePub = util.getVersionByte(coinInfo.address)[0];
@@ -363,7 +365,7 @@ module.exports = function (logger) {
             },
             function (err) {
               callback(null, client, coinBytes, coinsForRedis);
-            }
+            },
           );
         },
         function (client, coinBytes, coinsForRedis, callback) {
@@ -374,7 +376,7 @@ module.exports = function (logger) {
                   logSystem,
                   "Init",
                   "Failed inserting coin byte version into redis " +
-                    JSON.stringify(err)
+                    JSON.stringify(err),
                 );
               client.quit();
             });
@@ -391,13 +393,13 @@ module.exports = function (logger) {
         }
         try {
           keyScriptTemplate = dot.template(
-            fs.readFileSync("website/key.html", { encoding: "utf8" })
+            fs.readFileSync("website/key.html", { encoding: "utf8" }),
           );
           keyScriptProcessed = keyScriptTemplate({ coins: coinBytes });
         } catch (e) {
           logger.error(logSystem, "Init", "Failed to read key.html file");
         }
-      }
+      },
     );
   };
 
@@ -478,12 +480,12 @@ module.exports = function (logger) {
             logger.error(
               logSystem,
               "Auth",
-              "Bcrypt comparison error: " + err.message
+              "Bcrypt comparison error: " + err.message,
             );
             return callback(false);
           }
           callback(result);
-        }
+        },
       );
     }
     // Fallback to plain text comparison (legacy - not recommended)
@@ -491,14 +493,14 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "Auth",
-        "Using legacy plain text password - consider upgrading to passwordHash"
+        "Using legacy plain text password - consider upgrading to passwordHash",
       );
       callback(adminConfig.password === inputPassword);
     } else {
       logger.error(
         logSystem,
         "Auth",
-        "No password or passwordHash configured in adminCenter"
+        "No password or passwordHash configured in adminCenter",
       );
       callback(false);
     }
@@ -558,7 +560,7 @@ module.exports = function (logger) {
         "Session IP mismatch - Session IP: " +
           session.ip +
           ", Request IP: " +
-          ip
+          ip,
       );
       return false;
     }
@@ -573,7 +575,7 @@ module.exports = function (logger) {
       logger.info(
         logSystem,
         "Auth",
-        "Destroyed admin session from IP: " + adminSessions[sessionId].ip
+        "Destroyed admin session from IP: " + adminSessions[sessionId].ip,
       );
       delete adminSessions[sessionId];
     }
@@ -594,7 +596,7 @@ module.exports = function (logger) {
       logger.debug(
         logSystem,
         "Auth",
-        "Cleaned up " + expiredCount + " expired admin sessions"
+        "Cleaned up " + expiredCount + " expired admin sessions",
       );
     }
   };
@@ -608,7 +610,7 @@ module.exports = function (logger) {
     logger.info(
       logSystem,
       "MinerPage",
-      "Miner stats requested for: " + (address || "unknown")
+      "Miner stats requested for: " + (address || "unknown"),
     );
 
     if (address != null) {
@@ -620,7 +622,7 @@ module.exports = function (logger) {
           "Invalid address format from IP: " +
             getRealIP(req) +
             " - Address: " +
-            address
+            address,
         );
         requestStats.errors++;
         res.status(400).json({ error: "Invalid address format" });
@@ -635,7 +637,7 @@ module.exports = function (logger) {
         logger.debug(
           logSystem,
           "MinerPage",
-          "Retrieved balance for " + address + " in " + fetchTime + "ms"
+          "Retrieved balance for " + address + " in " + fetchTime + "ms",
         );
         // Set the address in stats so it's available in the template
         portalStats.stats.address = address;
@@ -657,7 +659,7 @@ module.exports = function (logger) {
           "Invalid address format from IP: " +
             getRealIP(req) +
             " - Address: " +
-            address
+            address,
         );
         requestStats.errors++;
         res.status(400).json({ error: "Invalid address format" });
@@ -686,7 +688,7 @@ module.exports = function (logger) {
         logger.warning(
           logSystem,
           "UserShares",
-          "Invalid coin name from IP: " + getRealIP(req) + " - Coin: " + coin
+          "Invalid coin name from IP: " + getRealIP(req) + " - Coin: " + coin,
         );
         requestStats.errors++;
         res.status(400).json({ error: "Invalid coin name format" });
@@ -708,7 +710,7 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "Route",
-        "Invalid page ID from IP: " + getRealIP(req) + " - PageID: " + pageId
+        "Invalid page ID from IP: " + getRealIP(req) + " - PageID: " + pageId,
       );
       requestStats.errors++;
       res.status(400).json({ error: "Invalid page identifier" });
@@ -767,12 +769,12 @@ module.exports = function (logger) {
         logSystem,
         "Route",
         "Index template not loaded! Templates available: " +
-          Object.keys(pageTemplates).join(", ")
+          Object.keys(pageTemplates).join(", "),
       );
       res
         .status(503)
         .send(
-          "Website templates are still loading. Please try again in a moment."
+          "Website templates are still loading. Please try again in a moment.",
         );
       return;
     }
@@ -795,7 +797,7 @@ module.exports = function (logger) {
 
       let pageContent = homeIndex.replace(
         /<html lang=".*?">/,
-        `<html lang="${language}">`
+        `<html lang="${language}">`,
       );
       res.end(pageContent);
     } else if (pageId in pageProcessed) {
@@ -803,7 +805,7 @@ module.exports = function (logger) {
       logger.debug(
         logSystem,
         "Route",
-        "Page served: " + pageId + " [" + language + "]"
+        "Page served: " + pageId + " [" + language + "]",
       );
       res.header("Content-Type", "text/html");
 
@@ -819,7 +821,7 @@ module.exports = function (logger) {
 
       let pageContent = pageIndex.replace(
         /<html lang=".*?">/,
-        `<html lang="${language}">`
+        `<html lang="${language}">`,
       );
       res.end(pageContent);
     } else {
@@ -834,9 +836,35 @@ module.exports = function (logger) {
   // Helmet helps protect from common web vulnerabilities
   app.use(
     helmet({
-      contentSecurityPolicy: false, // Disable CSP for now to avoid breaking existing functionality
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            "https://cdnjs.cloudflare.com",
+            "https://cdn.jsdelivr.net",
+          ],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            "https://fonts.googleapis.com",
+            "https://cdnjs.cloudflare.com",
+          ],
+          fontSrc: [
+            "'self'",
+            "https://fonts.gstatic.com",
+            "https://cdnjs.cloudflare.com",
+          ],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+        },
+      },
       crossOriginEmbedderPolicy: false,
-    })
+    }),
   );
 
   // Rate limiting configuration
@@ -851,7 +879,7 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "RateLimit",
-        "Rate limit exceeded for IP: " + getRealIP(req)
+        "Rate limit exceeded for IP: " + getRealIP(req),
       );
       res
         .status(429)
@@ -870,7 +898,7 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "RateLimit",
-        "API rate limit exceeded for IP: " + getRealIP(req)
+        "API rate limit exceeded for IP: " + getRealIP(req),
       );
       res
         .status(429)
@@ -889,7 +917,7 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "RateLimit",
-        "Admin rate limit exceeded for IP: " + getRealIP(req)
+        "Admin rate limit exceeded for IP: " + getRealIP(req),
       );
       res
         .status(429)
@@ -912,7 +940,7 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "GetPage",
-        "Invalid page ID from IP: " + getRealIP(req) + " - PageID: " + pageId
+        "Invalid page ID from IP: " + getRealIP(req) + " - PageID: " + pageId,
       );
       requestStats.errors++;
       res.status(400).json({ error: "Invalid page identifier" });
@@ -929,7 +957,7 @@ module.exports = function (logger) {
           "Invalid address format from IP: " +
             getRealIP(req) +
             " - Address: " +
-            address
+            address,
         );
         requestStats.errors++;
         res.status(400).json({ error: "Invalid address format" });
@@ -940,7 +968,7 @@ module.exports = function (logger) {
       logger.debug(
         logSystem,
         "GetPage",
-        "Miner stats requested via get_page for: " + address
+        "Miner stats requested via get_page for: " + address,
       );
 
       // Get balance data for the address
@@ -959,7 +987,7 @@ module.exports = function (logger) {
           });
 
           res.end(minerStatsPage);
-        }
+        },
       );
       return;
     }
@@ -988,7 +1016,7 @@ module.exports = function (logger) {
       logger.debug(
         logSystem,
         "API",
-        "API response: " + method + " (" + apiTime + "ms)"
+        "API response: " + method + " (" + apiTime + "ms)",
       );
       originalEnd.apply(res, arguments);
     };
@@ -1014,7 +1042,7 @@ module.exports = function (logger) {
         logger.info(
           logSystem,
           "Admin",
-          "Admin login successful from IP: " + ip
+          "Admin login successful from IP: " + ip,
         );
         res.json({
           result: "success",
@@ -1055,7 +1083,7 @@ module.exports = function (logger) {
     logger.warning(
       logSystem,
       "Admin",
-      "Admin API request: " + method + " from IP: " + ip
+      "Admin API request: " + method + " from IP: " + ip,
     );
 
     if (
@@ -1074,7 +1102,7 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "Admin",
-        "Missing session credentials for: " + method + " from IP: " + ip
+        "Missing session credentials for: " + method + " from IP: " + ip,
       );
       return res.status(401).json({ error: "Session required" });
     }
@@ -1086,13 +1114,12 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "Admin",
-        "Invalid session for: " + method + " from IP: " + ip
+        "Invalid session for: " + method + " from IP: " + ip,
       );
       res.status(401).json({ error: "Invalid or expired session" });
     }
   });
 
-  // Removed insecure GET endpoint - all admin requests now use POST with session tokens
   app.use(compress());
   app.get("/stats/shares/:coin", usershares);
   app.get("/stats/shares", shares);
@@ -1120,7 +1147,7 @@ module.exports = function (logger) {
       logger.warning(
         logSystem,
         "Server",
-        "URI decode error from IP: " + getRealIP(req) + " - URL: " + req.url
+        "URI decode error from IP: " + getRealIP(req) + " - URL: " + req.url,
       );
       errorResponse.error = "Invalid request";
       errorResponse.message = "The request contains invalid characters";
@@ -1154,9 +1181,9 @@ module.exports = function (logger) {
               "TLS Website started on https://" +
                 portalConfig.website.host +
                 ":" +
-                portalConfig.website.port
+                portalConfig.website.port,
             );
-          }
+          },
         );
     } else {
       logger.info(logSystem, "Server", "Starting HTTP server...");
@@ -1170,9 +1197,9 @@ module.exports = function (logger) {
             "Website started on http://" +
               portalConfig.website.host +
               ":" +
-              portalConfig.website.port
+              portalConfig.website.port,
           );
-        }
+        },
       );
     }
   } catch (e) {
@@ -1185,7 +1212,7 @@ module.exports = function (logger) {
         ":" +
         portalConfig.website.port +
         " - Error: " +
-        e.message
+        e.message,
     );
   }
 
@@ -1205,7 +1232,7 @@ module.exports = function (logger) {
           requestStats.errors +
           ", Uptime: " +
           Math.floor(uptime / 1000 / 60) +
-          " min"
+          " min",
       );
     }
   }, 300000); // Every 5 minutes

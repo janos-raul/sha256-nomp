@@ -33,28 +33,11 @@ module.exports = function (logger, poolConfig) {
     lastReset: Date.now(),
   };
 
-  var connection = redis.createClient(redisConfig.port, redisConfig.host);
-
-  // Enhanced Redis connection handling
-  if (redisConfig.password) {
-    connection.auth(redisConfig.password, function (err) {
-      if (err) {
-        logger.error(
-          logSystem,
-          logComponent,
-          logSubCat,
-          "Redis authentication failed: " + err.message
-        );
-      } else {
-        logger.success(
-          logSystem,
-          logComponent,
-          logSubCat,
-          "Redis authenticated successfully"
-        );
-      }
-    });
-  }
+var connection = redis.createClient({
+  host: redisConfig.host,
+  port: redisConfig.port,
+  password: redisConfig.password,
+});
 
   connection.on("ready", function () {
     logger.success(

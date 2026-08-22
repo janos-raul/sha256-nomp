@@ -15,6 +15,11 @@
     "generationMode": "sequential"
   },
   "coinbase": "yourpool.com",
+  "coinbasePayouts": {
+    "enabled": false,
+    "coinbaseOnly": false,
+    "feeHandledInCoinbase": false
+  },
   "txMessages": false,
   "segwit": true,
   "taproot": true,

@@ -238,33 +238,11 @@ Explanation for each field:
         }
     },
 
-    /* Redis instance of where to store global portal data such as historical stats, proxy states,
-       ect.. */
+    /* Redis instance of where to store global portal data such as historical stats, etc. */
     "redis": {
         "host": "127.0.0.1",
         "port": 6379
-    },
-
-    /* With this switching configuration, you can setup ports that accept miners for work based on
-       a specific algorithm instead of a specific coin. */
-    "switching": {
-        "switch1": {
-            "enabled": false,
-            "algorithm": "sha256",
-            "ports": {
-                "3333": {
-                    "diff": 10,
-                    "varDiff": {
-                        "minDiff": 16,
-                        "maxDiff": 512,
-                        "targetTime": 15,
-                        "retargetTime": 90,
-                        "variancePercent": 30
-                    }
-                }
-            }
-        }
-    },
+    }
 }
 ```
 
@@ -299,6 +277,11 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
 
     // Coinbase and transaction settings
     "coinbase": "yourpool.com",           // Coinbase signature (pool identifier)
+    "coinbasePayouts": {
+        "enabled": false,                  // Master switch for coinbase payout controls
+        "coinbaseOnly": false,             // If true, payment txs spend only generated (coinbase) UTXOs
+        "feeHandledInCoinbase": false      // If true, payment processor will NOT deduct poolFee/soloFee again
+    },
     "txMessages": false,                  // Enable transaction messages
     "segwit": true,                       // Enable SegWit support
     "taproot": true,                      // Enable Taproot support
@@ -474,27 +457,7 @@ Pool configurations define operational settings for each coin's mining pool. Eac
             "user": "rpcuser",
             "password": "rpcpassword"
         }
-    ],
-
-    // P2P block notifications (optional, alternative to blocknotify)
-    "p2p": {
-        "enabled": false,
-        "host": "127.0.0.1",
-        "port": 8333,
-        "disableTransactions": true
-    },
-
-    // MPOS database integration (optional)
-    "mposMode": {
-        "enabled": false,
-        "host": "127.0.0.1",
-        "port": 3306,
-        "user": "",
-        "password": "",
-        "database": "",
-        "checkPassword": true,
-        "autoCreateWorker": false
-    }
+    ]
 }
 ```
 
@@ -565,6 +528,92 @@ Understanding how fees work is crucial for proper pool operation:
 
 This approach keeps accounting simple and transparent for your miners.
 
+**Coinbase Payouts (`coinbasePayouts`) Explained:**
+
+`coinbasePayouts` is configured in `coins/*.json` and controls how payout funding and fee accounting are handled.
+
+1. `enabled`
+   - Enables coinbase payout logic for that coin.
+   - When `false`, payout behavior is standard (no coinbase-only UTXO restrictions, normal fee deduction behavior).
+
+2. `coinbaseOnly`
+   - When `true`, payout transactions are funded only from generated coinbase UTXOs.
+   - Non-coinbase UTXOs are excluded from payout funding.
+   - Use this only if you explicitly want strict separation between mined rewards and other wallet funds.
+
+3. `feeHandledInCoinbase`
+   - When `true`, the payment processor does not deduct `poolFee`/`soloFee` again.
+   - This prevents double charging if your fee is already handled at coinbase level (for example through `rewardRecipients`).
+   - When `false`, `poolFee`/`soloFee` are deducted normally during payment processing.
+
+**Recommended Config Patterns:**
+
+1. Standard/simple pool setup (recommended)
+
+```javascript
+// coins/yourcoin.json
+"coinbasePayouts": {
+    "enabled": false,
+    "coinbaseOnly": false,
+    "feeHandledInCoinbase": false
+}
+
+// pool_configs/yourcoin.json
+"rewardRecipients": {
+    "YOUR_FEE_ADDRESS": 0.0
+},
+"paymentProcessing": {
+    "poolFee": 2.0,
+    "soloFee": 2.0
+}
+```
+
+2. Coinbase-fee setup (advanced)
+
+```javascript
+// coins/yourcoin.json
+"coinbasePayouts": {
+    "enabled": true,
+    "coinbaseOnly": false,
+    "feeHandledInCoinbase": true
+}
+
+// pool_configs/yourcoin.json
+"rewardRecipients": {
+    "YOUR_FEE_ADDRESS": 1.0
+},
+"paymentProcessing": {
+    "poolFee": 0.0,
+    "soloFee": 0.0
+}
+```
+
+Use this advanced mode only if you intentionally want fee collection to happen in coinbase outputs instead of payment-time deductions.
+
+**Migration Note (From Mixed Config to Clean Mode):**
+
+If your current config mixes `rewardRecipients` with non-zero `poolFee`/`soloFee`, move to one of these clean modes to avoid fee confusion.
+
+1. Migrate to standard payment-fee mode (recommended)
+   - Set `coins/*.json -> coinbasePayouts.enabled = false`
+   - Set `coins/*.json -> coinbasePayouts.feeHandledInCoinbase = false`
+   - Set `pool_configs/*.json -> rewardRecipients` percentages to `0.0`
+   - Keep your desired `paymentProcessing.poolFee` and `paymentProcessing.soloFee`
+
+2. Migrate to coinbase-fee mode (advanced)
+   - Set `coins/*.json -> coinbasePayouts.enabled = true`
+   - Set `coins/*.json -> coinbasePayouts.feeHandledInCoinbase = true`
+   - Set fee percentages in `pool_configs/*.json -> rewardRecipients`
+   - Set `paymentProcessing.poolFee = 0.0` and `paymentProcessing.soloFee = 0.0`
+
+3. Optional strict-funding rule
+   - Set `coinbasePayouts.coinbaseOnly = true` only if you want payouts funded strictly from mined coinbase UTXOs.
+
+4. Verification checklist after migration
+   - Confirm one and only one fee path is active.
+   - Run one payment cycle and verify expected fee amounts.
+   - Confirm no unexpected second fee deduction in logs and payout totals.
+
 #### Solo Mining Configuration
 
 Miners connect for solo mining using the password parameter:
@@ -597,7 +646,7 @@ Add the `multiVersion` configuration to your coin config (`coins/*.json`):
     "multiVersion": {
         "enabled": true,        // Enable mining.multi_version support
         "maxVersions": 4,       // Maximum versions a miner can request (1-16)
-        "mode": "sequential"    // Version generation mode
+        "generationMode": "sequential"    // Version generation mode
     }
 }
 ```
@@ -980,7 +1029,7 @@ Donations for development are greatly appreciated!
 ### NOMP
 
 - [Matthew Little / zone117x](https://github.com/zone117x) - developer of NOMP
-- [Jerry Brady / mintyfresh68](https://github.com/bluecircle) - got coin-switching fully working and developed proxy-per-algo feature
+- [Jerry Brady / mintyfresh68](https://github.com/bluecircle) - historical contributions around switching/proxy-per-algo feature
 - [Tony Dobbs](http://anthonydobbs.com) - designs for front-end and created the NOMP logo
 - [LucasJones](//github.com/LucasJones) - got p2p block notify working and implemented additional hashing algos
 - [vekexasia](//github.com/vekexasia) - co-developer & great tester

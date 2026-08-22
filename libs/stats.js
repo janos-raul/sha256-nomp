@@ -5,10 +5,11 @@ var algos = require("stratum-pool/lib/algoProperties.js");
 
 // redis callback Ready check failed bypass trick
 function rediscreateClient(port, host, pass) {
-  var client = redis.createClient(port, host);
-  if (pass) {
-    client.auth(pass);
-  }
+  var client = redis.createClient({
+    host: host,
+    port: port,
+    password: pass,
+  });
   return client;
 }
 
@@ -81,7 +82,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           totalWorkers +
           " workers, " +
           "Hashrate: " +
-          totalHashrate
+          totalHashrate,
       );
     }
   }, 300000);
@@ -98,14 +99,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     for (var i = 0; i < redisClients.length; i++) {
       var client = redisClients[i];
       if (
-        client.client.port === redisConfig.port &&
-        client.client.host === redisConfig.host
+        client.client.connection_options &&
+        client.client.connection_options.port === redisConfig.port &&
+        client.client.connection_options.host === redisConfig.host
       ) {
         client.coins.push(coin);
         logger.debug(
           logSystem,
           "Redis",
-          "Reusing existing Redis client for " + coin
+          "Reusing existing Redis client for " + coin,
         );
         return;
       }
@@ -113,7 +115,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     var newClient = rediscreateClient(
       redisConfig.port,
       redisConfig.host,
-      redisConfig.password
+      redisConfig.password,
     );
     redisClients.push({
       coins: [coin],
@@ -127,18 +129,18 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         " at " +
         redisConfig.host +
         ":" +
-        redisConfig.port
+        redisConfig.port,
     );
   });
 
   function setupStatsRedis() {
-    redisStats = redis.createClient(
-      portalConfig.redis.port,
-      portalConfig.redis.host
-    );
+    redisStats = redis.createClient({
+      host: portalConfig.redis.host,
+      port: portalConfig.redis.port,
+      password: portalConfig.redis.password,
+    });
     redisStats.on("error", function (err) {
       logger.error(logSystem, "Redis", "Stats Redis error: " + err.message);
-      redisStats.auth(portalConfig.redis.password);
     });
   }
 
@@ -210,7 +212,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
       },
       function (err) {
         cback(allBlocks);
-      }
+      },
     );
   };
 
@@ -226,7 +228,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           logger.error(
             logSystem,
             "Historics",
-            "Error when trying to grab historical stats " + JSON.stringify(err)
+            "Error when trying to grab historical stats " + JSON.stringify(err),
           );
           return;
         }
@@ -252,14 +254,14 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               maxHistoryEntries +
               " entries, trimmed " +
               excess +
-              " oldest entries"
+              " oldest entries",
           );
         }
         if (_this.statPoolHistory.length > maxHistoryEntries) {
           var excess = _this.statPoolHistory.length - maxHistoryEntries;
           _this.statPoolHistory = _this.statPoolHistory.slice(excess);
         }
-      }
+      },
     );
   }
 
@@ -374,7 +376,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
       ],
       function (err, total) {
         cback(coinsRound(total).toFixed(8));
-      }
+      },
     );
   };
 
@@ -442,9 +444,9 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 }
 
                 pcb();
-              }
+              },
             );
-          }
+          },
         );
       },
       function (err) {
@@ -453,7 +455,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           return;
         }
         cback(totalShares);
-      }
+      },
     );
   };
 
@@ -461,7 +463,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     logger.debug(
       logSystem,
       "Balance",
-      "Getting balance for address: " + address
+      "Getting balance for address: " + address,
     );
     var fetchStart = Date.now();
     var a = address.split(".")[0];
@@ -617,7 +619,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                                     workers[workerName].isSolo = true;
                                   } else {
                                     var pendingAmount = parseFloat(
-                                      soloPends[1][b]
+                                      soloPends[1][b],
                                     );
                                     workers[workerName].immature =
                                       (workers[workerName].immature || 0) +
@@ -637,17 +639,17 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                                 }
 
                                 pcb();
-                              }
+                              },
                             );
-                          }
+                          },
                         );
-                      }
+                      },
                     );
-                  }
+                  },
                 );
-              }
+              },
             );
-          }
+          },
         );
       },
       function (err) {
@@ -662,7 +664,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         logger.debug(
           logSystem,
           "Balance",
-          "Balance retrieved in " + fetchTime + "ms for " + address
+          "Balance retrieved in " + fetchTime + "ms for " + address,
         );
         cback({
           totalHeld: coinsRound(totalHeld),
@@ -670,7 +672,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           totalImmature: satoshisToCoins(totalImmature),
           balances,
         });
-      }
+      },
     );
   };
 
@@ -750,7 +752,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               "Redis error getting stats for " +
                 client.coins.join(", ") +
                 ": " +
-                JSON.stringify(err)
+                JSON.stringify(err),
             );
             callback(err);
           } else {
@@ -761,7 +763,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 client.coins.length +
                 " coins (" +
                 replies.length +
-                " replies)"
+                " replies)",
             );
             //console.log('=== DEBUG: Processing coins ===');
             //console.log('Coins to process:', client.coins);
@@ -795,7 +797,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
               // Solo block details (actual block data)
               const soloPendingBlocks = (replies[i + 17] || []).sort(
-                sortBlocks
+                sortBlocks,
               );
               const soloConfirmedBlocks = (replies[i + 18] || [])
                 .sort(sortBlocks)
@@ -847,7 +849,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 //lastblock_time: lastPoolBlockStr ? parseInt(lastPoolBlockStr.split(':')[4], 10) : null	// in miliseconds
                 lastblock_time: lastPoolBlockStr
                   ? Math.floor(
-                      parseInt(lastPoolBlockStr.split(":")[4], 10) / 1000
+                      parseInt(lastPoolBlockStr.split(":")[4], 10) / 1000,
                     )
                   : null, // in seconds
               };
@@ -862,7 +864,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 //lastblock_time: lastSoloBlockStr ? parseInt(lastSoloBlockStr.split(':')[4], 10) : null	// in miliseconds
                 lastblock_time: lastSoloBlockStr
                   ? Math.floor(
-                      parseInt(lastSoloBlockStr.split(":")[4], 10) / 1000
+                      parseInt(lastSoloBlockStr.split(":")[4], 10) / 1000,
                     )
                   : null, // in seconds
               };
@@ -921,7 +923,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     ? replies[i + 2].networkHash || 0
                     : 0,
                   networkHashString: getReadableNetworkHashRateString(
-                    replies[i + 2] ? replies[i + 2].networkHash || 0 : 0
+                    replies[i + 2] ? replies[i + 2].networkHash || 0 : 0,
                   ),
                   networkDiff: replies[i + 2]
                     ? replies[i + 2].networkDiff || 0
@@ -997,7 +999,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     logger.warning(
                       logSystem,
                       coinName,
-                      "Invalid payment data skipped"
+                      "Invalid payment data skipped",
                     );
                   }
                 }
@@ -1005,7 +1007,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   logger.debug(
                     logSystem,
                     coinName,
-                    "Processed " + validPayments + " payment records"
+                    "Processed " + validPayments + " payment records",
                   );
                 }
 
@@ -1030,7 +1032,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           logger.error(
             logSystem,
             "Global",
-            "error getting all stats" + JSON.stringify(err)
+            "error getting all stats" + JSON.stringify(err),
           );
           callback();
           return;
@@ -1198,7 +1200,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             for (var worker in coinStats.currentRoundShares) {
               var miner = worker.split(".")[0];
               var shareAmount = parseFloat(
-                coinStats.currentRoundShares[worker]
+                coinStats.currentRoundShares[worker],
               );
 
               // Add to poolWorkers if not already present
@@ -1407,7 +1409,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             (shareMultiplier * (coinStats.poolShares || 0)) /
             portalConfig.website.stats.hashrateWindow;
           coinStats.hashrateString = _this.getReadableHashRateString(
-            coinStats.hashrate
+            coinStats.hashrate,
           );
 
           var _blocktime = coinStats.blockTime || 90;
@@ -1486,7 +1488,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           portalStats.global.hashrate +=
             coinStats.hashrate + coinStats.soloHashrate;
           portalStats.global.hashrateString = _this.getReadableHashRateString(
-            portalStats.global.hashrate
+            portalStats.global.hashrate,
           );
 
           var _shareTotal = parseFloat(0);
@@ -1520,7 +1522,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           for (var worker in coinStats.currentRoundSharesSolo) {
             var miner = worker.split(".")[0];
             var shareAmount = parseFloat(
-              coinStats.currentRoundSharesSolo[worker]
+              coinStats.currentRoundSharesSolo[worker],
             );
 
             // Update soloWorkers
@@ -1557,7 +1559,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             if (worker in coinStats.workers) {
               coinStats.workers[worker].currRoundTime = Math.max(
                 coinStats.workers[worker].currRoundTime || 0,
-                time
+                time,
               );
             }
 
@@ -1565,7 +1567,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             if (miner in coinStats.miners) {
               coinStats.miners[miner].currRoundTime = Math.max(
                 coinStats.miners[miner].currRoundTime || 0,
-                time
+                time,
               );
             }
 
@@ -1589,7 +1591,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             if (worker in coinStats.workers) {
               coinStats.workers[worker].currRoundTime = Math.max(
                 coinStats.workers[worker].currRoundTime || 0,
-                time
+                time,
               );
             }
 
@@ -1597,7 +1599,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             if (miner in coinStats.miners) {
               coinStats.miners[miner].currRoundTime = Math.max(
                 coinStats.miners[miner].currRoundTime || 0,
-                time
+                time,
               );
             }
 
@@ -1709,11 +1711,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
           // Set pool-level counts
           coinStats.poolMinerCount = Object.keys(
-            activePoolMinerAddresses
+            activePoolMinerAddresses,
           ).length;
           coinStats.poolWorkerCount = activePoolWorkerCount;
           coinStats.soloMinerCount = Object.keys(
-            activeSoloMinerAddresses
+            activeSoloMinerAddresses,
           ).length;
           coinStats.soloWorkerCount = activeSoloWorkerCount;
 
@@ -1725,12 +1727,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
           coinStats.poolHashrate = coinStats.hashrate; // pool total
           coinStats.poolHashrateString = _this.getReadableHashRateString(
-            coinStats.hashrate
+            coinStats.hashrate,
           );
 
           coinStats.hashrate = coinStats.hashrate + coinStats.soloHashrate; // Combined total
           coinStats.hashrateString = _this.getReadableHashRateString(
-            coinStats.hashrate
+            coinStats.hashrate,
           );
 
           // Calculate luck using combined hashrate
@@ -1763,7 +1765,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               ", Pool workers: " +
               coinStats.workerCount +
               ", Solo workers: " +
-              coinStats.soloWorkerCount
+              coinStats.soloWorkerCount,
           );
 
           // Calculate miner hashrates and clean up inactive miners
@@ -1968,13 +1970,13 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           algoStats.activeMiners =
             algoStats.activePoolMiners + algoStats.activeSoloMiners;
           algoStats.hashrateString = _this.getReadableHashRateString(
-            algoStats.hashrate
+            algoStats.hashrate,
           );
           algoStats.poolHashrateString = _this.getReadableHashRateString(
-            algoStats.poolHashrate || 0
+            algoStats.poolHashrate || 0,
           );
           algoStats.soloHashrateString = _this.getReadableHashRateString(
-            algoStats.soloHashrate || 0
+            algoStats.soloHashrate || 0,
           );
         });
 
@@ -2046,7 +2048,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               excess +
               " excess history entries (keeping last " +
               maxHistoryEntries +
-              ")"
+              ")",
           );
         }
 
@@ -2060,14 +2062,14 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               logger.error(
                 logSystem,
                 "Historics",
-                "Error saving stats history: " + JSON.stringify(err)
+                "Error saving stats history: " + JSON.stringify(err),
               );
             } else {
               logger.debug(
                 logSystem,
                 "Historics",
                 "Stats history saved, retained from " +
-                  new Date(retentionTime * 1000).toISOString()
+                  new Date(retentionTime * 1000).toISOString(),
               );
             }
           });
@@ -2075,17 +2077,17 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         logger.info(
           logSystem,
           "Global",
-          "Stats collection completed in " + statsTime + "ms"
+          "Stats collection completed in " + statsTime + "ms",
         );
         if (statsTime > 1000) {
           logger.warning(
             logSystem,
             "Global",
-            "Slow stats collection detected: " + statsTime + "ms"
+            "Slow stats collection detected: " + statsTime + "ms",
           );
         }
         callback();
-      }
+      },
     );
   };
 

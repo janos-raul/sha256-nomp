@@ -1,8 +1,6 @@
 var Stratum = require("stratum-pool");
 var redis = require("redis");
-var net = require("net");
 
-var MposCompatibility = require("./mposCompatibility.js");
 var ShareProcessor = require("./shareProcessor.js");
 
 module.exports = function (logger) {
@@ -14,7 +12,6 @@ module.exports = function (logger) {
   var forkId = process.env.forkId;
 
   var pools = {};
-  var proxySwitch = {};
 
   // Store worker passwords for solo detection
   var workerPasswords = {};
@@ -31,13 +28,14 @@ module.exports = function (logger) {
     "PoolWorker",
     "Init",
     "Fork " + forkId,
-    "Starting pool worker process..."
+    "Starting pool worker process...",
   );
 
-  var redisClient = redis.createClient(
-    portalConfig.redis.port,
-    portalConfig.redis.host
-  );
+  var redisClient = redis.createClient({
+    host: portalConfig.redis.host,
+    port: portalConfig.redis.port,
+    password: portalConfig.redis.password,
+  });
 
   // Redis connection logging
   redisClient.on("ready", function () {
@@ -48,7 +46,7 @@ module.exports = function (logger) {
       "Connected to Redis at " +
         portalConfig.redis.host +
         ":" +
-        portalConfig.redis.port
+        portalConfig.redis.port,
     );
   });
 
@@ -57,7 +55,7 @@ module.exports = function (logger) {
       "PoolWorker",
       "Redis",
       "Fork " + forkId,
-      "Redis connection error: " + err.message
+      "Redis connection error: " + err.message,
     );
   });
 
@@ -66,7 +64,7 @@ module.exports = function (logger) {
       "PoolWorker",
       "Redis",
       "Fork " + forkId,
-      "Redis connection closed"
+      "Redis connection closed",
     );
   });
 
@@ -77,14 +75,14 @@ module.exports = function (logger) {
           "PoolWorker",
           "Redis",
           "Fork " + forkId,
-          "Redis auth failed: " + err.message
+          "Redis auth failed: " + err.message,
         );
       } else {
         logger.success(
           "PoolWorker",
           "Redis",
           "Fork " + forkId,
-          "Redis authentication successful"
+          "Redis authentication successful",
         );
       }
     });
@@ -100,7 +98,7 @@ module.exports = function (logger) {
           "PoolWorker",
           "Security",
           logSubCat,
-          "Banning IP address: " + message.ip
+          "Banning IP address: " + message.ip,
         );
         var bannedCount = 0;
         for (var p in pools) {
@@ -113,7 +111,7 @@ module.exports = function (logger) {
           "PoolWorker",
           "Security",
           logSubCat,
-          "IP " + message.ip + " banned on " + bannedCount + " pools"
+          "IP " + message.ip + " banned on " + bannedCount + " pools",
         );
         break;
 
@@ -131,94 +129,19 @@ module.exports = function (logger) {
             "Processing block notification for " +
               poolTarget +
               " - Hash: " +
-              message.hash
+              message.hash,
           );
           pools[poolTarget].processBlockNotify(
             message.hash,
-            "blocknotify script"
+            "blocknotify script",
           );
         } else {
           logger.warning(
             "PoolWorker",
             "BlockNotify",
             logSubCat,
-            "Received block notification for unknown pool: " + messageCoin
+            "Received block notification for unknown pool: " + messageCoin,
           );
-        }
-        break;
-
-      case "coinswitch":
-        var logSystem = "Proxy";
-        var logComponent = "Switch";
-        var switchName = message.switchName;
-        var newCoin = message.coin;
-        var algo = poolConfigs[newCoin].coin.algorithm;
-        var newPool = pools[newCoin];
-        var oldCoin = proxySwitch[switchName].currentPool;
-        var oldPool = pools[oldCoin];
-        var proxyPorts = Object.keys(proxySwitch[switchName].ports);
-
-        if (newCoin == oldCoin) {
-          logger.debug(
-            logSystem,
-            logComponent,
-            logSubCat,
-            "Switch would have no effect - ignoring switch to " + newCoin
-          );
-          break;
-        }
-
-        logger.info(
-          logSystem,
-          logComponent,
-          logSubCat,
-          "Switching " + algo + " miners from " + oldCoin + " to " + newCoin
-        );
-
-        if (newPool) {
-          var switchedMiners = 0;
-          oldPool.relinquishMiners(
-            function (miner, cback) {
-              var shouldSwitch =
-                proxyPorts.indexOf(miner.client.socket.localPort.toString()) !==
-                -1;
-              if (shouldSwitch) switchedMiners++;
-              cback(shouldSwitch);
-            },
-            function (clients) {
-              newPool.attachMiners(clients);
-              logger.success(
-                logSystem,
-                logComponent,
-                logSubCat,
-                "Switched " +
-                  switchedMiners +
-                  " miners from " +
-                  oldCoin +
-                  " to " +
-                  newCoin
-              );
-            }
-          );
-          proxySwitch[switchName].currentPool = newCoin;
-
-          redisClient.hset("proxyState", algo, newCoin, function (error, obj) {
-            if (error) {
-              logger.error(
-                logSystem,
-                logComponent,
-                logSubCat,
-                "Redis error saving proxy state: " + JSON.stringify(error)
-              );
-            } else {
-              logger.debug(
-                logSystem,
-                logComponent,
-                logSubCat,
-                "Proxy state saved to Redis for " + algo
-              );
-            }
-          });
         }
         break;
 
@@ -227,7 +150,7 @@ module.exports = function (logger) {
           "PoolWorker",
           "Reload",
           logSubCat,
-          "Reloading pool: " + message.coin
+          "Reloading pool: " + message.coin,
         );
         // Add pool reload logic here if needed
         break;
@@ -245,7 +168,7 @@ module.exports = function (logger) {
       logSystem,
       logComponent,
       logSubCat,
-      "Initializing pool for " + coin
+      "Initializing pool for " + coin,
     );
 
     // Initialize stats for this coin
@@ -265,269 +188,218 @@ module.exports = function (logger) {
       diff: function () {},
     };
 
-    //Functions required for MPOS compatibility
-    if (poolOptions.mposMode && poolOptions.mposMode.enabled) {
-      logger.info(
-        logSystem,
-        logComponent,
-        logSubCat,
-        "MPOS compatibility mode enabled"
-      );
-      var mposCompat = new MposCompatibility(logger, poolOptions);
+    // Internal payment processing is always used.
+    logger.info(
+      logSystem,
+      logComponent,
+      logSubCat,
+      "Using internal payment processing",
+    );
+    var shareProcessor = new ShareProcessor(logger, poolOptions);
 
-      handlers.auth = function (port, workerName, password, authCallback) {
+    handlers.auth = function (port, workerName, password, authCallback) {
+      var authStart = Date.now();
+      const [wallet, worker] = (workerName || "").split(".", 2);
+
+      // If validation is disabled, accept all
+      if (poolOptions.validateWorkerUsername !== true) {
         logger.debug(
           logSystem,
           logComponent,
           logSubCat,
-          "[MPOS Auth] Worker: " + workerName
+          "[Auth] Validation disabled, auto-accepting: " + workerName,
         );
-        mposCompat.handleAuth(workerName, password, authCallback);
-      };
+        return authCallback(true);
+      }
 
-      handlers.share = function (isValidShare, isValidBlock, data) {
-        logger.debug(
-          logSystem,
-          logComponent,
-          logSubCat,
-          "[MPOS Share] Valid: " + isValidShare + ", Block: " + isValidBlock
-        );
-        mposCompat.handleShare(isValidShare, isValidBlock, data);
-      };
+      // Get expected address format from coin config
+      const addressValidation = poolOptions.coin.addressValidation;
 
-      handlers.diff = function (workerName, diff) {
-        logger.debug(
-          logSystem,
-          logComponent,
-          logSubCat,
-          "[MPOS Diff] Worker: " + workerName + ", Diff: " + diff
-        );
-        mposCompat.handleDifficultyUpdate(workerName, diff);
-      };
-    }
-    //Functions required for internal payment processing
-    else {
-      logger.info(
-        logSystem,
-        logComponent,
-        logSubCat,
-        "Using internal payment processing"
-      );
-      var shareProcessor = new ShareProcessor(logger, poolOptions);
+      if (addressValidation && addressValidation.addressPrefix) {
+        const expectedPrefix = addressValidation.addressPrefix;
+        const minLength = addressValidation.minLength || 20;
+        const maxLength = addressValidation.maxLength || 100;
+        const walletLower = wallet.toLowerCase();
 
-      handlers.auth = function (port, workerName, password, authCallback) {
-        var authStart = Date.now();
-        const [wallet, worker] = (workerName || "").split(".", 2);
+        // STEP 1: Fast prefix validation
+        if (!walletLower.startsWith(expectedPrefix.toLowerCase())) {
+          // Log what we got vs what we expected
+          const actualPrefix = wallet.substring(0, Math.min(4, wallet.length));
 
-        // If validation is disabled, accept all
-        if (poolOptions.validateWorkerUsername !== true) {
-          logger.debug(
-            logSystem,
-            logComponent,
-            logSubCat,
-            "[Auth] Validation disabled, auto-accepting: " + workerName
-          );
-          return authCallback(true);
+          // Detect common wrong coin types for better logging
+          let wrongCoinType = null;
+          if (wallet.match(/^bc1/i)) wrongCoinType = "Bitcoin Bech32";
+          else if (wallet.match(/^tb1/i)) wrongCoinType = "Bitcoin Testnet";
+          else if (wallet.match(/^[13]/)) wrongCoinType = "Bitcoin Legacy";
+          else if (wallet.match(/^ltc1/i)) wrongCoinType = "Litecoin Bech32";
+          else if (wallet.match(/^[LM]/)) wrongCoinType = "Litecoin Legacy";
+
+          if (wrongCoinType) {
+            logger.warning(
+              logSystem,
+              logComponent,
+              logSubCat,
+              `[Auth] REJECTED ${wrongCoinType} address on ${poolOptions.coin.name} pool: ${wallet} - Expected prefix: ${expectedPrefix}`,
+            );
+          } else {
+            logger.warning(
+              logSystem,
+              logComponent,
+              logSubCat,
+              `[Auth] Invalid address prefix for ${poolOptions.coin.name}: ${actualPrefix}... - Expected: ${expectedPrefix}`,
+            );
+          }
+          return authCallback(false);
         }
 
-        // Get expected address format from coin config
-        const addressValidation = poolOptions.coin.addressValidation;
-
-        if (addressValidation && addressValidation.addressPrefix) {
-          const expectedPrefix = addressValidation.addressPrefix;
-          const minLength = addressValidation.minLength || 20;
-          const maxLength = addressValidation.maxLength || 100;
-          const walletLower = wallet.toLowerCase();
-
-          // STEP 1: Fast prefix validation
-          if (!walletLower.startsWith(expectedPrefix.toLowerCase())) {
-            // Log what we got vs what we expected
-            const actualPrefix = wallet.substring(
-              0,
-              Math.min(4, wallet.length)
-            );
-
-            // Detect common wrong coin types for better logging
-            let wrongCoinType = null;
-            if (wallet.match(/^bc1/i)) wrongCoinType = "Bitcoin Bech32";
-            else if (wallet.match(/^tb1/i)) wrongCoinType = "Bitcoin Testnet";
-            else if (wallet.match(/^[13]/)) wrongCoinType = "Bitcoin Legacy";
-            else if (wallet.match(/^ltc1/i)) wrongCoinType = "Litecoin Bech32";
-            else if (wallet.match(/^[LM]/)) wrongCoinType = "Litecoin Legacy";
-
-            if (wrongCoinType) {
-              logger.warning(
-                logSystem,
-                logComponent,
-                logSubCat,
-                `[Auth] REJECTED ${wrongCoinType} address on ${poolOptions.coin.name} pool: ${wallet} - Expected prefix: ${expectedPrefix}`
-              );
-            } else {
-              logger.warning(
-                logSystem,
-                logComponent,
-                logSubCat,
-                `[Auth] Invalid address prefix for ${poolOptions.coin.name}: ${actualPrefix}... - Expected: ${expectedPrefix}`
-              );
-            }
-            return authCallback(false);
-          }
-
-          // Check length constraints
-          if (wallet.length < minLength) {
-            logger.warning(
-              logSystem,
-              logComponent,
-              logSubCat,
-              `[Auth] Address too short for ${poolOptions.coin.name}: ${wallet.length} < ${minLength}`
-            );
-            return authCallback(false);
-          }
-
-          if (wallet.length > maxLength) {
-            logger.warning(
-              logSystem,
-              logComponent,
-              logSubCat,
-              `[Auth] Address too long for ${poolOptions.coin.name}: ${wallet.length} > ${maxLength}`
-            );
-            return authCallback(false);
-          }
-
-          // Additional bech32 character validation if it's a bech32 address
-          // Bech32 addresses have format: prefix + '1' + data (e.g., bc1, bs1, myt1)
-          if (walletLower.includes("1")) {
-            // Bech32 can only contain specific characters after the separator
-            const bech32Regex = new RegExp(
-              `^${expectedPrefix.toLowerCase()}[ac-hj-np-z02-9]+$`,
-              "i"
-            );
-            if (!bech32Regex.test(walletLower)) {
-              logger.warning(
-                logSystem,
-                logComponent,
-                logSubCat,
-                `[Auth] Invalid bech32 characters in ${poolOptions.coin.name} address: ${wallet}`
-              );
-              return authCallback(false);
-            }
-          }
-
-          // STEP 2: Prefix validation passed - now verify with daemon for accuracy
-          logger.debug(
-            logSystem,
-            logComponent,
-            logSubCat,
-            `[Auth] Prefix validation passed for ${poolOptions.coin.name}: ${wallet} - Now checking with daemon...`
-          );
-
-          pool.daemon.cmd("validateaddress", [wallet], function (results) {
-            var authTime = Date.now() - authStart;
-            const isValid = results.some(
-              (r) => r.response && r.response.isvalid
-            );
-
-            if (!isValid) {
-              logger.warning(
-                logSystem,
-                logComponent,
-                logSubCat,
-                `[Auth] Daemon REJECTED ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`
-              );
-            } else {
-              logger.success(
-                logSystem,
-                logComponent,
-                logSubCat,
-                `[Auth] HYBRID validation passed for ${poolOptions.coin.name}: ${wallet} - Time: ${authTime}ms`
-              );
-            }
-
-            authCallback(isValid);
-          });
-          return; // Important: return here to wait for daemon response
-        } else if (
-          addressValidation &&
-          addressValidation.validateWorkerUsername === true
-        ) {
-          // Has validation enabled but no specific prefix - use daemon validation only
-          logger.debug(
-            logSystem,
-            logComponent,
-            logSubCat,
-            `[Auth] No address prefix configured for ${poolOptions.coin.name}, using daemon validation: ${wallet}`
-          );
-
-          pool.daemon.cmd("validateaddress", [wallet], function (results) {
-            var authTime = Date.now() - authStart;
-            const isValid = results.some(
-              (r) => r.response && r.response.isvalid
-            );
-
-            if (!isValid) {
-              logger.warning(
-                logSystem,
-                logComponent,
-                logSubCat,
-                `[Auth] Daemon rejected ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`
-              );
-            } else {
-              logger.debug(
-                logSystem,
-                logComponent,
-                logSubCat,
-                `[Auth] Daemon validated ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`
-              );
-            }
-
-            authCallback(isValid);
-          });
-          return; // Important: return here to wait for daemon response
-        } else {
-          // No validation configured - accept common formats but warn
-          logger.debug(
-            logSystem,
-            logComponent,
-            logSubCat,
-            `[Auth] No address validation configured for ${poolOptions.coin.name}, using generic validation`
-          );
-
-          // Accept common cryptocurrency address formats
-          const commonFormats = [
-            /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/, // Legacy P2PKH/P2SH
-            /^[a-z0-9]{2,}1[ac-hj-np-z02-9]{11,71}$/i, // Generic Bech32
-          ];
-
-          const isValidFormat = commonFormats.some((regex) =>
-            regex.test(wallet)
-          );
-
-          if (isValidFormat) {
-            var authTime = Date.now() - authStart;
-            logger.debug(
-              logSystem,
-              logComponent,
-              logSubCat,
-              `[Auth] Generic format accepted for ${poolOptions.coin.name}: ${wallet} - Time: ${authTime}ms`
-            );
-            return authCallback(true);
-          }
-
-          // Invalid format
+        // Check length constraints
+        if (wallet.length < minLength) {
           logger.warning(
             logSystem,
             logComponent,
             logSubCat,
-            `[Auth] Invalid address format for ${poolOptions.coin.name}: ${wallet}`
+            `[Auth] Address too short for ${poolOptions.coin.name}: ${wallet.length} < ${minLength}`,
           );
           return authCallback(false);
         }
-      };
 
-      handlers.share = function (isValidShare, isValidBlock, data) {
-        shareProcessor.handleShare(isValidShare, isValidBlock, data);
-      };
-    }
+        if (wallet.length > maxLength) {
+          logger.warning(
+            logSystem,
+            logComponent,
+            logSubCat,
+            `[Auth] Address too long for ${poolOptions.coin.name}: ${wallet.length} > ${maxLength}`,
+          );
+          return authCallback(false);
+        }
+
+        // Additional bech32 character validation if it's a bech32 address
+        // Bech32 addresses have format: prefix + '1' + data (e.g., bc1, bs1, myt1)
+        if (walletLower.includes("1")) {
+          // Bech32 can only contain specific characters after the separator
+          const bech32Regex = new RegExp(
+            `^${expectedPrefix.toLowerCase()}[ac-hj-np-z02-9]+$`,
+            "i",
+          );
+          if (!bech32Regex.test(walletLower)) {
+            logger.warning(
+              logSystem,
+              logComponent,
+              logSubCat,
+              `[Auth] Invalid bech32 characters in ${poolOptions.coin.name} address: ${wallet}`,
+            );
+            return authCallback(false);
+          }
+        }
+
+        // STEP 2: Prefix validation passed - now verify with daemon for accuracy
+        logger.debug(
+          logSystem,
+          logComponent,
+          logSubCat,
+          `[Auth] Prefix validation passed for ${poolOptions.coin.name}: ${wallet} - Now checking with daemon...`,
+        );
+
+        pool.daemon.cmd("validateaddress", [wallet], function (results) {
+          var authTime = Date.now() - authStart;
+          const isValid = results.some((r) => r.response && r.response.isvalid);
+
+          if (!isValid) {
+            logger.warning(
+              logSystem,
+              logComponent,
+              logSubCat,
+              `[Auth] Daemon REJECTED ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`,
+            );
+          } else {
+            logger.success(
+              logSystem,
+              logComponent,
+              logSubCat,
+              `[Auth] HYBRID validation passed for ${poolOptions.coin.name}: ${wallet} - Time: ${authTime}ms`,
+            );
+          }
+
+          authCallback(isValid);
+        });
+        return; // Important: return here to wait for daemon response
+      } else if (
+        addressValidation &&
+        addressValidation.validateWorkerUsername === true
+      ) {
+        // Has validation enabled but no specific prefix - use daemon validation only
+        logger.debug(
+          logSystem,
+          logComponent,
+          logSubCat,
+          `[Auth] No address prefix configured for ${poolOptions.coin.name}, using daemon validation: ${wallet}`,
+        );
+
+        pool.daemon.cmd("validateaddress", [wallet], function (results) {
+          var authTime = Date.now() - authStart;
+          const isValid = results.some((r) => r.response && r.response.isvalid);
+
+          if (!isValid) {
+            logger.warning(
+              logSystem,
+              logComponent,
+              logSubCat,
+              `[Auth] Daemon rejected ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`,
+            );
+          } else {
+            logger.debug(
+              logSystem,
+              logComponent,
+              logSubCat,
+              `[Auth] Daemon validated ${poolOptions.coin.name} address: ${wallet} - Time: ${authTime}ms`,
+            );
+          }
+
+          authCallback(isValid);
+        });
+        return; // Important: return here to wait for daemon response
+      } else {
+        // No validation configured - accept common formats but warn
+        logger.debug(
+          logSystem,
+          logComponent,
+          logSubCat,
+          `[Auth] No address validation configured for ${poolOptions.coin.name}, using generic validation`,
+        );
+
+        // Accept common cryptocurrency address formats
+        const commonFormats = [
+          /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/, // Legacy P2PKH/P2SH
+          /^[a-z0-9]{2,}1[ac-hj-np-z02-9]{11,71}$/i, // Generic Bech32
+        ];
+
+        const isValidFormat = commonFormats.some((regex) => regex.test(wallet));
+
+        if (isValidFormat) {
+          var authTime = Date.now() - authStart;
+          logger.debug(
+            logSystem,
+            logComponent,
+            logSubCat,
+            `[Auth] Generic format accepted for ${poolOptions.coin.name}: ${wallet} - Time: ${authTime}ms`,
+          );
+          return authCallback(true);
+        }
+
+        // Invalid format
+        logger.warning(
+          logSystem,
+          logComponent,
+          logSubCat,
+          `[Auth] Invalid address format for ${poolOptions.coin.name}: ${wallet}`,
+        );
+        return authCallback(false);
+      }
+    };
+
+    handlers.share = function (isValidShare, isValidBlock, data) {
+      shareProcessor.handleShare(isValidShare, isValidBlock, data);
+    };
 
     var authorizeFN = function (ip, port, workerName, password, callback) {
       var authStart = Date.now();
@@ -541,7 +413,7 @@ module.exports = function (logger) {
           ":" +
           port +
           " as " +
-          workerName
+          workerName,
       );
 
       // Store password for this worker
@@ -558,7 +430,7 @@ module.exports = function (logger) {
             logSystem,
             logComponent,
             logSubCat,
-            "[Solo Mining] Worker " + workerName + " identified as SOLO miner"
+            "[Solo Mining] Worker " + workerName + " identified as SOLO miner",
           );
         }
       }
@@ -580,7 +452,7 @@ module.exports = function (logger) {
               ip +
               " - Time: " +
               authTime +
-              "ms"
+              "ms",
           );
           callback({
             error: null,
@@ -598,7 +470,7 @@ module.exports = function (logger) {
               ip +
               " - Time: " +
               authTime +
-              "ms"
+              "ms",
           );
           performanceStats.connections[coin].current--;
 
@@ -633,9 +505,8 @@ module.exports = function (logger) {
         logComponent,
         logSubCat,
         "Stratum pool started on ports: " +
-          Object.keys(poolOptions.ports).join(", ")
+          Object.keys(poolOptions.ports).join(", "),
       );
-      _this.setDifficultyForProxyPort(pool, coin, poolOptions.coin.algorithm);
     });
 
     pool.on("stratumTimeout", function (minerSocket) {
@@ -643,7 +514,7 @@ module.exports = function (logger) {
         logSystem,
         logComponent,
         logSubCat,
-        "Miner timed out: " + minerSocket.remoteAddress
+        "Miner timed out: " + minerSocket.remoteAddress,
       );
       performanceStats.connections[coin].current--;
     });
@@ -653,7 +524,7 @@ module.exports = function (logger) {
         logSystem,
         logComponent,
         logSubCat,
-        "Miner disconnected: " + minerSocket.remoteAddress
+        "Miner disconnected: " + minerSocket.remoteAddress,
       );
       performanceStats.connections[coin].current--;
     });
@@ -704,7 +575,7 @@ module.exports = function (logger) {
               data.height +
               ", Worker: " +
               data.worker +
-              (isSoloMining ? " [SOLO]" : " [POOL]")
+              (isSoloMining ? " [SOLO]" : " [POOL]"),
           );
           performanceStats.blocks[coin].invalid++;
         } else {
@@ -724,7 +595,7 @@ module.exports = function (logger) {
               ", Reward: " +
               (data.blockReward
                 ? data.blockReward / 100000000 + " coins"
-                : "pending")
+                : "pending"),
           );
 
           performanceStats.blocks[coin].valid++;
@@ -758,7 +629,7 @@ module.exports = function (logger) {
             logSystem,
             logComponent,
             logSubCat,
-            "[HIGH DIFF SHARE] Diff: " + data.shareDiff + " by " + data.worker
+            "[HIGH DIFF SHARE] Diff: " + data.shareDiff + " by " + data.worker,
           );
         }
 
@@ -777,7 +648,7 @@ module.exports = function (logger) {
             data.shareDiff +
             ", Time: " +
             shareTime +
-            "ms"
+            "ms",
         );
 
         // Log every 1000th share with stats
@@ -796,7 +667,7 @@ module.exports = function (logger) {
               " valid shares processed - " +
               "Acceptance rate: " +
               validRatio +
-              "%"
+              "%",
           );
         }
       } else if (!isValidShare) {
@@ -809,7 +680,7 @@ module.exports = function (logger) {
             ", Reason: " +
             (data.error || "unknown") +
             ", Job: " +
-            data.job
+            data.job,
         );
 
         // Log high invalid share rates
@@ -824,7 +695,7 @@ module.exports = function (logger) {
               logSystem,
               logComponent,
               logSubCat,
-              "[High Invalid Rate] " + invalidRatio + "% shares rejected"
+              "[High Invalid Rate] " + invalidRatio + "% shares rejected",
             );
           }
         }
@@ -850,7 +721,7 @@ module.exports = function (logger) {
         logSystem,
         logComponent,
         logSubCat,
-        "[Difficulty] Updated for " + workerName + " to " + diff
+        "[Difficulty] Updated for " + workerName + " to " + diff,
       );
       handlers.diff(workerName, diff);
     });
@@ -866,234 +737,9 @@ module.exports = function (logger) {
       logSystem,
       logComponent,
       logSubCat,
-      "Pool initialized and running"
+      "Pool initialized and running",
     );
   });
-
-  // Proxy switching setup
-  if (portalConfig.switching) {
-    var logSystem = "Switching";
-    var logComponent = "Setup";
-    var logSubCat = "Thread " + (parseInt(forkId) + 1);
-
-    var proxyState = {};
-
-    logger.info(
-      logSystem,
-      logComponent,
-      logSubCat,
-      "Initializing proxy switching..."
-    );
-
-    redisClient.hgetall("proxyState", function (error, obj) {
-      if (!error && obj) {
-        proxyState = obj;
-        logger.info(
-          logSystem,
-          logComponent,
-          logSubCat,
-          "Loaded proxy state from Redis: " + JSON.stringify(proxyState)
-        );
-      } else if (error) {
-        logger.warning(
-          logSystem,
-          logComponent,
-          logSubCat,
-          "Could not load proxy state from Redis: " + error.message
-        );
-      }
-
-      Object.keys(portalConfig.switching).forEach(function (switchName) {
-        var algorithm = portalConfig.switching[switchName].algorithm;
-
-        if (!portalConfig.switching[switchName].enabled) {
-          logger.debug(
-            logSystem,
-            logComponent,
-            logSubCat,
-            'Proxy switch "' + switchName + '" is disabled'
-          );
-          return;
-        }
-
-        var initalPool = proxyState.hasOwnProperty(algorithm)
-          ? proxyState[algorithm]
-          : _this.getFirstPoolForAlgorithm(algorithm);
-        proxySwitch[switchName] = {
-          algorithm: algorithm,
-          ports: portalConfig.switching[switchName].ports,
-          currentPool: initalPool,
-          servers: [],
-        };
-
-        logger.info(
-          logSystem,
-          logComponent,
-          logSubCat,
-          'Setting up proxy "' +
-            switchName +
-            '" for ' +
-            algorithm +
-            " algorithm"
-        );
-
-        Object.keys(proxySwitch[switchName].ports).forEach(function (port) {
-          var connectionCount = 0;
-
-          var f = net
-            .createServer(function (socket) {
-              connectionCount++;
-              var currentPool = proxySwitch[switchName].currentPool;
-
-              logger.info(
-                logSystem,
-                "ProxyConnect",
-                logSubCat,
-                "New proxy connection #" +
-                  connectionCount +
-                  ' to "' +
-                  switchName +
-                  '" from ' +
-                  socket.remoteAddress +
-                  ":" +
-                  socket.remotePort +
-                  " on port " +
-                  port +
-                  " -> routing to " +
-                  currentPool
-              );
-
-              if (pools[currentPool]) {
-                pools[currentPool].getStratumServer().handleNewClient(socket);
-              } else {
-                logger.warning(
-                  logSystem,
-                  "ProxyConnect",
-                  logSubCat,
-                  "Pool " +
-                    currentPool +
-                    " not available, falling back to " +
-                    initalPool
-                );
-                pools[initalPool].getStratumServer().handleNewClient(socket);
-              }
-
-              socket.on("close", function () {
-                connectionCount--;
-                logger.debug(
-                  logSystem,
-                  "ProxyDisconnect",
-                  logSubCat,
-                  "Proxy connection closed. Active connections: " +
-                    connectionCount
-                );
-              });
-            })
-            .listen(parseInt(port), function () {
-              logger.success(
-                logSystem,
-                logComponent,
-                logSubCat,
-                'Proxy "' +
-                  switchName +
-                  '" listening for ' +
-                  algorithm +
-                  " on port " +
-                  port +
-                  " -> " +
-                  proxySwitch[switchName].currentPool
-              );
-            });
-
-          f.on("error", function (err) {
-            logger.error(
-              logSystem,
-              logComponent,
-              logSubCat,
-              "Failed to bind proxy port " + port + ": " + err.message
-            );
-          });
-
-          proxySwitch[switchName].servers.push(f);
-        });
-      });
-    });
-  }
-
-  this.getFirstPoolForAlgorithm = function (algorithm) {
-    var foundCoin = "";
-    Object.keys(poolConfigs).forEach(function (coinName) {
-      if (poolConfigs[coinName].coin.algorithm == algorithm) {
-        if (foundCoin === "") foundCoin = coinName;
-      }
-    });
-    logger.debug(
-      "PoolWorker",
-      "Algorithm",
-      "Fork " + forkId,
-      "First pool for " + algorithm + ": " + (foundCoin || "none")
-    );
-    return foundCoin;
-  };
-
-  this.setDifficultyForProxyPort = function (pool, coin, algo) {
-    logger.debug(
-      "PoolWorker",
-      coin,
-      "Fork " + forkId,
-      "Configuring proxy difficulties for " + algo
-    );
-
-    var diffConfigs = 0;
-    Object.keys(portalConfig.switching).forEach(function (switchName) {
-      if (!portalConfig.switching[switchName].enabled) return;
-
-      var switchAlgo = portalConfig.switching[switchName].algorithm;
-      if (pool.options.coin.algorithm !== switchAlgo) return;
-
-      for (var port in portalConfig.switching[switchName].ports) {
-        if (portalConfig.switching[switchName].ports[port].varDiff) {
-          pool.setVarDiff(
-            port,
-            portalConfig.switching[switchName].ports[port].varDiff
-          );
-          diffConfigs++;
-          logger.debug(
-            "PoolWorker",
-            coin,
-            "Fork " + forkId,
-            "Set varDiff for port " + port
-          );
-        }
-
-        if (portalConfig.switching[switchName].ports[port].diff) {
-          if (!pool.options.ports.hasOwnProperty(port))
-            pool.options.ports[port] = {};
-          pool.options.ports[port].diff =
-            portalConfig.switching[switchName].ports[port].diff;
-          diffConfigs++;
-          logger.debug(
-            "PoolWorker",
-            coin,
-            "Fork " + forkId,
-            "Set fixed diff " +
-              portalConfig.switching[switchName].ports[port].diff +
-              " for port " +
-              port
-          );
-        }
-      }
-    });
-
-    if (diffConfigs > 0) {
-      logger.info(
-        "PoolWorker",
-        coin,
-        "Fork " + forkId,
-        "Configured " + diffConfigs + " proxy difficulty settings"
-      );
-    }
-  };
 
   // Log stats periodically
   setInterval(function () {
@@ -1116,7 +762,7 @@ module.exports = function (logger) {
             performanceStats.blocks[coin].valid +
             " (Solo: " +
             performanceStats.blocks[coin].solo +
-            ")"
+            ")",
         );
       }
     });
