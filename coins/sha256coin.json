@@ -1,6 +1,6 @@
 {
-  "name": "bitcoin",
-  "symbol": "BTC",
+  "name": "sha256coin",
+  "symbol": "S256",
   "algorithm": "sha256",
   "reward": "POW",
   "asicboost": true,
@@ -21,7 +21,7 @@
     "feeHandledInCoinbase": false
   },
   "txMessages": true,
-  "txMessageText": "https://github.com/janos-raul/sha256-nomp",
+  "txMessageText": "https://sha256coin.eu",
   "segwit": true,
   "taproot": true,
   "coinbaseTxVersion": 2,
@@ -30,24 +30,24 @@
   "default_witness_commitment": true,
   "shareDifficultyTarget": "target",
   "rpcTimeout": 5000,
-  "blockTime": 600,
-  "minConf": 101,
+  "blockTime": 1200,
+  "minConf": 201,
 
   "addressValidation": {
     "validateWorkerUsername": true,
-    "addressPrefix": "bc1",
+    "addressPrefix": "s21",
     "minLength": 26,
     "maxLength": 46
   },
 
   "explorer": {
-    "txURL": "https://blockstream.info/tx/",
-    "blockURL": "https://blockstream.info/block/"
+    "txURL": "https://explorer.sha256coin.eu/tx/",
+    "blockURL": "https://explorer.sha256coin.eu/block/"
   },
 
   "rpc": {
     "host": "127.0.0.1",
-    "port": 8332,
+    "port": 25332,
     "user": "rpcuser",
     "password": "rpcpassword"
   }

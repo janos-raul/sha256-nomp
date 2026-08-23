@@ -59,6 +59,7 @@ SHA256-NOMP comes pre-configured with the following coins:
 | Bitcoin Silver | BTCS   | SHA256    | 50220-50226 | 201               | 5 min      |
 | Mytherra       | MYT    | SHA256    | 50232-50236 | 101               | 5 min      |
 | Bitcoin II     | BC2    | SHA256    | 50242-50246 | 101               | 10 min     |
+| SHA256COIN     | S256   | SHA256    | 50272-50276 | 201               | 20 min     |
 
 All coins support:
 
@@ -256,6 +257,7 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
 - `bitcoinsilver.json` - Bitcoin Silver (BTCS)
 - `mytherra.json` - Mytherra (MYT)
 - `bitcoinii.json` - Bitcoin II (BC2)
+- `sha256coin.json` - SHA256COIN (S256)
 
 **Coin Configuration Fields:**
 
@@ -282,7 +284,8 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
         "coinbaseOnly": false,             // If true, payment txs spend only generated (coinbase) UTXOs
         "feeHandledInCoinbase": false      // If true, payment processor will NOT deduct poolFee/soloFee again
     },
-    "txMessages": false,                  // Enable transaction messages
+    "txMessages": true,                   // Enable transaction messages
+    "txMessageText": "custom_message",    // Set a custom message
     "segwit": true,                       // Enable SegWit support
     "taproot": true,                      // Enable Taproot support
     "coinbaseTxVersion": 2,               // Coinbase transaction version
@@ -337,6 +340,7 @@ Pool configurations define operational settings for each coin's mining pool. Eac
 - `pool_configs/bitcoinsilver.json` - Bitcoin Silver pool (ports 50220-50226)
 - `pool_configs/mytherra.json` - Mytherra pool (ports 50232-50236)
 - `pool_configs/bitcoinii.json` - Bitcoin II pool (ports 50242-50246)
+- `pool_configs/sha256coin.json` - SHA256COIN pool (ports 50272-50276)
 
 **Pool Configuration Structure:**
 

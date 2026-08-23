@@ -20,7 +20,8 @@
     "coinbaseOnly": false,
     "feeHandledInCoinbase": false
   },
-  "txMessages": false,
+  "txMessages": true,
+  "txMessageText": "https://github.com/janos-raul/sha256-nomp",
   "segwit": true,
   "taproot": true,
   "coinbaseTxVersion": 2,
