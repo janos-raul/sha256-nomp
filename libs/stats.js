@@ -1763,7 +1763,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               ", Solo miners: " +
               coinStats.soloMinerCount +
               ", Pool workers: " +
-              coinStats.workerCount +
+              coinStats.poolWorkerCount +
               ", Solo workers: " +
               coinStats.soloWorkerCount,
           );

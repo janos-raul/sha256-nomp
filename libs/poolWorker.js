@@ -629,8 +629,8 @@ module.exports = function (logger) {
               hash: data.blockHash,
               height: data.height,
               worker: data.worker,
-              difficulty: data.difficulty,
-              shareDiff: data.shareDiff,
+              difficulty: formatCompactNumber(data.difficulty),
+              shareDiff: formatCompactNumber(data.shareDiff),
               reward: data.blockReward,
             },
           });

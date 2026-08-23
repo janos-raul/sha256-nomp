@@ -198,19 +198,19 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 for (var pool in portalStats.statHistory[h].pools) {
                   // Check regular workers
                   for (var w in portalStats.statHistory[h].pools[pool]
-                    .workers) {
+                    .poolWorkers) {
                     if (w.startsWith(address)) {
                       if (history[w] == null) {
                         history[w] = [];
                       }
                       if (
-                        portalStats.statHistory[h].pools[pool].workers[w]
+                        portalStats.statHistory[h].pools[pool].poolWorkers[w]
                           .hashrate
                       ) {
                         history[w].push({
                           time: portalStats.statHistory[h].time,
                           hashrate:
-                            portalStats.statHistory[h].pools[pool].workers[w]
+                            portalStats.statHistory[h].pools[pool].poolWorkers[w]
                               .hashrate,
                         });
                       }
@@ -244,10 +244,10 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               // Check current stats for both regular and solo workers
               for (var pool in portalStats.stats.pools) {
                 // Check regular workers
-                for (var w in portalStats.stats.pools[pool].workers) {
+                for (var w in portalStats.stats.pools[pool].poolWorkers) {
                   if (w.startsWith(address)) {
                     workerCount++;
-                    workers[w] = portalStats.stats.pools[pool].workers[w];
+                    workers[w] = portalStats.stats.pools[pool].poolWorkers[w];
                     for (var b in balances.balances) {
                       if (w == balances.balances[b].worker) {
                         workers[w].paid = balances.balances[b].paid;
@@ -257,7 +257,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     workers[w].balance = workers[w].balance || 0;
                     workers[w].paid = workers[w].paid || 0;
                     totalHash +=
-                      portalStats.stats.pools[pool].workers[w].hashrate;
+                      portalStats.stats.pools[pool].poolWorkers[w].hashrate;
                     networkHash =
                       portalStats.stats.pools[pool].poolStats.networkHash;
                   }
