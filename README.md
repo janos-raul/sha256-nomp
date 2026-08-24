@@ -285,7 +285,7 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
         "feeHandledInCoinbase": false      // If true, payment processor will NOT deduct poolFee/soloFee again
     },
     "txMessages": true,                   // Enable transaction messages
-    "txMessageText": "custom_message",    // Set a custom message
+    "txMessageText": "",                  // Custom OP_RETURN message
     "segwit": true,                       // Enable SegWit support
     "taproot": true,                      // Enable Taproot support
     "coinbaseTxVersion": 2,               // Coinbase transaction version
