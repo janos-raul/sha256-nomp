@@ -59,15 +59,15 @@
 
   "ports": {
     "50220": {
-      "diff": 15000,
+      "diff": 10000,
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 5000,
+        "minDiff": 3000,
         "maxDiff": 500000,
-        "targetTime": 15,
-        "retargetTime": 90,
-        "variancePercent": 30
+        "targetTime": 60,
+        "retargetTime": 180,
+        "variancePercent": 40
       }
     },
     "50221": {
@@ -75,59 +75,59 @@
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 7500,
-        "maxDiff": 500000,
-        "targetTime": 15,
-        "retargetTime": 90,
-        "variancePercent": 30
+        "minDiff": 8000,
+        "maxDiff": 100000,
+        "targetTime": 60,
+        "retargetTime": 180,
+        "variancePercent": 40
       }
     },
     "50222": {
-      "diff": 25000,
+      "diff": 40000,
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 10000,
-        "maxDiff": 500000,
-        "targetTime": 15,
-        "retargetTime": 90,
-        "variancePercent": 30
+        "minDiff": 15000,
+        "maxDiff": 1500000,
+        "targetTime": 60,
+        "retargetTime": 180,
+        "variancePercent": 40
       }
     },
     "50223": {
-      "diff": 50000,
-      "tls": false,
-      "soloMining": true,
-      "varDiff": {
-        "minDiff": 25000,
-        "maxDiff": 1000000,
-        "targetTime": 20,
-        "retargetTime": 120,
-        "variancePercent": 30
-      }
-    },
-    "50224": {
       "diff": 100000,
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 50000,
-        "maxDiff": 5000000,
-        "targetTime": 25,
-        "retargetTime": 180,
-        "variancePercent": 35
+        "minDiff": 40000,
+        "maxDiff": 4000000,
+        "targetTime": 60,
+        "retargetTime": 240,
+        "variancePercent": 50
+      }
+    },
+    "50224": {
+      "diff": 300000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 100000,
+        "maxDiff": 30000000,
+        "targetTime": 60,
+        "retargetTime": 300,
+        "variancePercent": 60
       }
     },
     "50226": {
-      "diff": 1500000,
+      "diff": 1000000,
       "tls": false,
       "soloMining": true,
       "varDiff": {
         "minDiff": 500000,
         "maxDiff": 50000000,
-        "targetTime": 30,
-        "retargetTime": 300,
-        "variancePercent": 40
+        "targetTime": 60,
+        "retargetTime": 360,
+        "variancePercent": 65
       }
     }
   },
