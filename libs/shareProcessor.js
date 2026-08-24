@@ -298,6 +298,16 @@ module.exports = function (logger, poolConfig) {
           shareData.worker,
           (dateNow / 1000) | 0,
         ]);
+        // Track last share difficulty for solo workers
+        // (shareDiff = actual computed difficulty of this share, i.e. the
+        // luck factor — not shareData.difficulty, which is just the
+        // miner's assigned/target diff and barely changes between shares)
+        redisCommands.push([
+          "hset",
+          coin + ":shares:diffCurrent:solo",
+          shareData.worker,
+          shareData.shareDiff || shareData.difficulty,
+        ]);
 
         // Log solo share
         if (stats.shares.solo % 100 === 0) {
@@ -367,6 +377,16 @@ module.exports = function (logger, poolConfig) {
           coin + ":shares:timesCurrent",
           shareData.worker,
           (dateNow / 1000) | 0,
+        ]);
+        // Track last share difficulty for pool workers
+        // (shareDiff = actual computed difficulty of this share, i.e. the
+        // luck factor — not shareData.difficulty, which is just the
+        // miner's assigned/target diff and barely changes between shares)
+        redisCommands.push([
+          "hset",
+          coin + ":shares:diffCurrent",
+          shareData.worker,
+          shareData.shareDiff || shareData.difficulty,
         ]);
 
         // Log pool share milestones
@@ -559,6 +579,9 @@ module.exports = function (logger, poolConfig) {
         // Clear solo round times
         redisCommands.push(["del", coin + ":shares:timesCurrent:solo"]);
 
+        // Clear solo round diffs
+        redisCommands.push(["del", coin + ":shares:diffCurrent:solo"]);
+
         // Update solo block stats
         redisCommands.push(["hincrby", coin + ":stats:solo", "validBlocks", 1]);
         redisCommands.push([
@@ -625,6 +648,11 @@ module.exports = function (logger, poolConfig) {
           "rename",
           coin + ":shares:timesCurrent",
           coin + ":shares:times" + blockInfo.height,
+        ]);
+        redisCommands.push([
+          "rename",
+          coin + ":shares:diffCurrent",
+          coin + ":shares:diffs" + blockInfo.height,
         ]);
 
         // Store pool block

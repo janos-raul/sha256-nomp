@@ -295,6 +295,10 @@ function calculateAverageHashrate(pool, data) {
 }
 
 function getReadableDifficultyString(difficulty) {
+  difficulty = parseFloat(difficulty);
+  if (isNaN(difficulty) || difficulty <= 0) {
+    return "1.00";
+  }
   if (difficulty >= 1e24) return (difficulty / 1e24).toFixed(2) + " Y";
   if (difficulty >= 1e21) return (difficulty / 1e21).toFixed(2) + " Z";
   if (difficulty >= 1e18) return (difficulty / 1e18).toFixed(2) + " E";

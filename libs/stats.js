@@ -715,10 +715,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           ["smembers", ":blocksPending:solo"], // index 17
           ["smembers", ":blocksConfirmed:solo"], // index 18
           ["hgetall", ":shares:timesCurrent:solo"], // index 19
+          ["hgetall", ":shares:diffCurrent"], // index 20
+          ["hgetall", ":shares:diffCurrent:solo"], // index 21
         ];
 
         //var commandsPerCoin = redisCommandTemplates.length;
-        var commandsPerCoin = 20; // Hardcode this to be sure
+        var commandsPerCoin = 22; // Hardcode this to be sure
 
         // ENHANCED: Solo mining data indices
         var soloSharesIndex = 9; // :shares:roundCurrent:solo position
@@ -967,6 +969,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 currentRoundTimesPool: replies[i + 13] || {}, // Pool worker times
                 currentRoundTimesSolo: replies[i + 19] || {}, // Solo worker times
                 currentRoundTimes: {}, // Will be populated with actual worker times
+                lastShareDiffPool: replies[i + 20] || {}, // Pool worker last-share diffs
+                lastShareDiffSolo: replies[i + 21] || {}, // Solo worker last-share diffs
                 maxRoundTime: 0,
                 shareCount: 0,
               };
@@ -1607,6 +1611,36 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             coinStats.currentRoundTimes[worker] = time;
 
             if (_maxTimeShare < time) _maxTimeShare = time;
+          }
+
+          // Process pool worker last-share difficulty
+          for (var worker in coinStats.lastShareDiffPool) {
+            var lastDiff = parseFloat(coinStats.lastShareDiffPool[worker]);
+
+            // Update poolWorkers
+            if (worker in coinStats.poolWorkers) {
+              coinStats.poolWorkers[worker].lastShareDiff = lastDiff;
+            }
+
+            // Update combined workers
+            if (worker in coinStats.workers) {
+              coinStats.workers[worker].lastShareDiff = lastDiff;
+            }
+          }
+
+          // Process solo worker last-share difficulty
+          for (var worker in coinStats.lastShareDiffSolo) {
+            var lastDiff = parseFloat(coinStats.lastShareDiffSolo[worker]);
+
+            // Update soloWorkers
+            if (worker in coinStats.soloWorkers) {
+              coinStats.soloWorkers[worker].lastShareDiff = lastDiff;
+            }
+
+            // Update combined workers
+            if (worker in coinStats.workers) {
+              coinStats.workers[worker].lastShareDiff = lastDiff;
+            }
           }
 
           coinStats.shareCount = _shareTotal;

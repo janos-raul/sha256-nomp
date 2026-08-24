@@ -238,6 +238,24 @@
         color: var(--text-primary);
         font-weight: 500;
         font-family: 'Courier New', monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+    }
+
+    .last-share-diff {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: var(--success);
+        margin-left: 0.25rem;
+    }
+
+    .last-share-time {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        margin-left: 0.25rem;
     }
 
     /* Section Headers */
@@ -401,9 +419,9 @@
 <script>
     var _miner = "{{=String(it.stats.address || '').split('.')[0]}}";
     var _workerCount = 0;
-    
+
     // Make functions available globally
-    window.getWorkerNameFromAddress = function(w) {
+    window.getWorkerNameFromAddress = function (w) {
         var worker = w;
         // Check if there's a dot in the address (indicating a worker name)
         if (w.indexOf(".") > -1) {
@@ -420,84 +438,90 @@
         }
         return worker;
     };
-    
+
     // Modern worker display function
     function addWorkerToDisplay(name, htmlSafeName, workerObj, isSolo) {
         var htmlToAdd = '';
         var cardClass = isSolo ? 'solo' : 'pool';
         var badgeClass = isSolo ? 'badge-solo' : 'badge-pool';
         var badgeText = isSolo ? 'SOLO' : 'POOL';
-        
+
         // Ensure we display "noname" if no worker name is provided
         var displayName = name;
         if (!displayName || displayName.trim().length === 0) {
             displayName = "noname";
         }
-        
+
         htmlToAdd = '<div class="worker-card ' + cardClass + '" id="worker_' + htmlSafeName + '">';
         htmlToAdd += '<div class="worker-header">';
         htmlToAdd += '<div class="worker-name">' + displayName.replace(/[^\w\s]/gi, '') + '</div>';
         htmlToAdd += '<span class="worker-badge ' + badgeClass + '">' + badgeText + '</span>';
         htmlToAdd += '</div>';
         htmlToAdd += '<div class="worker-stats">';
-        
+
         // Hashrate Now
         htmlToAdd += '<div class="worker-stat">';
         htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-tachometer-alt"></i> Hashrate</span>';
         htmlToAdd += '<span class="worker-stat-value" id="statsHashrate' + htmlSafeName + '">...</span>';
         htmlToAdd += '</div>';
-        
+
         // Hashrate Avg
         htmlToAdd += '<div class="worker-stat">';
         htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-gauge"></i> Average</span>';
         htmlToAdd += '<span class="worker-stat-value" id="statsHashrateAvg' + htmlSafeName + '">...</span>';
         htmlToAdd += '</div>';
-        
+
         // Difficulty
         htmlToAdd += '<div class="worker-stat">';
         htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-unlock-alt"></i> Difficulty</span>';
         htmlToAdd += '<span class="worker-stat-value" id="statsDiff' + htmlSafeName + '">...</span>';
         htmlToAdd += '</div>';
-        
+
+        // Last Share
+        htmlToAdd += '<div class="worker-stat">';
+        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-bolt"></i> Last Share</span>';
+        htmlToAdd += '<span class="worker-stat-value" id="statsLastShare' + htmlSafeName + '">...</span>';
+        htmlToAdd += '</div>';
+
         // Shares
         htmlToAdd += '<div class="worker-stat">';
         htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-cog"></i> Shares</span>';
         htmlToAdd += '<span class="worker-stat-value" id="statsShares' + htmlSafeName + '">...</span>';
         htmlToAdd += '</div>';
-        
+
         // Luck
         htmlToAdd += '<div class="worker-stat">';
         htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-clock"></i> Luck</span>';
         htmlToAdd += '<span class="worker-stat-value" id="statsLuckDays' + htmlSafeName + '">...</span>';
         htmlToAdd += '</div>';
-        
+
         // Balance
         htmlToAdd += '<div class="worker-stat">';
         htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-wallet"></i> Balance</span>';
         htmlToAdd += '<span class="worker-stat-value" id="statsBalance' + htmlSafeName + '">...</span>';
         htmlToAdd += '</div>';
-        
+
         // Paid
         htmlToAdd += '<div class="worker-stat">';
         htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-money-bill"></i> Paid</span>';
         htmlToAdd += '<span class="worker-stat-value" id="statsPaid' + htmlSafeName + '">...</span>';
         htmlToAdd += '</div>';
-        
+
         htmlToAdd += '</div></div>';
-        
+
         var targetContainer = isSolo ? "#boxesSoloWorkers" : "#boxesPoolWorkers";
         var targetSection = isSolo ? "#soloWorkersSection" : "#poolWorkersSection";
-        
+
         $(targetSection).show();
         $(targetContainer).append(htmlToAdd);
     }
-    
+
     function rebuildWorkerDisplay() {
         $("#boxesPoolWorkers").html("");
         $("#boxesSoloWorkers").html("");
         $("#poolWorkersSection").hide();
         $("#soloWorkersSection").hide();
-        
+
         if (window.statData && window.statData.workers) {
             for (var w in window.statData.workers) {
                 var worker = window.statData.workers[w];
@@ -508,13 +532,13 @@
             }
         }
     }
-    
+
     // Make functions globally available
     window.rebuildWorkerDisplay = rebuildWorkerDisplay;
     window.addWorkerToDisplay = addWorkerToDisplay;
-    
+
     // Initialize - prevent double loading
-    $(document).ready(function() {
+    $(document).ready(function () {
         console.log('Initializing miner stats for:', _miner);
 
         // Check if script is already loaded to prevent double loading
@@ -525,7 +549,7 @@
             // EventSource is already handled by main.js globally
             var script = document.createElement('script');
             script.src = '/static/modern-miner-stats.js?v=' + Date.now();
-            script.onload = function() {
+            script.onload = function () {
                 console.log('Miner stats script loaded successfully');
             };
             document.querySelector('main').appendChild(script);

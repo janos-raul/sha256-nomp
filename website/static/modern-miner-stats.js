@@ -81,6 +81,19 @@ function getWorkerNameFromAddress(w) {
   return worker;
 }
 
+function getTimeAgoString(unixSeconds) {
+  var t = parseFloat(unixSeconds);
+  if (!t || isNaN(t) || t <= 0) {
+    return "No shares yet";
+  }
+  var seconds = Math.floor(Date.now() / 1000 - t);
+  if (seconds < 0) seconds = 0;
+  if (seconds < 60) return seconds + "s ago";
+  if (seconds < 3600) return Math.floor(seconds / 60) + "m ago";
+  if (seconds < 86400) return Math.floor(seconds / 3600) + "h ago";
+  return Math.floor(seconds / 86400) + "d ago";
+}
+
 // =====================
 // Chart Functions
 // =====================
@@ -376,7 +389,7 @@ function updateStats() {
   // Update display elements
   $("#statsHashrate").text(getReadableHashRateString(totalHash));
   $("#statsHashrateAvg").text(
-    getReadableHashRateString(calculateAverageHashrate(null))
+    getReadableHashRateString(calculateAverageHashrate(null)),
   );
   $("#statsLuckDays").text(getReadableLuckTime(luckDays));
   $("#statsTotalImmature").text(totalImmature.toFixed(8));
@@ -400,26 +413,36 @@ function updateWorkerStats() {
     var saneWorkerName = getWorkerNameFromAddress(w);
 
     $("#statsHashrate" + htmlSafeWorkerName).text(
-      getReadableHashRateString(worker.hashrate)
+      getReadableHashRateString(worker.hashrate),
     );
     $("#statsHashrateAvg" + htmlSafeWorkerName).text(
-      getReadableHashRateString(calculateAverageHashrate(saneWorkerName))
+      getReadableHashRateString(calculateAverageHashrate(saneWorkerName)),
     );
     $("#statsLuckDays" + htmlSafeWorkerName).text(
-      getReadableLuckTime(worker.luckDays)
+      getReadableLuckTime(worker.luckDays),
     );
     $("#statsPaid" + htmlSafeWorkerName).text(
-      parseFloat(worker.paid || 0).toFixed(8)
+      parseFloat(worker.paid || 0).toFixed(8),
     );
     $("#statsBalance" + htmlSafeWorkerName).text(
-      parseFloat(worker.balance || 0).toFixed(8)
+      parseFloat(worker.balance || 0).toFixed(8),
     );
     $("#statsShares" + htmlSafeWorkerName).text(
-      getReadableSharesString(worker.currRoundShares || 0)
+      getReadableSharesString(worker.currRoundShares || 0),
     );
     $("#statsDiff" + htmlSafeWorkerName).text(
-      getReadableDifficultyString(worker.diff) || "N/A"
+      getReadableDifficultyString(worker.diff) || "N/A",
     );
+$("#statsLastShare" + htmlSafeWorkerName).html(
+  (worker.lastShareDiff
+    ? ' <span class="last-share-diff">' +
+      getReadableDifficultyString(worker.lastShareDiff) +
+      "</span>"
+    : "") +
+    ' <span class="last-share-time">' +
+    getTimeAgoString(worker.currRoundTime) +
+    "</span>",
+);
   }
 }
 
@@ -485,7 +508,7 @@ function calculateWorkerHistoryMax() {
     workerHistoryMax,
     "points (",
     ((workerHistoryMax * updateInterval) / 60).toFixed(1),
-    "minutes)"
+    "minutes)",
   );
 }
 
