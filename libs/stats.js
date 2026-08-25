@@ -717,10 +717,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           ["hgetall", ":shares:timesCurrent:solo"], // index 19
           ["hgetall", ":shares:diffCurrent"], // index 20
           ["hgetall", ":shares:diffCurrent:solo"], // index 21
+          ["zrange", ":shares:bestDiff", "0", "-1", "WITHSCORES"], // index 22
+          ["zrange", ":shares:bestDiff:solo", "0", "-1", "WITHSCORES"], // index 23
         ];
 
         //var commandsPerCoin = redisCommandTemplates.length;
-        var commandsPerCoin = 22; // Hardcode this to be sure
+        var commandsPerCoin = 24; // Hardcode this to be sure
 
         // ENHANCED: Solo mining data indices
         var soloSharesIndex = 9; // :shares:roundCurrent:solo position
@@ -971,6 +973,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 currentRoundTimes: {}, // Will be populated with actual worker times
                 lastShareDiffPool: replies[i + 20] || {}, // Pool worker last-share diffs
                 lastShareDiffSolo: replies[i + 21] || {}, // Solo worker last-share diffs
+                bestShareDiffPool: replies[i + 22] || [], // Pool worker best-share diffs (flat zrange withscores)
+                bestShareDiffSolo: replies[i + 23] || [], // Solo worker best-share diffs (flat zrange withscores)
                 maxRoundTime: 0,
                 shareCount: 0,
               };
@@ -1073,7 +1077,10 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             var workerShares = parseFloat(parts[0]);
             var miner = parts[1].split(".")[0];
             var worker = parts[1];
-            var diff = Math.round(parts[0] * 8192);
+            // parts[0] is already the real assigned difficulty
+            // (shareData.difficulty from shareProcessor.js), not a
+            // normalized share-count — no multiplier needed here.
+            var diff = workerShares;
 
             if (workerShares > 0) {
               coinStats.poolShares += workerShares;
@@ -1270,7 +1277,10 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               var workerShares = parseFloat(parts[0]);
               var miner = parts[1].split(".")[0];
               var worker = parts[1];
-              var diff = Math.round(parts[0] * 8192);
+              // parts[0] is already the real assigned difficulty
+              // (shareData.difficulty from shareProcessor.js), not a
+              // normalized share-count — no multiplier needed here.
+              var diff = workerShares;
 
               if (workerShares > 0) {
                 coinStats.soloShares += workerShares;
@@ -1640,6 +1650,43 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             // Update combined workers
             if (worker in coinStats.workers) {
               coinStats.workers[worker].lastShareDiff = lastDiff;
+            }
+          }
+
+          // ZRANGE WITHSCORES returns a flat [member, score, member, score, ...]
+          // array — convert to worker -> bestDiff maps before merging
+          var bestDiffPoolMap = {};
+          for (var bi = 0; bi < coinStats.bestShareDiffPool.length; bi += 2) {
+            bestDiffPoolMap[coinStats.bestShareDiffPool[bi]] = parseFloat(
+              coinStats.bestShareDiffPool[bi + 1],
+            );
+          }
+          var bestDiffSoloMap = {};
+          for (var bi = 0; bi < coinStats.bestShareDiffSolo.length; bi += 2) {
+            bestDiffSoloMap[coinStats.bestShareDiffSolo[bi]] = parseFloat(
+              coinStats.bestShareDiffSolo[bi + 1],
+            );
+          }
+
+          // Process pool worker best-share difficulty
+          for (var worker in bestDiffPoolMap) {
+            if (worker in coinStats.poolWorkers) {
+              coinStats.poolWorkers[worker].bestShareDiff =
+                bestDiffPoolMap[worker];
+            }
+            if (worker in coinStats.workers) {
+              coinStats.workers[worker].bestShareDiff = bestDiffPoolMap[worker];
+            }
+          }
+
+          // Process solo worker best-share difficulty
+          for (var worker in bestDiffSoloMap) {
+            if (worker in coinStats.soloWorkers) {
+              coinStats.soloWorkers[worker].bestShareDiff =
+                bestDiffSoloMap[worker];
+            }
+            if (worker in coinStats.workers) {
+              coinStats.workers[worker].bestShareDiff = bestDiffSoloMap[worker];
             }
           }
 

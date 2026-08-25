@@ -58,64 +58,40 @@
   },
 
   "ports": {
-    "50220": {
-      "diff": 10000,
-      "tls": false,
-      "soloMining": true,
-      "varDiff": {
-        "minDiff": 3000,
-        "maxDiff": 500000,
-        "targetTime": 30,
-        "retargetTime": 180,
-        "variancePercent": 20
-      }
-    },
-    "50221": {
-      "diff": 20000,
-      "tls": false,
-      "soloMining": true,
-      "varDiff": {
-        "minDiff": 8000,
-        "maxDiff": 100000,
-        "targetTime": 30,
-        "retargetTime": 180,
-        "variancePercent": 20
-      }
-    },
     "50222": {
-      "diff": 40000,
+      "diff": 15000,
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 15000,
-        "maxDiff": 1500000,
+        "minDiff": 1500,
+        "maxDiff": 200000,
         "targetTime": 30,
-        "retargetTime": 180,
-        "variancePercent": 20
+        "retargetTime": 300,
+        "variancePercent": 5
       }
     },
     "50223": {
-      "diff": 100000,
+      "diff": 50000,
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 40000,
-        "maxDiff": 4000000,
-        "targetTime": 30,
-        "retargetTime": 240,
-        "variancePercent": 25
+        "minDiff": 5000,
+        "maxDiff": 2000000,
+        "targetTime": 35,
+        "retargetTime": 300,
+        "variancePercent": 10
       }
     },
     "50224": {
-      "diff": 300000,
+      "diff": 250000,
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 100000,
-        "maxDiff": 30000000,
-        "targetTime": 30,
-        "retargetTime": 300,
-        "variancePercent": 30
+        "minDiff": 25000,
+        "maxDiff": 10000000,
+        "targetTime": 40,
+        "retargetTime": 360,
+        "variancePercent": 10
       }
     },
     "50226": {
@@ -123,11 +99,11 @@
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 500000,
-        "maxDiff": 50000000,
-        "targetTime": 30,
-        "retargetTime": 360,
-        "variancePercent": 35
+        "minDiff": 100000,
+        "maxDiff": 15000000,
+        "targetTime": 45,
+        "retargetTime": 420,
+        "variancePercent": 15
       }
     }
   },

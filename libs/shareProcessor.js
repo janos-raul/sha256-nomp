@@ -308,7 +308,14 @@ module.exports = function (logger, poolConfig) {
           shareData.worker,
           shareData.shareDiff || shareData.difficulty,
         ]);
-
+        // Track best share difficulty this round (solo) — atomic GT, race-safe
+        redisCommands.push([
+          "zadd",
+          coin + ":shares:bestDiff:solo",
+          "GT",
+          shareData.shareDiff || shareData.difficulty,
+          shareData.worker,
+        ]);
         // Log solo share
         if (stats.shares.solo % 100 === 0) {
           logger.info(
@@ -388,7 +395,14 @@ module.exports = function (logger, poolConfig) {
           shareData.worker,
           shareData.shareDiff || shareData.difficulty,
         ]);
-
+        // Track best share difficulty this round (pool) — atomic GT, race-safe
+        redisCommands.push([
+          "zadd",
+          coin + ":shares:bestDiff",
+          "GT",
+          shareData.shareDiff || shareData.difficulty,
+          shareData.worker,
+        ]);
         // Log pool share milestones
         if (stats.shares.pool % 1000 === 0) {
           logger.info(
@@ -582,6 +596,9 @@ module.exports = function (logger, poolConfig) {
         // Clear solo round diffs
         redisCommands.push(["del", coin + ":shares:diffCurrent:solo"]);
 
+        // Clear solo best-share diffs
+        redisCommands.push(["del", coin + ":shares:bestDiff:solo"]);
+
         // Update solo block stats
         redisCommands.push(["hincrby", coin + ":stats:solo", "validBlocks", 1]);
         redisCommands.push([
@@ -653,6 +670,11 @@ module.exports = function (logger, poolConfig) {
           "rename",
           coin + ":shares:diffCurrent",
           coin + ":shares:diffs" + blockInfo.height,
+        ]);
+        redisCommands.push([
+          "rename",
+          coin + ":shares:bestDiff",
+          coin + ":shares:bestDiffs" + blockInfo.height,
         ]);
 
         // Store pool block

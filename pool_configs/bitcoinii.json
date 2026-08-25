@@ -63,11 +63,11 @@
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 5000,
-        "maxDiff": 500000,
+        "minDiff": 1500,
+        "maxDiff": 200000,
         "targetTime": 30,
-        "retargetTime": 180,
-        "variancePercent": 20
+        "retargetTime": 300,
+        "variancePercent": 5
       }
     },
     "50243": {
@@ -75,11 +75,11 @@
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 20000,
+        "minDiff": 5000,
         "maxDiff": 2000000,
-        "targetTime": 30,
-        "retargetTime": 240,
-        "variancePercent": 25
+        "targetTime": 35,
+        "retargetTime": 300,
+        "variancePercent": 10
       }
     },
     "50244": {
@@ -87,11 +87,11 @@
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 100000,
+        "minDiff": 25000,
         "maxDiff": 10000000,
-        "targetTime": 30,
-        "retargetTime": 300,
-        "variancePercent": 30
+        "targetTime": 40,
+        "retargetTime": 360,
+        "variancePercent": 10
       }
     },
     "50246": {
@@ -99,11 +99,11 @@
       "tls": false,
       "soloMining": true,
       "varDiff": {
-        "minDiff": 500000,
-        "maxDiff": 50000000,
-        "targetTime": 30,
-        "retargetTime": 360,
-        "variancePercent": 35
+        "minDiff": 100000,
+        "maxDiff": 15000000,
+        "targetTime": 45,
+        "retargetTime": 420,
+        "variancePercent": 15
       }
     }
   },

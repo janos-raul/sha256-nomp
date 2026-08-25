@@ -56,7 +56,7 @@ SHA256-NOMP comes pre-configured with the following coins:
 | Coin           | Symbol | Algorithm | Ports       | Min Confirmations | Block Time |
 | -------------- | ------ | --------- | ----------- | ----------------- | ---------- |
 | Bitcoin        | BTC    | SHA256    | 50212-50216 | 101               | 10 min     |
-| Bitcoin Silver | BTCS   | SHA256    | 50220-50226 | 201               | 5 min      |
+| Bitcoin Silver | BTCS   | SHA256    | 50222-50226 | 201               | 5 min      |
 | Mytherra       | MYT    | SHA256    | 50232-50236 | 101               | 5 min      |
 | Bitcoin II     | BC2    | SHA256    | 50242-50246 | 101               | 10 min     |
 | SHA256COIN     | S256   | SHA256    | 50272-50276 | 201               | 20 min     |

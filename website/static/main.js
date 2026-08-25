@@ -323,7 +323,7 @@ function getReadableHashRateString(hashrate) {
 function getReadableDifficultyString(difficulty) {
   difficulty = parseFloat(difficulty);
   if (isNaN(difficulty) || difficulty <= 0) {
-    return "1.00";
+    return "N/A";
   }
   if (difficulty >= 1e24) return (difficulty / 1e24).toFixed(2) + " Y";
   if (difficulty >= 1e21) return (difficulty / 1e21).toFixed(2) + " Z";
@@ -332,7 +332,23 @@ function getReadableDifficultyString(difficulty) {
   if (difficulty >= 1e12) return (difficulty / 1e12).toFixed(2) + " T";
   if (difficulty >= 1e9) return (difficulty / 1e9).toFixed(2) + " G";
   if (difficulty >= 1e6) return (difficulty / 1e6).toFixed(2) + " M";
-  if (difficulty >= 1e3) return (difficulty / 1e3).toFixed(2) + " k";
+  if (difficulty >= 1e3) return (difficulty / 1e3).toFixed(2) + " K";
+  return difficulty.toFixed(2);
+}
+
+function getReadableDifficultyStringStripped(difficulty) {
+  difficulty = parseFloat(difficulty);
+  if (isNaN(difficulty) || difficulty <= 0) {
+    return "N/A";
+  }
+  if (difficulty >= 1e24) return (difficulty / 1e24).toFixed(2) + "Y";
+  if (difficulty >= 1e21) return (difficulty / 1e21).toFixed(2) + "Z";
+  if (difficulty >= 1e18) return (difficulty / 1e18).toFixed(2) + "E";
+  if (difficulty >= 1e15) return (difficulty / 1e15).toFixed(2) + "P";
+  if (difficulty >= 1e12) return (difficulty / 1e12).toFixed(2) + "T";
+  if (difficulty >= 1e9) return (difficulty / 1e9).toFixed(2) + "G";
+  if (difficulty >= 1e6) return (difficulty / 1e6).toFixed(2) + "M";
+  if (difficulty >= 1e3) return (difficulty / 1e3).toFixed(2) + "K";
   return difficulty.toFixed(2);
 }
 

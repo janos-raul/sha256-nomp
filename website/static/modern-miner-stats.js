@@ -433,16 +433,21 @@ function updateWorkerStats() {
     $("#statsDiff" + htmlSafeWorkerName).text(
       getReadableDifficultyString(worker.diff) || "N/A",
     );
-$("#statsLastShare" + htmlSafeWorkerName).html(
-  (worker.lastShareDiff
-    ? ' <span class="last-share-diff">' +
-      getReadableDifficultyString(worker.lastShareDiff) +
-      "</span>"
-    : "") +
-    ' <span class="last-share-time">' +
-    getTimeAgoString(worker.currRoundTime) +
-    "</span>",
-);
+    $("#statsLastShare" + htmlSafeWorkerName).html(
+      (worker.lastShareDiff
+        ? ' <span class="last-share-diff">' +
+          getReadableDifficultyStringStripped(worker.lastShareDiff) +
+          "</span>"
+        : "") +
+        ' <span class="last-share-time">' +
+        getTimeAgoString(worker.currRoundTime) +
+        "</span>",
+    );
+    $("#statsBestShare" + htmlSafeWorkerName).text(
+      worker.bestShareDiff
+        ? getReadableDifficultyString(worker.bestShareDiff)
+        : "—",
+    );
   }
 }
 
