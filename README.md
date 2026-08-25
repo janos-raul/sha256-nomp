@@ -77,7 +77,7 @@ If your pool uses SHA256-NOMP let us know and we will list your website here.
 
 ### Some pools using SHA256-NOMP:
 
-[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:55000)
+[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:50300)
 
 _Building high-performance SHA256 mining infrastructure_
 
@@ -983,7 +983,7 @@ the `node-stratum-pool` and `node-multi-hashing` modules, and any config files t
 
 #### Developer & Maintainer
 
-[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:55000)
+[![Website](https://img.shields.io/badge/Pool-sha256--mining.go.ro-blue?style=for-the-badge)](https://sha256-mining.go.ro:50300)
 
 _Building high-performance SHA256 mining infrastructure_
 
