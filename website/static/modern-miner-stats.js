@@ -72,11 +72,11 @@ function getWorkerNameFromAddress(w) {
     worker = parts.slice(1).join(".");
     // If worker name is empty or just whitespace, use "noname"
     if (!worker || worker.trim().length === 0) {
-      worker = "noname";
+      worker = "no-name";
     }
   } else {
     // No dot found, so no worker name provided
-    worker = "noname";
+    worker = "no-name";
   }
   return worker;
 }
@@ -409,7 +409,7 @@ function updateWorkerStats() {
       w
         .split(".")
         .join("_")
-        .replace(/[^\w\s]/gi, "");
+        .replace(/[^\w\s\-]/gi, "");
     var saneWorkerName = getWorkerNameFromAddress(w);
 
     $("#statsHashrate" + htmlSafeWorkerName).text(
@@ -433,15 +433,24 @@ function updateWorkerStats() {
     $("#statsDiff" + htmlSafeWorkerName).text(
       getReadableDifficultyString(worker.diff) || "N/A",
     );
+    var timeAgoText = getTimeAgoString(worker.currRoundTime);
+    // If it contains 'm', 'h', or 'd', it's been over a minute (stale)
+    var isStale =
+      timeAgoText.includes("m") ||
+      timeAgoText.includes("h") ||
+      timeAgoText.includes("d");
+
     $("#statsLastShare" + htmlSafeWorkerName).html(
-      (worker.lastShareDiff
-        ? ' <span class="last-share-diff">' +
-          getReadableDifficultyStringStripped(worker.lastShareDiff) +
-          "</span>"
-        : "") +
-        ' <span class="last-share-time">' +
-        getTimeAgoString(worker.currRoundTime) +
-        "</span>",
+      ' <span class="last-share-time' +
+        (isStale ? " stale" : "") +
+        '">' +
+        timeAgoText +
+        "</span>" +
+        (worker.lastShareDiff
+          ? ' <span class="last-share-diff">' +
+            getReadableDifficultyString(worker.lastShareDiff) +
+            "</span>"
+          : "—"),
     );
     $("#statsBestShare" + htmlSafeWorkerName).text(
       worker.bestShareDiff

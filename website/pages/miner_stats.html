@@ -248,14 +248,28 @@
         font-size: 0.85rem;
         font-weight: 800;
         color: var(--success);
+        text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+        /* Soft neon-like glow */
         margin-left: 0.25rem;
     }
 
     .last-share-time {
         font-size: 0.75rem;
         font-weight: 800;
+        padding: 0.15rem 0.35rem;
+        border-radius: 0.25rem;
+        display: inline-block;
+        /* Default green box for seconds */
         color: var(--text-muted);
-        margin-left: 0.25rem;
+        background-color: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .last-share-time.stale {
+        /* Red box when it reaches minutes or longer */
+        color: #ef4444 !important;
+        background-color: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     /* Section Headers */
@@ -430,11 +444,11 @@
             worker = parts.slice(1).join(".");
             // If worker name is empty or just whitespace, use "noname"
             if (!worker || worker.trim().length === 0) {
-                worker = "noname";
+                worker = "no-name";
             }
         } else {
             // No dot found, so no worker name provided
-            worker = "noname";
+            worker = "no-name";
         }
         return worker;
     };
@@ -449,12 +463,12 @@
         // Ensure we display "noname" if no worker name is provided
         var displayName = name;
         if (!displayName || displayName.trim().length === 0) {
-            displayName = "noname";
+            displayName = "no-name";
         }
 
         htmlToAdd = '<div class="worker-card ' + cardClass + '" id="worker_' + htmlSafeName + '">';
         htmlToAdd += '<div class="worker-header">';
-        htmlToAdd += '<div class="worker-name">' + displayName.replace(/[^\w\s]/gi, '') + '</div>';
+        htmlToAdd += '<div class="worker-name">' + displayName.replace(/[^\w\s\-]/gi, '') + '</div>';
         htmlToAdd += '<span class="worker-badge ' + badgeClass + '">' + badgeText + '</span>';
         htmlToAdd += '</div>';
         htmlToAdd += '<div class="worker-stats">';
@@ -532,7 +546,7 @@
             for (var w in window.statData.workers) {
                 var worker = window.statData.workers[w];
                 var isSolo = worker.isSolo === true;
-                var htmlSafeWorkerName = (isSolo ? 'solo_' : '') + w.split('.').join('_').replace(/[^\w\s]/gi, '');
+                var htmlSafeWorkerName = (isSolo ? 'solo_' : '') + w.split('.').join('_').replace(/[^\w\s\-]/gi, '');
                 var saneWorkerName = getWorkerNameFromAddress(w);
                 addWorkerToDisplay(saneWorkerName, htmlSafeWorkerName, worker, isSolo);
             }

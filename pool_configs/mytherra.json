@@ -64,7 +64,7 @@
       "soloMining": true,
       "varDiff": {
         "minDiff": 1500,
-        "maxDiff": 200000,
+        "maxDiff": 9000000000,
         "targetTime": 30,
         "retargetTime": 300,
         "variancePercent": 5
@@ -76,7 +76,7 @@
       "soloMining": true,
       "varDiff": {
         "minDiff": 5000,
-        "maxDiff": 2000000,
+        "maxDiff": 9000000000,
         "targetTime": 35,
         "retargetTime": 300,
         "variancePercent": 10
@@ -88,7 +88,7 @@
       "soloMining": true,
       "varDiff": {
         "minDiff": 25000,
-        "maxDiff": 10000000,
+        "maxDiff": 9000000000,
         "targetTime": 40,
         "retargetTime": 360,
         "variancePercent": 10
@@ -100,7 +100,7 @@
       "soloMining": true,
       "varDiff": {
         "minDiff": 100000,
-        "maxDiff": 15000000,
+        "maxDiff": 9000000000,
         "targetTime": 45,
         "retargetTime": 420,
         "variancePercent": 15

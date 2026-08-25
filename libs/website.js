@@ -834,38 +834,38 @@ module.exports = function (logger) {
 
   // Security middleware configuration
   // Helmet helps protect from common web vulnerabilities
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: [
-            "'self'",
-            "'unsafe-inline'",
-            "https://cdnjs.cloudflare.com",
-            "https://cdn.jsdelivr.net",
-          ],
-          styleSrc: [
-            "'self'",
-            "'unsafe-inline'",
-            "https://fonts.googleapis.com",
-            "https://cdnjs.cloudflare.com",
-          ],
-          fontSrc: [
-            "'self'",
-            "https://fonts.gstatic.com",
-            "https://cdnjs.cloudflare.com",
-          ],
-          imgSrc: ["'self'", "data:", "https:"],
-          connectSrc: ["'self'"],
-          frameAncestors: ["'none'"],
-          objectSrc: ["'none'"],
-          baseUri: ["'self'"],
-        },
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdnjs.cloudflare.com",
+          "https://cdn.jsdelivr.net",
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://cdnjs.cloudflare.com",
+        ],
+        fontSrc: [
+          "'self'",
+          "https://fonts.gstatic.com",
+          "https://cdnjs.cloudflare.com",
+        ],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
       },
-      crossOriginEmbedderPolicy: false,
-    }),
-  );
+    },
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 
   // Rate limiting configuration
   const generalLimiter = rateLimit({
