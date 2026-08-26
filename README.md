@@ -57,6 +57,7 @@ SHA256-NOMP comes pre-configured with the following coins:
 | -------------- | ------ | --------- | ----------- | ----------------- | ---------- |
 | Bitcoin        | BTC    | SHA256    | 50212-50216 | 101               | 10 min     |
 | Bitcoin Silver | BTCS   | SHA256    | 50222-50226 | 201               | 5 min      |
+| Bitcoin Gold   | BTGS   | SHA256    | 50292-50296 | 101               | 10 min     |
 | Mytherra       | MYT    | SHA256    | 50232-50236 | 101               | 5 min      |
 | Bitcoin II     | BC2    | SHA256    | 50242-50246 | 101               | 10 min     |
 | SHA256COIN     | S256   | SHA256    | 50272-50276 | 201               | 20 min     |
@@ -253,11 +254,12 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
 
 **Available Coins:**
 
-- `bitcoin.json` - Bitcoin (BTC)
-- `bitcoinsilver.json` - Bitcoin Silver (BTCS)
-- `mytherra.json` - Mytherra (MYT)
-- `bitcoinii.json` - Bitcoin II (BC2)
-- `sha256coin.json` - SHA256COIN (S256)
+- `bitcoin.json`        - Bitcoin (BTC)
+- `bitcoinsilver.json`  - Bitcoin Silver (BTCS)
+- `bitcoingold.json`    - Bitcoin Gold (BTGS)
+- `mytherra.json`       - Mytherra (MYT)
+- `bitcoinii.json`      - Bitcoin II (BC2)
+- `sha256coin.json`     - SHA256COIN (S256)
 
 **Coin Configuration Fields:**
 
@@ -336,11 +338,12 @@ Pool configurations define operational settings for each coin's mining pool. Eac
 
 **Available Pool Configurations:**
 
-- `pool_configs/bitcoin.json` - Bitcoin pool (ports 50212-50216)
-- `pool_configs/bitcoinsilver.json` - Bitcoin Silver pool (ports 50220-50226)
-- `pool_configs/mytherra.json` - Mytherra pool (ports 50232-50236)
-- `pool_configs/bitcoinii.json` - Bitcoin II pool (ports 50242-50246)
-- `pool_configs/sha256coin.json` - SHA256COIN pool (ports 50272-50276)
+- `pool_configs/bitcoin.json`               - Bitcoin pool (ports 50212-50216)
+- `pool_configs/bitcoinsilver.json`         - Bitcoin Silver pool (ports 50222-50226)
+- `pool_configs/bitcoingold.json`           - Bitcoin Gold pool ports (50292-50296)
+- `pool_configs/mytherra.json`              - Mytherra pool (ports 50232-50236)
+- `pool_configs/bitcoinii.json`             - Bitcoin II pool (ports 50242-50246)
+- `pool_configs/sha256coin.json`            - SHA256COIN pool (ports 50272-50276)
 
 **Pool Configuration Structure:**
 

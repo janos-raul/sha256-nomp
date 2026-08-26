@@ -669,7 +669,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         cback({
           totalHeld: coinsRound(totalHeld),
           totalPaid: coinsRound(totalPaid),
-          totalImmature,
+          totalImmature: coinsRound(totalImmature),
           balances,
         });
       },

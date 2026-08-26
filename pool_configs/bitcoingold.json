@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "coin": "bitcoin.json",
+  "coin": "bitcoingold.json",
   "asicboost": true,
   "blockIdentifier": "",
 
@@ -35,17 +35,17 @@
     "enabled": true,
     "soloMining": true,
     "paymentMode": "prop",
-    "poolFee": 2.0,
-    "soloFee": 2.0,
+    "poolFee": 1.0,
+    "soloFee": 1.0,
     "_comment_paymentMode": "prop, pplnt",
     "paymentInterval": 3600,
-    "minimumPayment": 0.01,
-    "minimumPayment_solo": 0.01,
-    "maxBlocksPerPayment": 5,
+    "minimumPayment": 1,
+    "minimumPayment_solo": 1,
+    "maxBlocksPerPayment": 50,
     "daemon": {
       "host": "127.0.0.1",
-      "port": 8332,
-      "user": "rpcuser",
+      "port": 13389,
+      "user": "janos",
       "password": "YOUR_RPC_PASSWORD"
     }
   },
@@ -58,7 +58,7 @@
   },
 
   "ports": {
-    "50212": {
+    "50292": {
       "diff": 15000,
       "tls": false,
       "soloMining": true,
@@ -70,7 +70,7 @@
         "variancePercent": 5
       }
     },
-    "50213": {
+    "50293": {
       "diff": 50000,
       "tls": false,
       "soloMining": true,
@@ -82,7 +82,7 @@
         "variancePercent": 10
       }
     },
-    "50214": {
+    "50294": {
       "diff": 250000,
       "tls": false,
       "soloMining": true,
@@ -94,7 +94,7 @@
         "variancePercent": 10
       }
     },
-    "50216": {
+    "50296": {
       "diff": 1000000,
       "tls": false,
       "soloMining": true,
@@ -114,9 +114,9 @@
   "daemons": [
     {
       "host": "127.0.0.1",
-      "port": 8332,
-      "user": "rpcuser",
-      "password": "rpcpassword"
+      "port": 13389,
+      "user": "janos",
+      "password": "YOUR_RPC_PASSWORD"
     }
   ]
 }
