@@ -63,12 +63,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
   var logSystem = "Payments";
   var logComponent = coin;
 
-  // default tx fee
-  var txFee = 1000;
-
-  var opidCount = 0;
-  var opids = [];
-
   var paymentStats = {
     cycleCount: 0,
     lastCycleTime: 0,
@@ -1989,7 +1983,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 (worker.balance + worker.reward) * (1 - withholdPercent),
               );
               var address = (worker.address = (
-                worker.address || getProperAddress(w.split(".")[0])
+                worker.address || handleAddress(w.split(".")[0])
               ).trim());
               if (minerTotals[address] != null && minerTotals[address] > 0) {
                 minerTotals[address] += toSendSatoshis;
@@ -2006,7 +2000,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 (worker.balance + worker.reward) * (1 - withholdPercent),
               );
               var address = (worker.address = (
-                worker.address || getProperAddress(w.split(".")[0])
+                worker.address || handleAddress(w.split(".")[0])
               ).trim());
               if (minerTotals[address] != null && minerTotals[address] > 0) {
                 minerTotals[address] += toSendSatoshis;
@@ -2023,7 +2017,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 (worker.balance + worker.reward) * (1 - withholdPercent),
               );
               var address = (worker.address = (
-                worker.address || getProperAddress(w.split(".")[0])
+                worker.address || handleAddress(w.split(".")[0])
               ).trim());
               // if miners total is enough, go ahead and add this worker balance
               if (minerTotals[address] >= minPaymentSatoshis) {
@@ -2088,7 +2082,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 (worker.balance + worker.reward) * (1 - withholdPercent),
               );
               var address = (worker.address = (
-                worker.address || getProperAddress(w.split(".")[0])
+                worker.address || handleAddress(w.split(".")[0])
               ).trim());
 
               // Solo miners: always pay if they have any reward (no minimum threshold)
@@ -2485,7 +2479,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 "hset",
                 coin + ":immature",
                 w,
-                worker.immature,
+                satoshisToCoins(worker.immature),
               ]);
             } else {
               immatureUpdateCommands.push(["hset", coin + ":immature", w, 0]);
@@ -2520,7 +2514,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 "hset",
                 coin + ":immature:solo",
                 w,
-                worker.immature,
+                satoshisToCoins(worker.immature),
               ]);
             } else {
               immatureUpdateCommands.push([
@@ -2706,7 +2700,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
           redisClient.multi(finalRedisCommands).exec(function (error, results) {
             endRedisTimer();
             if (error) {
-              //clearInterval(paymentInterval);
               clearTimeout(paymentInterval);
               disablePeymentProcessing = true;
 
@@ -2725,7 +2718,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 JSON.stringify(finalRedisCommands),
                 function (err) {
                   logger.error(
-                    "Could not write finalRedisCommands.txt, you are fucked.",
+                    "Could not write finalRedisCommands.txt — manual recovery required.",
                   );
                 },
               );
@@ -2789,40 +2782,4 @@ function SetupForPool(logger, poolOptions, setupFinished) {
       return util.addressFromEx(poolOptions.address, address);
     } else return address;
   }
-
-  var getProperAddress = function (address) {
-    if (address.length === 40) {
-      return util.addressFromEx(poolOptions.address, address);
-    } else return address;
-    if (address != false) {
-      return handleAddress(address);
-    } else {
-      var addressToPay = "";
-
-      daemon.cmd(
-        "getnewaddress",
-        [],
-        function (result) {
-          if (result.error) {
-            callback(true);
-            return;
-          }
-          try {
-            addressToPay = result.data;
-          } catch (e) {
-            logger.error(
-              logSystem,
-              logComponent,
-              "Error getting a new address. Got: " + result.data,
-            );
-            callback(true);
-          }
-        },
-        true,
-        true,
-      );
-
-      return handleAddress(addressToPay);
-    }
-  };
 }

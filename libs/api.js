@@ -210,8 +210,9 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                         history[w].push({
                           time: portalStats.statHistory[h].time,
                           hashrate:
-                            portalStats.statHistory[h].pools[pool].poolWorkers[w]
-                              .hashrate,
+                            portalStats.statHistory[h].pools[pool].poolWorkers[
+                              w
+                            ].hashrate,
                         });
                       }
                     }
@@ -252,10 +253,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                       if (w == balances.balances[b].worker) {
                         workers[w].paid = balances.balances[b].paid;
                         workers[w].balance = balances.balances[b].balance;
+                        workers[w].immature = balances.balances[b].immature;
                       }
                     }
                     workers[w].balance = workers[w].balance || 0;
                     workers[w].paid = workers[w].paid || 0;
+                    workers[w].immature = workers[w].immature || 0;
                     totalHash +=
                       portalStats.stats.pools[pool].poolWorkers[w].hashrate;
                     networkHash =
@@ -277,10 +280,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                         if (w == balances.balances[b].worker) {
                           workers[w].paid = balances.balances[b].paid;
                           workers[w].balance = balances.balances[b].balance;
+                          workers[w].immature = balances.balances[b].immature;
                         }
                       }
                       workers[w].balance = workers[w].balance || 0;
                       workers[w].paid = workers[w].paid || 0;
+                      workers[w].immature = workers[w].immature || 0;
                       totalHash +=
                         portalStats.stats.pools[pool].soloWorkers[w].hashrate ||
                         0;
@@ -351,7 +356,9 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         });
 
         // Send initial comment to establish connection
-        res.write('***sha256-mining.go.ro***\n*******mining pool*******\n       live stats\n\n');
+        res.write(
+          "***sha256-mining.go.ro***\n*******mining pool*******\n       live stats\n\n",
+        );
 
         var uid = Math.random().toString();
         _this.liveStatConnections[uid] = res;

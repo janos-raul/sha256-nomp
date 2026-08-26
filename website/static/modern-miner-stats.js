@@ -427,6 +427,9 @@ function updateWorkerStats() {
     $("#statsBalance" + htmlSafeWorkerName).text(
       parseFloat(worker.balance || 0).toFixed(8),
     );
+    $("#statsImmature" + htmlSafeWorkerName).text(
+      parseFloat(worker.immature || 0).toFixed(8),
+    );
     $("#statsShares" + htmlSafeWorkerName).text(
       getReadableSharesString(worker.currRoundShares || 0),
     );
@@ -494,11 +497,11 @@ function loadWorkerStats() {
 }
 
 function calculateWorkerHistoryMax() {
-  // Target: Show 4 hours of history
-  var targetHistorySeconds = 14400; // 4 hours
+  // Target: Show 8 hours of history
+  var targetHistorySeconds = 28800; // 8 hours
 
   // Try to get update interval from global stats
-  var updateInterval = 90; // Default
+  var updateInterval = 60; // Default
 
   if (
     window.statsData &&
@@ -510,7 +513,7 @@ function calculateWorkerHistoryMax() {
     updateInterval = window.statsData.config.website.stats.updateInterval;
   }
 
-  // Calculate how many data points we need for 4 hours
+  // Calculate how many data points we need for 8 hours
   var calculatedMax = Math.ceil(targetHistorySeconds / updateInterval);
 
   // Limit between 20 and 500 points to avoid extremes

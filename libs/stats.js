@@ -507,7 +507,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   "count",
                   10000,
                   function (error, pays) {
-                    // get all payouts from address (SOLO) - ADD THIS
+                    // get all payouts from address (SOLO)
                     client.hscan(
                       coin + ":payouts:solo",
                       0,
@@ -550,7 +550,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                                   }
                                 }
 
-                                // Process solo payouts - ADD THIS
+                                // Process solo payouts
                                 for (var i in soloPays[1]) {
                                   if (Math.abs(i % 2) != 1) {
                                     workerName = String(soloPays[1][i]);
@@ -580,7 +580,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                                   }
                                 }
 
-                                // Process solo balances - ADD THIS
+                                // Process solo balances
                                 for (var b in soloBals[1]) {
                                   if (Math.abs(b % 2) != 1) {
                                     workerName = String(soloBals[1][b]);
@@ -610,7 +610,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                                   }
                                 }
 
-                                // Process solo immature - ADD THIS
+                                // Process solo immature
                                 for (var b in soloPends[1]) {
                                   if (Math.abs(b % 2) != 1) {
                                     workerName = String(soloPends[1][b]);
@@ -669,7 +669,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         cback({
           totalHeld: coinsRound(totalHeld),
           totalPaid: coinsRound(totalPaid),
-          totalImmature: satoshisToCoins(totalImmature),
+          totalImmature,
           balances,
         });
       },
@@ -708,7 +708,6 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           ["hgetall", ":blocksPendingConfirms"],
           ["zrevrange", ":payments", 0, 99],
           ["hgetall", ":shares:timesCurrent"],
-          // ADD THESE NEW COMMANDS FOR SOLO BLOCKS
           ["scard", ":blocksPending:solo"], // index 14
           ["scard", ":blocksConfirmed:solo"], // index 15
           ["scard", ":blocksKicked:solo"], // index 16
