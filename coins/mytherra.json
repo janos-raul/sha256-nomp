@@ -14,7 +14,6 @@
     "maxVersions": 4,
     "generationMode": "sequential"
   },
-  "coinbase": "yourpool.com",
   "coinbasePayouts": {
     "enabled": false,
     "coinbaseOnly": false,
@@ -49,6 +48,6 @@
     "host": "127.0.0.1",
     "port": 24013,
     "user": "rpcuser",
-    "password": "rpcpassword"
+    "password": "YOUR_RPC_PASSWORD"
   }
 }

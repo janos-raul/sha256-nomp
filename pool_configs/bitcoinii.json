@@ -2,7 +2,7 @@
   "enabled": true,
   "coin": "bitcoinii.json",
   "asicboost": true,
-  "blockIdentifier": "",
+  "blockIdentifier": "sha256-mining.go.ro",
 
   "security": {
     "enabled": true,
@@ -66,7 +66,7 @@
         "minDiff": 1500,
         "maxDiff": 9000000000,
         "targetTime": 30,
-        "retargetTime": 300,
+        "retargetTime": 200,
         "variancePercent": 5
       }
     },
@@ -78,8 +78,8 @@
         "minDiff": 5000,
         "maxDiff": 9000000000,
         "targetTime": 35,
-        "retargetTime": 300,
-        "variancePercent": 10
+        "retargetTime": 240,
+        "variancePercent": 5
       }
     },
     "50244": {
@@ -90,8 +90,8 @@
         "minDiff": 25000,
         "maxDiff": 9000000000,
         "targetTime": 40,
-        "retargetTime": 360,
-        "variancePercent": 10
+        "retargetTime": 260,
+        "variancePercent": 7
       }
     },
     "50246": {
@@ -102,8 +102,8 @@
         "minDiff": 100000,
         "maxDiff": 9000000000,
         "targetTime": 45,
-        "retargetTime": 420,
-        "variancePercent": 15
+        "retargetTime": 290,
+        "variancePercent": 7
       }
     }
   },

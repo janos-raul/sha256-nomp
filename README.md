@@ -22,6 +22,17 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Dual Mining** - Support pool and solo mining simultaneously
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 
+### Recent Updates (v1.4.6)
+
+- **FIXED**: Coinbase transaction framing bug that corrupted the block's merkle root when `txMessages` was enabled — pool signature is now embedded as a standards-compliant OP_RETURN output instead of invalid trailing bytes
+- **FIXED**: `blockIdentifier` was written to shared global state, leaking one coin's identifier into every other coin's mined blocks when running multiple coins in the same process — now threaded per-coin end to end, with a byte-length safety cap
+- **FIXED**: `md=` (minimum difficulty) password parameter now correctly floors the miner's assigned difficulty instead of being silently ignored
+- **FIXED**: Immature balance display showed raw satoshis instead of coins due to a missing unit conversion in the payment processor
+- **NEW**: Security module bans (rate limiting, malformed messages, flood detection) now actually block reconnection attempts, instead of being logged without being enforced
+- **NEW**: Worker cards on the website now show Last Share (time + actual difficulty) and Best Share (highest difficulty this round)
+- **NEW**: Log archives are compacted into one monthly archive instead of being deleted after 30 days
+- **IMPROVED**: Graceful shutdown handling — `systemctl restart` no longer races with worker auto-respawn logic
+
 ### Recent Updates (v1.4.5)
 
 - **NEW**: Added `mining.multi_version` stratum extension for overt AsicBoost
@@ -65,7 +76,7 @@ SHA256-NOMP comes pre-configured with the following coins:
 All coins support:
 
 - ✅ ASICBoost with version rolling
-- ✅ SegWit and Taproot
+- ✅ SegWit support
 - ✅ Solo and pool mining modes
 - ✅ Variable difficulty per port
 - ✅ Multiple mining ports for different hashrates
@@ -254,12 +265,12 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
 
 **Available Coins:**
 
-- `bitcoin.json`        - Bitcoin (BTC)
-- `bitcoinsilver.json`  - Bitcoin Silver (BTCS)
-- `bitcoingold.json`    - Bitcoin Gold (BTGS)
-- `mytherra.json`       - Mytherra (MYT)
-- `bitcoinii.json`      - Bitcoin II (BC2)
-- `sha256coin.json`     - SHA256COIN (S256)
+- `bitcoin.json` - Bitcoin (BTC)
+- `bitcoinsilver.json` - Bitcoin Silver (BTCS)
+- `bitcoingold.json` - Bitcoin Gold (BTGS)
+- `mytherra.json` - Mytherra (MYT)
+- `bitcoinii.json` - Bitcoin II (BC2)
+- `sha256coin.json` - SHA256COIN (S256)
 
 **Coin Configuration Fields:**
 
@@ -280,31 +291,30 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
     "asicboostMaxClients": 1000,          // Maximum ASICBoost clients
 
     // Coinbase and transaction settings
-    "coinbase": "yourpool.com",           // Coinbase signature (pool identifier)
     "coinbasePayouts": {
         "enabled": false,                  // Master switch for coinbase payout controls
         "coinbaseOnly": false,             // If true, payment txs spend only generated (coinbase) UTXOs
         "feeHandledInCoinbase": false      // If true, payment processor will NOT deduct poolFee/soloFee again
     },
-    "txMessages": true,                   // Enable transaction messages
-    "txMessageText": "",                  // Custom OP_RETURN message
-    "segwit": true,                       // Enable SegWit support
-    "taproot": true,                      // Enable Taproot support
-    "coinbaseTxVersion": 2,               // Coinbase transaction version
-    "hasBlockReward": true,               // Coin has block reward
-    "blockVersion": 536870912,            // Block version number
-    "default_witness_commitment": true,   // Include witness commitment
-    "shareDifficultyTarget": "target",    // Share difficulty calculation method
+    "txMessages": true,                     // Enable the pool signature OP_RETURN output in the coinbase tx
+    "txMessageText": "",                    // Custom OP_RETURN message text (max 255 bytes, truncated if longer).
+                                            // Falls back to a built-in default URL if left empty.
+    "segwit": true,                         // Enable SegWit support
+    "default_witness_commitment": true,     // Informational only — the witness commitment output is included
+                                            // automatically whenever the daemon's getblocktemplate response
+                                            // provides one; this flag is not read anywhere and does not gate it.
 
     // Network and timing settings
-    "rpcTimeout": 5000,                   // RPC timeout in milliseconds
-    "blockTime": 600,                     // Expected block time in seconds
-    "minConf": 101,                       // Minimum confirmations for payouts
+    "blockTime": 600,                       // Expected block time in seconds — used for luck (luckDays/
+                                            // luckHours/luckMinute) calculations shown on the website
+    "minConf": 101,                         // Informational/reference only. The value that actually gates
+                                            // payouts is pool_configs/<coin>.json -> paymentProcessing.minConf
+                                            // — keep the two in sync manually, since nothing enforces it.
 
     // Address validation (prevents invalid addresses)
     "addressValidation": {
         "validateWorkerUsername": true,   // Validate miner addresses
-        "addressPrefix": "bc",            // Expected address prefix (bc for BTC, bs for BTCS, myt for MYT)
+        "addressPrefix": "bc1",           // Expected address prefix (bc for BTC, bs for BTCS, myt for MYT)
         "minLength": 26,                  // Minimum address length
         "maxLength": 46                   // Maximum address length
     },
@@ -327,7 +337,7 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
 
 **Important Notes:**
 
-- The `minConf` value determines how many confirmations are required before blocks are paid out
+- The value that actually gates payouts is `pool_configs/<coin>.json` -> `paymentProcessing.minConf` — the coin config's own `minConf` is a reference/documentation copy only and isn't read by the payment processor
 - Bitcoin typically uses 101 confirmations, Bitcoin Silver uses 201
 - ASICBoost is enabled by default for optimal performance with modern ASIC miners
 - The `rpc` section is used by maintenance scripts like `blockConfirmations.js`
@@ -338,22 +348,27 @@ Pool configurations define operational settings for each coin's mining pool. Eac
 
 **Available Pool Configurations:**
 
-- `pool_configs/bitcoin.json`               - Bitcoin pool (ports 50212-50216)
-- `pool_configs/bitcoinsilver.json`         - Bitcoin Silver pool (ports 50222-50226)
-- `pool_configs/bitcoingold.json`           - Bitcoin Gold pool ports (50292-50296)
-- `pool_configs/mytherra.json`              - Mytherra pool (ports 50232-50236)
-- `pool_configs/bitcoinii.json`             - Bitcoin II pool (ports 50242-50246)
-- `pool_configs/sha256coin.json`            - SHA256COIN pool (ports 50272-50276)
+- `pool_configs/bitcoin.json` - Bitcoin pool (ports 50212-50216)
+- `pool_configs/bitcoinsilver.json` - Bitcoin Silver pool (ports 50222-50226)
+- `pool_configs/bitcoingold.json` - Bitcoin Gold pool ports (50292-50296)
+- `pool_configs/mytherra.json` - Mytherra pool (ports 50232-50236)
+- `pool_configs/bitcoinii.json` - Bitcoin II pool (ports 50242-50246)
+- `pool_configs/sha256coin.json` - SHA256COIN pool (ports 50272-50276)
 
 **Pool Configuration Structure:**
 
 ```javascript
 {
     // Basic settings
-    "enabled": true,                      // Enable this pool
-    "coin": "bitcoin.json",              // Reference to coin config file
-    "asicboost": true,                   // Enable ASICBoost for this pool
-    "blockIdentifier": "",               // Optional block identifier
+    "enabled": true,                        // Enable this pool
+    "coin": "bitcoin.json",                 // Reference to coin config file
+    "asicboost": true,                      // Enable ASICBoost for this pool
+    "blockIdentifier": "",                  // Text embedded in the coinbase scriptSig, wrapped in slashes
+                                            // (e.g. "mypool.com" -> "/mypool.com/"). Passed per-coin all the
+                                            // way through to the built transaction — safe to set differently
+                                            // per coin. Falls back to a built-in default if left empty.
+                                            // Truncated at 64 bytes to stay within the scriptSig's 100-byte
+                                            // consensus limit alongside the block height/timestamp/extranonce.
 
 	  // ============================================================================
 	  // SECURITY MODULE - Advanced DDoS Protection & Rate Limiting
@@ -634,6 +649,18 @@ Example connections:
 
 - **CGMiner**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo`
 - **With custom difficulty**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo,d=65536`
+
+#### Password Parameters
+
+Miners can pass one or more of the following via the stratum password field, comma-separated:
+
+| Parameter    | Description                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `m=solo`     | Mine solo instead of pool mode                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `d=<value>`  | Set the miner's _starting_ difficulty immediately on connect, overriding the port's configured default                                                                                                                                                                                                                                                                                                                                  |
+| `md=<value>` | Set a _minimum_ difficulty floor — variable difficulty will retarget freely above this value but will never drop the miner below it, even if their share timing suggests it should. Useful for large ASICs (S19/S21/T21-class) to reduce unnecessary share traffic. The floor is clamped between the port's own `minDiff` and `maxDiff`, so it can raise the effective floor but can never push it above the port's configured ceiling. |
+
+Example: `-p m=solo,d=1000000,md=500000` starts the miner at difficulty 1,000,000 and guarantees it never retargets below 500,000.
 
 #### Multi-Version Support (mining.multi_version)
 

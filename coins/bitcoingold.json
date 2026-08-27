@@ -14,7 +14,6 @@
     "maxVersions": 4,
     "generationMode": "sequential"
   },
-  "coinbase": "sha256-mining.go.ro",
   "coinbasePayouts": {
     "enabled": false,
     "coinbaseOnly": false,
