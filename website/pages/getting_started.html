@@ -24,7 +24,7 @@
         right: -50%;
         width: 200%;
         height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
         animation: float 10s ease-in-out infinite;
     }
 
@@ -176,8 +176,15 @@
     }
 
     @keyframes glow-pulse {
-        0%, 100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
-        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+        }
+
+        50% {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+        }
     }
 
     .pool-name {
@@ -277,8 +284,8 @@
         font-family: 'Courier New', monospace;
         border: 1px solid var(--border);
     }
-    
-    .config-example > div {
+
+    .config-example>div {
         margin: 0.5rem 0;
         line-height: 1.8;
     }
@@ -329,6 +336,20 @@
         left: 0;
         color: var(--success);
         font-weight: 700;
+    }
+
+    .config-note {
+        background: rgba(245, 158, 11, 0.1);
+        border-left: 3px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+    }
+
+    .config-note strong {
+        color: #f59e0b;
     }
 
     /* ASICBoost Badge */
@@ -476,15 +497,15 @@
         .hero-banner h1 {
             font-size: 2rem;
         }
-        
+
         .quick-start {
             grid-template-columns: 1fr;
         }
-        
+
         .pools-grid {
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         }
-        
+
         .config-item-header {
             flex-wrap: wrap;
         }
@@ -548,29 +569,29 @@
             <h2>📊 Select Your Coin</h2>
             <span style="color: var(--text-secondary);">Click any coin for connection details</span>
         </div>
-        
+
         <div class="pools-grid">
             {{? (function(){
-                if (!it.portalConfig.switching) return false;
-                for (var p in it.portalConfig.switching){
-                    if (it.portalConfig.switching[p].enabled)
-                        return true;
-                }
-                return false;
+            if (!it.portalConfig.switching) return false;
+            for (var p in it.portalConfig.switching){
+            if (it.portalConfig.switching[p].enabled)
+            return true;
+            }
+            return false;
             })()
             }}
             {{?}}
-            
+
             <div style="grid-column: 1 / -1; padding: 1rem 0;">
                 <h3 style="color: var(--text-primary); margin-bottom: 1rem;">💰 Available Coins</h3>
             </div>
             {{ for(var pool in it.poolsConfigs) {
-                var info = JSON.stringify({
-                    coin: it.poolsConfigs[pool].coin,
-                    algo: it.poolsConfigs[pool].coin.algorithm,
-                    ports: it.poolsConfigs[pool].ports,
-                    host: it.portalConfig.website.stratumHost
-                }).replace(/"/g, '&quot;');
+            var info = JSON.stringify({
+            coin: it.poolsConfigs[pool].coin,
+            algo: it.poolsConfigs[pool].coin.algorithm,
+            ports: it.poolsConfigs[pool].ports,
+            host: it.portalConfig.website.stratumHost
+            }).replace(/"/g, '&quot;');
             }}
             <div class="pool-item poolOption" data-info="{{=info}}">
                 <div class="pool-name">{{=pool}}</div>
@@ -638,10 +659,53 @@
         </div>
 
         <!-- Config Option 3 -->
+        <!-- Allowed Ranges:
+                     targetTime (tt): min 15, max 120
+                     retargetTime (rt): min 60, max 600
+                     variancePercent (vp): min 5, max 50
+                -->
+        <div class="config-item">
+            <div class="config-item-header">
+                <span class="config-emoji">🎛️</span>
+                <span class="config-number">3</span>
+                <div class="config-title">Advanced VarDiff Tuning</div>
+            </div>
+
+            <div class="config-desc">
+                For experienced miners who know their rig's real hashrate: fine‑tune how quickly and how
+                aggressively your difficulty adjusts. <strong>Most miners don't need this</strong> — the
+                pool's default settings are already tuned to work well automatically.
+            </div>
+
+            <div class="config-example">
+                <div class="example-label">Example Configuration:</div>
+                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
+                <div>Password: <span class="code-inline">tt=45,rt=290,vp=7</span></div>
+            </div>
+
+            <div class="config-effect">
+                <div class="effect-label">What each parameter does:</div>
+                <ul>
+                    <li><span class="code-inline">tt=</span> target seconds between shares (15–120 allowed)</li>
+                    <li><span class="code-inline">rt=</span> seconds between difficulty adjustments (60–600 allowed)
+                    </li>
+                    <li><span class="code-inline">vp=</span> allowed variance (%) before adjusting (5–50 allowed)</li>
+                </ul>
+            </div>
+
+            <div class="config-note">
+                <strong>Good to know:</strong> Any value you will use for these parameters is automatically
+                kept within the allowed range, so there's no way to misconfigure this into
+                something harmful; worst case, your difficulty just adjusts less smoothly than it could.
+            </div>
+        </div>
+
+
+        <!-- Config Option 4 -->
         <div class="config-item">
             <div class="config-item-header">
                 <span class="config-emoji">🎲</span>
-                <span class="config-number">3</span>
+                <span class="config-number">4</span>
                 <div class="config-title">Solo Mining Mode</div>
             </div>
             <div class="config-desc">
@@ -662,11 +726,11 @@
             </div>
         </div>
 
-        <!-- Config Option 4 -->
+        <!-- Config Option 5 -->
         <div class="config-item">
             <div class="config-item-header">
                 <span class="config-emoji">👥</span>
-                <span class="config-number">4</span>
+                <span class="config-number">5</span>
                 <div class="config-title">PROP Pool Mining (Default)</div>
             </div>
             <div class="config-desc">
@@ -687,11 +751,11 @@
             </div>
         </div>
 
-        <!-- Config Option 5 -->
+        <!-- Config Option 6 -->
         <div class="config-item">
             <div class="config-item-header">
                 <span class="config-emoji">🔧</span>
-                <span class="config-number">5</span>
+                <span class="config-number">6</span>
                 <div class="config-title">Combine Multiple Settings</div>
             </div>
             <div class="config-desc">
@@ -744,7 +808,7 @@
     function showCoinConfig(info) {
         var modal = document.getElementById('connectionModal');
         var portsHtml = '';
-        
+
         // Set coin name and algorithm
         if (info.coin) {
             document.getElementById('coinName').textContent = info.coin.name;
@@ -753,9 +817,9 @@
             document.getElementById('coinName').textContent = info.algo.toUpperCase();
             document.getElementById('coinUsername').textContent = '[your-wallet-address].[worker]';
         }
-        
+
         document.getElementById('coinAlgo').textContent = info.algo.toUpperCase();
-        
+
         // Generate stratum URLs
         for (var port in info.ports) {
             portsHtml += '<div class="detail-row">';
@@ -763,45 +827,45 @@
             portsHtml += '<span class="detail-value">stratum+tcp://' + info.host + ':' + port + '</span>';
             portsHtml += '</div>';
         }
-        
+
         document.getElementById('stratumPorts').innerHTML = portsHtml;
         modal.classList.add('active');
     }
-    
+
     // Pool selection with glow effect
-    document.querySelectorAll('.poolOption').forEach(function(element) {
-        element.addEventListener('click', function(e) {
+    document.querySelectorAll('.poolOption').forEach(function (element) {
+        element.addEventListener('click', function (e) {
             e.preventDefault();
             var info = JSON.parse(this.getAttribute('data-info'));
             showCoinConfig(info);
         });
     });
-    
+
     // Quick mine button - highlight pools
-    document.getElementById('quickMine').addEventListener('click', function(e) {
+    document.getElementById('quickMine').addEventListener('click', function (e) {
         e.preventDefault();
-        document.querySelectorAll('.pool-item').forEach(function(el) {
+        document.querySelectorAll('.pool-item').forEach(function (el) {
             el.classList.add('glow');
-            setTimeout(function() {
+            setTimeout(function () {
                 el.classList.remove('glow');
             }, 500);
         });
         // Scroll to pool selection
         document.querySelector('.pool-selection').scrollIntoView({ behavior: 'smooth' });
     });
-    
+
     // Rent miner button
-    document.getElementById('rentMiner').addEventListener('click', function(e) {
+    document.getElementById('rentMiner').addEventListener('click', function (e) {
         e.preventDefault();
         window.open('https://www.miningrigrentals.com/', '_blank');
     });
-    
+
     // Modal close
-    document.getElementById('modalClose').addEventListener('click', function() {
+    document.getElementById('modalClose').addEventListener('click', function () {
         document.getElementById('connectionModal').classList.remove('active');
     });
-    
-    document.getElementById('connectionModal').addEventListener('click', function(e) {
+
+    document.getElementById('connectionModal').addEventListener('click', function (e) {
         if (e.target === this) {
             this.classList.remove('active');
         }
