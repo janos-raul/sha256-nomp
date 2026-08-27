@@ -123,6 +123,37 @@ if (cluster.isWorker) {
   return;
 }
 
+// Guards the three worker exit handlers below against respawning during
+// an intentional shutdown. Without this, systemd's KillMode=control-group
+// sends SIGTERM to the master and every worker simultaneously — the
+// master has no way to tell "worker exited because we're stopping" apart
+// from "worker crashed" and would keep spawning brand-new replacement
+// processes mid-teardown, which systemd's kill sweep never learns about.
+var isShuttingDown = false;
+
+var gracefulShutdown = function (signal) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  logger.special(
+    "Master",
+    "Shutdown",
+    "Received " +
+      signal +
+      " — shutting down gracefully, no workers will be respawned",
+  );
+  // Workers receive this same signal directly from systemd
+  // (KillMode=control-group), so nothing further to do here except exit
+  // promptly ourselves.
+  process.exit(0);
+};
+
+process.on("SIGTERM", function () {
+  gracefulShutdown("SIGTERM");
+});
+process.on("SIGINT", function () {
+  gracefulShutdown("SIGINT");
+});
+
 // Read all pool configs from pool_configs and join them with their coin profile
 var buildPoolConfigs = function () {
   logger.debug("Master", "Config", "Building pool configurations...");
@@ -483,6 +514,14 @@ var spawnPoolWorkers = function () {
 
     worker
       .on("exit", function (code, signal) {
+        if (isShuttingDown) {
+          logger.info(
+            "Master",
+            "PoolSpawner",
+            "Fork " + forkId + " exited during shutdown — not respawning",
+          );
+          return;
+        }
         logger.error(
           "Master",
           "PoolSpawner",
@@ -810,6 +849,14 @@ var startPaymentProcessor = function () {
   );
 
   worker.on("exit", function (code, signal) {
+    if (isShuttingDown) {
+      logger.info(
+        "Master",
+        "Payment Processor",
+        "Payment processor exited during shutdown — not respawning",
+      );
+      return;
+    }
     logger.error(
       "Master",
       "Payment Processor",
@@ -850,6 +897,14 @@ var startWebsite = function () {
   );
 
   worker.on("exit", function (code, signal) {
+    if (isShuttingDown) {
+      logger.info(
+        "Master",
+        "Website",
+        "Website process exited during shutdown — not respawning",
+      );
+      return;
+    }
     logger.error(
       "Master",
       "Website",

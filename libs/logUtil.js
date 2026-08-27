@@ -65,17 +65,17 @@ var PoolLogger = function (configuration) {
     try {
       if (!fs.existsSync(logDir)) {
         console.log(
-          "[LOGGER] " + processType + ": Creating logs directory: " + logDir
+          "[LOGGER] " + processType + ": Creating logs directory: " + logDir,
         );
         fs.mkdirSync(logDir, { recursive: true, mode: 0o755 });
         console.log(
-          "[LOGGER] " + processType + ": Logs directory created successfully"
+          "[LOGGER] " + processType + ": Logs directory created successfully",
         );
       }
       // Only verify and log once (master process only) to reduce noise
       else if (cluster.isMaster) {
         console.log(
-          "[LOGGER] " + processType + ": Logs directory exists: " + logDir
+          "[LOGGER] " + processType + ": Logs directory exists: " + logDir,
         );
       }
 
@@ -86,20 +86,20 @@ var PoolLogger = function (configuration) {
           fs.writeFileSync(testFile, "test");
           fs.unlinkSync(testFile);
           console.log(
-            "[LOGGER] " + processType + ": Logs directory is writable"
+            "[LOGGER] " + processType + ": Logs directory is writable",
           );
         } catch (err) {
           console.error(
             "[LOGGER] " +
               processType +
               ": ERROR: Logs directory is not writable:",
-            err.message
+            err.message,
           );
           console.error(
             "[LOGGER] " +
               processType +
               ": Please check permissions on: " +
-              logDir
+              logDir,
           );
           throw new Error("Logs directory not writable: " + logDir);
         }
@@ -107,14 +107,14 @@ var PoolLogger = function (configuration) {
     } catch (err) {
       console.error(
         "[LOGGER] " + processType + ": ERROR: Failed to create logs directory:",
-        err.message
+        err.message,
       );
       console.error("[LOGGER] " + processType + ": Path: " + logDir);
       console.error(
         "[LOGGER] " +
           processType +
           ": Current working directory: " +
-          process.cwd()
+          process.cwd(),
       );
       throw err;
     }
@@ -149,7 +149,7 @@ var PoolLogger = function (configuration) {
         processType +
         ": Creating " +
         streamNames.length +
-        " log streams..."
+        " log streams...",
     );
     var createdCount = 0;
 
@@ -175,7 +175,7 @@ var PoolLogger = function (configuration) {
                 attempt +
                 "/" +
                 maxRetries +
-                ")"
+                ")",
             );
           }
 
@@ -188,7 +188,7 @@ var PoolLogger = function (configuration) {
           stream.on("error", function (err) {
             console.error(
               "[LOGGER] Runtime error on stream " + name + ":",
-              err.message
+              err.message,
             );
             // Try to recreate the stream after a runtime error
             if (!streamReady) return; // Don't recreate if we're still in creation phase
@@ -202,12 +202,12 @@ var PoolLogger = function (configuration) {
                 mode: 0o644,
               });
               console.log(
-                "[LOGGER] Recreated stream " + name + " after runtime error"
+                "[LOGGER] Recreated stream " + name + " after runtime error",
               );
             } catch (retryErr) {
               console.error(
                 "[LOGGER] Failed to recreate stream " + name + ":",
-                retryErr.message
+                retryErr.message,
               );
             }
           });
@@ -223,7 +223,7 @@ var PoolLogger = function (configuration) {
                     processType +
                     ": All " +
                     streamNames.length +
-                    " log streams ready"
+                    " log streams ready",
                 );
               }
             }
@@ -250,7 +250,7 @@ var PoolLogger = function (configuration) {
                 "), retrying in " +
                 retryDelay +
                 "ms...",
-              err.message
+              err.message,
             );
             setTimeout(function () {
               tryCreate();
@@ -262,7 +262,7 @@ var PoolLogger = function (configuration) {
                 " after " +
                 maxRetries +
                 " attempts:",
-              err.message
+              err.message,
             );
             console.error("[LOGGER] Error details:", err.stack);
             throw err;
@@ -287,7 +287,7 @@ var PoolLogger = function (configuration) {
     // Workers share the same log files, so only one process should rotate
     if (cluster.isWorker) {
       console.log(
-        "[LOG ROTATION] Worker process detected - log rotation will be handled by master process"
+        "[LOG ROTATION] Worker process detected - log rotation will be handled by master process",
       );
       return;
     }
@@ -299,7 +299,7 @@ var PoolLogger = function (configuration) {
       now.getDate() + 1, // tomorrow
       0,
       0,
-      0 // midnight
+      0, // midnight
     );
     var msToMidnight = night.getTime() - now.getTime();
 
@@ -332,13 +332,13 @@ var PoolLogger = function (configuration) {
     } catch (err) {
       console.error(
         "[LOG ROTATION] Failed to create rotation directory:",
-        err.message
+        err.message,
       );
       return;
     }
 
     console.log(
-      "[LOG ROTATION] Closing and rotating log streams (minimal downtime)..."
+      "[LOG ROTATION] Closing and rotating log streams (minimal downtime)...",
     );
 
     // Step 1: Close all streams gracefully and rename files
@@ -368,7 +368,7 @@ var PoolLogger = function (configuration) {
                 closedCount +
                 "/" +
                 totalStreams +
-                ")"
+                ")",
             );
 
             // After stream is closed, rename the file
@@ -390,7 +390,7 @@ var PoolLogger = function (configuration) {
                       key +
                       ".log (" +
                       formatBytes(stats.size) +
-                      ")"
+                      ")",
                   );
                 } else {
                   console.log("[LOG ROTATION] Skipped empty: " + key + ".log");
@@ -398,7 +398,7 @@ var PoolLogger = function (configuration) {
               } catch (err) {
                 console.error(
                   "[LOG ROTATION] Failed to rotate " + key + ".log:",
-                  err.message
+                  err.message,
                 );
               }
             }
@@ -409,7 +409,7 @@ var PoolLogger = function (configuration) {
                   totalStreams +
                   " streams closed, " +
                   rotatedFiles.length +
-                  " files rotated"
+                  " files rotated",
               );
               resolve(rotatedFiles);
             }
@@ -423,7 +423,7 @@ var PoolLogger = function (configuration) {
               closedCount +
               "/" +
               totalStreams +
-              ")"
+              ")",
           );
           if (closedCount === totalStreams) {
             console.log(
@@ -431,7 +431,7 @@ var PoolLogger = function (configuration) {
                 totalStreams +
                 " streams closed, " +
                 rotatedFiles.length +
-                " files rotated"
+                " files rotated",
             );
             resolve(rotatedFiles);
           }
@@ -446,7 +446,7 @@ var PoolLogger = function (configuration) {
               closedCount +
               "/" +
               totalStreams +
-              " closed)"
+              " closed)",
           );
           console.error("[LOG ROTATION] Forcing rotation to continue...");
           resolve(rotatedFiles);
@@ -473,7 +473,7 @@ var PoolLogger = function (configuration) {
           newStream.on("error", function (err) {
             console.error(
               "[LOG ROTATION] Error on recreated stream " + key + ":",
-              err.message
+              err.message,
             );
             // Attempt to recreate the stream if it errors
             try {
@@ -482,14 +482,14 @@ var PoolLogger = function (configuration) {
               }
               logStreams[key] = fs.createWriteStream(logPath, { flags: "a" });
               console.log(
-                "[LOG ROTATION] Recreated stream " + key + " after error"
+                "[LOG ROTATION] Recreated stream " + key + " after error",
               );
             } catch (retryErr) {
               console.error(
                 "[LOG ROTATION] Failed to recreate stream " +
                   key +
                   " after error:",
-                retryErr.message
+                retryErr.message,
               );
             }
           });
@@ -504,14 +504,14 @@ var PoolLogger = function (configuration) {
                 recreatedCount +
                 "/" +
                 Object.keys(logStreams).length +
-                ")"
+                ")",
             );
           });
 
           // Also handle open event as fallback
           newStream.once("open", function (fd) {
             console.log(
-              "[LOG ROTATION] Stream " + key + " opened (fd: " + fd + ")"
+              "[LOG ROTATION] Stream " + key + " opened (fd: " + fd + ")",
             );
           });
 
@@ -519,7 +519,7 @@ var PoolLogger = function (configuration) {
         } catch (err) {
           console.error(
             "[LOG ROTATION] Failed to create stream for " + key + ":",
-            err.message
+            err.message,
           );
           recreationErrors.push({ key: key, error: err.message });
         }
@@ -530,7 +530,7 @@ var PoolLogger = function (configuration) {
         console.log(
           "[LOG ROTATION] Notifying " +
             Object.keys(cluster.workers).length +
-            " workers to recreate streams..."
+            " workers to recreate streams...",
         );
         Object.keys(cluster.workers).forEach(function (id) {
           try {
@@ -538,7 +538,7 @@ var PoolLogger = function (configuration) {
           } catch (err) {
             console.error(
               "[LOG ROTATION] Failed to notify worker " + id + ":",
-              err.message
+              err.message,
             );
           }
         });
@@ -550,7 +550,7 @@ var PoolLogger = function (configuration) {
           console.error(
             "[LOG ROTATION] WARNING: " +
               recreationErrors.length +
-              " streams failed to recreate:"
+              " streams failed to recreate:",
           );
           recreationErrors.forEach(function (err) {
             console.error("[LOG ROTATION]   - " + err.key + ": " + err.error);
@@ -561,7 +561,7 @@ var PoolLogger = function (configuration) {
             (Object.keys(logStreams).length - recreationErrors.length) +
             "/" +
             Object.keys(logStreams).length +
-            " successful) - logging resumed!"
+            " successful) - logging resumed!",
         );
       }, 100);
 
@@ -574,7 +574,7 @@ var PoolLogger = function (configuration) {
           } catch (err) {
             console.error(
               "[LOG ROTATION] Failed to remove rotation directory:",
-              err.message
+              err.message,
             );
           }
           return;
@@ -589,14 +589,14 @@ var PoolLogger = function (configuration) {
             if (err) {
               console.error(
                 "[LOG ROTATION] Failed to create archive:",
-                err.message
+                err.message,
               );
               console.error(
                 "[LOG ROTATION] Rotated files preserved in:",
-                rotateDir
+                rotateDir,
               );
               console.error(
-                "[LOG ROTATION] Please manually archive and delete this directory"
+                "[LOG ROTATION] Please manually archive and delete this directory",
               );
             } else {
               console.log("[LOG ROTATION] Archive created successfully");
@@ -609,7 +609,7 @@ var PoolLogger = function (configuration) {
                 } catch (err) {
                   console.error(
                     "[LOG ROTATION] Failed to delete " + file.key + ".log:",
-                    err.message
+                    err.message,
                   );
                 }
               });
@@ -621,14 +621,14 @@ var PoolLogger = function (configuration) {
               } catch (err) {
                 console.error(
                   "[LOG ROTATION] Failed to remove rotation directory:",
-                  err.message
+                  err.message,
                 );
               }
             }
 
             // Clean old archives
             cleanOldArchives();
-          }
+          },
         );
       }, 500); // Small delay before archiving
     });
@@ -671,10 +671,10 @@ var PoolLogger = function (configuration) {
 
         // Uncertain result - be conservative and pass
         console.warn(
-          "[VERIFY] Archive test completed (status unclear, assuming OK)"
+          "[VERIFY] Archive test completed (status unclear, assuming OK)",
         );
         callback(null);
-      }
+      },
     );
   };
 
@@ -682,7 +682,7 @@ var PoolLogger = function (configuration) {
     dateStr,
     sourceDir,
     filesToArchive,
-    callback
+    callback,
   ) {
     var archiveDir = path.join(logDir, "archive");
     var zipFilePath = path.join(archiveDir, dateStr + ".zip");
@@ -732,22 +732,25 @@ var PoolLogger = function (configuration) {
     };
 
     // Set a timeout to prevent hanging indefinitely (5 minutes max)
-    archiveTimeout = setTimeout(function () {
-      if (!callbackCalled) {
-        console.error(
-          "[ARCHIVE] ERROR: Archive creation timed out after 5 minutes"
-        );
-        hasError = true;
-        // Try to destroy streams
-        try {
-          if (output && !output.destroyed) output.destroy();
-          if (archive) archive.abort();
-        } catch (e) {
-          console.error("[ARCHIVE] Error destroying streams:", e.message);
+    archiveTimeout = setTimeout(
+      function () {
+        if (!callbackCalled) {
+          console.error(
+            "[ARCHIVE] ERROR: Archive creation timed out after 5 minutes",
+          );
+          hasError = true;
+          // Try to destroy streams
+          try {
+            if (output && !output.destroyed) output.destroy();
+            if (archive) archive.abort();
+          } catch (e) {
+            console.error("[ARCHIVE] Error destroying streams:", e.message);
+          }
+          safeCallback(new Error("Archive creation timed out"));
         }
-        safeCallback(new Error("Archive creation timed out"));
-      }
-    }, 5 * 60 * 1000);
+      },
+      5 * 60 * 1000,
+    );
 
     // Create write stream for the output zip file
     var output = null;
@@ -760,7 +763,7 @@ var PoolLogger = function (configuration) {
     } catch (err) {
       console.error(
         "[ARCHIVE] ERROR: Failed to initialize archiver:",
-        err.message
+        err.message,
       );
       safeCallback(err);
       return;
@@ -793,7 +796,7 @@ var PoolLogger = function (configuration) {
         // Treat non-ENOENT warnings as errors
         console.error(
           "[ARCHIVE] Archive warning (treating as error):",
-          err.message
+          err.message,
         );
         hasError = true;
         safeCallback(err);
@@ -812,7 +815,7 @@ var PoolLogger = function (configuration) {
             formatBytes(progress.fs.processedBytes) +
             "/" +
             formatBytes(totalSize) +
-            ")"
+            ")",
         );
         lastProgress = percent;
       }
@@ -823,7 +826,7 @@ var PoolLogger = function (configuration) {
       console.log(
         "[ARCHIVE] Archive finalized (" +
           formatBytes(archive.pointer()) +
-          "), waiting for output stream to close..."
+          "), waiting for output stream to close...",
       );
     });
 
@@ -832,7 +835,7 @@ var PoolLogger = function (configuration) {
       // If we already had an error, don't proceed
       if (hasError) {
         console.error(
-          "[ARCHIVE] Archive closed but errors occurred during creation"
+          "[ARCHIVE] Archive closed but errors occurred during creation",
         );
         return;
       }
@@ -847,7 +850,7 @@ var PoolLogger = function (configuration) {
           formatBytes(archiveSize) +
           " (compression ratio: " +
           compressionRatio +
-          ":1)"
+          ":1)",
       );
 
       // Verify archive size is reasonable
@@ -855,7 +858,7 @@ var PoolLogger = function (configuration) {
         console.error(
           "[ARCHIVE] ERROR: Archive size suspiciously small (expected ~" +
             formatBytes(totalSize) +
-            ")"
+            ")",
         );
         hasError = true;
         safeCallback(new Error("Archive too small"));
@@ -870,7 +873,7 @@ var PoolLogger = function (configuration) {
             "[ARCHIVE] ERROR: File size mismatch - expected " +
               archiveSize +
               " but got " +
-              zipStats.size
+              zipStats.size,
           );
           hasError = true;
           safeCallback(new Error("Archive file size mismatch"));
@@ -883,10 +886,10 @@ var PoolLogger = function (configuration) {
           if (verifyErr) {
             console.error(
               "[ARCHIVE] ERROR: Archive integrity check failed:",
-              verifyErr.message
+              verifyErr.message,
             );
             console.error(
-              "[ARCHIVE] Corrupted archive will be deleted to prevent data loss"
+              "[ARCHIVE] Corrupted archive will be deleted to prevent data loss",
             );
             // Delete the corrupted archive
             try {
@@ -894,7 +897,7 @@ var PoolLogger = function (configuration) {
             } catch (unlinkErr) {
               console.error(
                 "[ARCHIVE] Failed to delete corrupted archive:",
-                unlinkErr.message
+                unlinkErr.message,
               );
             }
             hasError = true;
@@ -909,7 +912,7 @@ var PoolLogger = function (configuration) {
       } catch (err) {
         console.error(
           "[ARCHIVE] ERROR: Cannot verify archive file:",
-          err.message
+          err.message,
         );
         hasError = true;
         safeCallback(err);
@@ -936,7 +939,7 @@ var PoolLogger = function (configuration) {
             ".log (" +
             formatBytes(file.size) +
             ") from " +
-            file.path
+            file.path,
         );
         // Verify file is readable before adding
         try {
@@ -946,14 +949,14 @@ var PoolLogger = function (configuration) {
               "[ARCHIVE] Warning: File size changed - expected " +
                 file.size +
                 " but got " +
-                stats.size
+                stats.size,
             );
           }
           archive.file(file.path, { name: file.key + ".log" });
         } catch (err) {
           console.error(
             "[ARCHIVE] ERROR: Cannot read file " + file.key + ".log:",
-            err.message
+            err.message,
           );
           throw err;
         }
@@ -961,7 +964,7 @@ var PoolLogger = function (configuration) {
     } catch (err) {
       console.error(
         "[ARCHIVE] ERROR: Failed to add files to archive:",
-        err.message
+        err.message,
       );
       hasError = true;
       safeCallback(err);
@@ -970,14 +973,14 @@ var PoolLogger = function (configuration) {
 
     // Finalize the archive (this is async)
     console.log(
-      "[ARCHIVE] Finalizing archive (this may take a while for large archives)..."
+      "[ARCHIVE] Finalizing archive (this may take a while for large archives)...",
     );
     try {
       archive.finalize();
     } catch (err) {
       console.error(
         "[ARCHIVE] ERROR: Failed to finalize archive:",
-        err.message
+        err.message,
       );
       hasError = true;
       safeCallback(err);
@@ -1005,7 +1008,7 @@ var PoolLogger = function (configuration) {
           }
         } catch (err) {
           console.warn(
-            "[ARCHIVE] Warning: Cannot read " + key + ".log: " + err.message
+            "[ARCHIVE] Warning: Cannot read " + key + ".log: " + err.message,
           );
         }
       }
@@ -1060,7 +1063,7 @@ var PoolLogger = function (configuration) {
         // Treat non-ENOENT warnings as errors
         console.error(
           "[ARCHIVE] Archive warning (treating as error):",
-          err.message
+          err.message,
         );
         hasError = true;
         safeCallback(err);
@@ -1070,7 +1073,7 @@ var PoolLogger = function (configuration) {
     // Handle archive finalization completion
     archive.on("finish", function () {
       console.log(
-        "[ARCHIVE] Archive finalized, waiting for output stream to close..."
+        "[ARCHIVE] Archive finalized, waiting for output stream to close...",
       );
     });
 
@@ -1079,7 +1082,7 @@ var PoolLogger = function (configuration) {
       // If we already had an error, don't proceed
       if (hasError) {
         console.error(
-          "[ARCHIVE] Archive closed but errors occurred during creation"
+          "[ARCHIVE] Archive closed but errors occurred during creation",
         );
         return;
       }
@@ -1094,7 +1097,7 @@ var PoolLogger = function (configuration) {
           formatBytes(archiveSize) +
           " (compression ratio: " +
           compressionRatio +
-          ":1)"
+          ":1)",
       );
 
       // Verify archive size is reasonable
@@ -1102,7 +1105,7 @@ var PoolLogger = function (configuration) {
         console.error(
           "[ARCHIVE] ERROR: Archive size suspiciously small (expected ~" +
             formatBytes(totalSize) +
-            ")"
+            ")",
         );
         hasError = true;
         safeCallback(new Error("Archive too small"));
@@ -1117,7 +1120,7 @@ var PoolLogger = function (configuration) {
             "[ARCHIVE] ERROR: File size mismatch - expected " +
               archiveSize +
               " but got " +
-              zipStats.size
+              zipStats.size,
           );
           hasError = true;
           safeCallback(new Error("Archive file size mismatch"));
@@ -1130,10 +1133,10 @@ var PoolLogger = function (configuration) {
           if (verifyErr) {
             console.error(
               "[ARCHIVE] ERROR: Archive integrity check failed:",
-              verifyErr.message
+              verifyErr.message,
             );
             console.error(
-              "[ARCHIVE] Corrupted archive will be deleted to prevent data loss"
+              "[ARCHIVE] Corrupted archive will be deleted to prevent data loss",
             );
             // Delete the corrupted archive
             try {
@@ -1141,7 +1144,7 @@ var PoolLogger = function (configuration) {
             } catch (unlinkErr) {
               console.error(
                 "[ARCHIVE] Failed to delete corrupted archive:",
-                unlinkErr.message
+                unlinkErr.message,
               );
             }
             hasError = true;
@@ -1156,7 +1159,7 @@ var PoolLogger = function (configuration) {
       } catch (err) {
         console.error(
           "[ARCHIVE] ERROR: Cannot verify archive file:",
-          err.message
+          err.message,
         );
         hasError = true;
         safeCallback(err);
@@ -1173,7 +1176,7 @@ var PoolLogger = function (configuration) {
           file.key +
           ".log (" +
           formatBytes(file.size) +
-          ")"
+          ")",
       );
       archive.file(file.path, { name: file.key + ".log" });
     });
@@ -1197,33 +1200,288 @@ var PoolLogger = function (configuration) {
     });
   };
 
-  var cleanOldArchives = function () {
+  // Bundles an arbitrary list of {entryName, path, size} files into a
+  // single zip. Mirrors the same robust error-handling / timeout /
+  // integrity-check pattern as createZipArchiveFromDir above, but takes
+  // explicit full entry names instead of assuming a "key" + ".log"
+  // convention — kept as a separate function so the proven, daily-used
+  // rotation path above is never touched by this.
+  var createGenericZipArchive = function (
+    zipFilePath,
+    filesToArchive,
+    callback,
+  ) {
+    var totalSize = filesToArchive.reduce(function (sum, file) {
+      return sum + file.size;
+    }, 0);
+
+    var callbackCalled = false;
+    var archiveTimeout = null;
+    var safeCallback = function (err) {
+      if (!callbackCalled) {
+        callbackCalled = true;
+        if (archiveTimeout) {
+          clearTimeout(archiveTimeout);
+          archiveTimeout = null;
+        }
+        callback(err);
+      }
+    };
+
+    archiveTimeout = setTimeout(
+      function () {
+        if (!callbackCalled) {
+          console.error(
+            "[MONTHLY ARCHIVE] ERROR: Archive creation timed out after 5 minutes",
+          );
+          try {
+            if (output && !output.destroyed) output.destroy();
+            if (archive) archive.abort();
+          } catch (e) {
+            console.error(
+              "[MONTHLY ARCHIVE] Error destroying streams:",
+              e.message,
+            );
+          }
+          safeCallback(new Error("Archive creation timed out"));
+        }
+      },
+      5 * 60 * 1000,
+    );
+
+    var output = null;
+    var archive = null;
+    try {
+      output = fs.createWriteStream(zipFilePath);
+      archive = archiver("zip", { zlib: { level: 9 } });
+    } catch (err) {
+      console.error(
+        "[MONTHLY ARCHIVE] ERROR: Failed to initialize archiver:",
+        err.message,
+      );
+      safeCallback(err);
+      return;
+    }
+
+    var hasError = false;
+
+    output.on("error", function (err) {
+      console.error("[MONTHLY ARCHIVE] Output stream error:", err.message);
+      hasError = true;
+      safeCallback(err);
+    });
+
+    archive.on("error", function (err) {
+      console.error("[MONTHLY ARCHIVE] Archive creation error:", err.message);
+      hasError = true;
+      safeCallback(err);
+    });
+
+    archive.on("warning", function (err) {
+      if (err.code === "ENOENT") {
+        console.warn("[MONTHLY ARCHIVE] Warning:", err.message);
+      } else {
+        console.error(
+          "[MONTHLY ARCHIVE] Archive warning (treating as error):",
+          err.message,
+        );
+        hasError = true;
+        safeCallback(err);
+      }
+    });
+
+    output.on("close", function () {
+      if (hasError) return;
+
+      var archiveSize = archive.pointer();
+      if (archiveSize < 100 && totalSize > 0) {
+        console.error(
+          "[MONTHLY ARCHIVE] ERROR: Archive size suspiciously small",
+        );
+        safeCallback(new Error("Archive too small"));
+        return;
+      }
+
+      console.log("[MONTHLY ARCHIVE] Performing integrity check on archive...");
+      verifyZipIntegrity(zipFilePath, function (verifyErr) {
+        if (verifyErr) {
+          console.error(
+            "[MONTHLY ARCHIVE] ERROR: Archive integrity check failed:",
+            verifyErr.message,
+          );
+          try {
+            fs.unlinkSync(zipFilePath);
+          } catch (unlinkErr) {
+            console.error(
+              "[MONTHLY ARCHIVE] Failed to delete corrupted archive:",
+              unlinkErr.message,
+            );
+          }
+          safeCallback(new Error("Archive corrupted: " + verifyErr.message));
+          return;
+        }
+        console.log("[MONTHLY ARCHIVE] Integrity check passed");
+        safeCallback(null);
+      });
+    });
+
+    try {
+      archive.pipe(output);
+      filesToArchive.forEach(function (file) {
+        archive.file(file.path, { name: file.entryName, store: true });
+      });
+      archive.finalize();
+    } catch (err) {
+      console.error(
+        "[MONTHLY ARCHIVE] ERROR: Failed to build archive:",
+        err.message,
+      );
+      safeCallback(err);
+    }
+  };
+
+  // Bundles one past month's daily zips as-is (nested, uncompressed —
+  // they're already compressed, so store: true skips wasted CPU trying
+  // to recompress near-incompressible zip data) into a single
+  // "<monthKey>-monthly.zip", verifies it, and only then deletes the
+  // original dailies. If anything fails, the dailies are left in place
+  // untouched and compaction is simply retried on the next rotation.
+  var compactSingleMonth = function (monthKey, dailyZipFilenames) {
+    var archiveDir = path.join(logDir, "archive");
+
+    console.log(
+      "[MONTHLY ARCHIVE] Compacting " +
+        dailyZipFilenames.length +
+        " daily archive(s) for " +
+        monthKey +
+        " into a single monthly archive...",
+    );
+
+    var filesToArchive = [];
+    var missingFiles = [];
+    dailyZipFilenames.forEach(function (dailyZipName) {
+      var dailyZipPath = path.join(archiveDir, dailyZipName);
+      try {
+        var stat = fs.statSync(dailyZipPath);
+        filesToArchive.push({
+          entryName: dailyZipName,
+          path: dailyZipPath,
+          size: stat.size,
+        });
+      } catch (err) {
+        missingFiles.push(dailyZipName);
+      }
+    });
+
+    if (missingFiles.length > 0) {
+      console.error(
+        "[MONTHLY ARCHIVE] Missing daily archive(s) for " +
+          monthKey +
+          ": " +
+          missingFiles.join(", "),
+      );
+    }
+
+    if (filesToArchive.length === 0) {
+      console.error(
+        "[MONTHLY ARCHIVE] No daily archives available for " +
+          monthKey +
+          " — skipping compaction",
+      );
+      return;
+    }
+
+    var monthlyZipPath = path.join(archiveDir, monthKey + "-monthly.zip");
+
+    createGenericZipArchive(monthlyZipPath, filesToArchive, function (err) {
+      if (err) {
+        console.error(
+          "[MONTHLY ARCHIVE] Failed to create monthly archive for " +
+            monthKey +
+            ":",
+          err.message,
+        );
+        console.error(
+          "[MONTHLY ARCHIVE] Daily archives preserved — will retry on next rotation",
+        );
+        return;
+      }
+
+      console.log("[MONTHLY ARCHIVE] Successfully created " + monthlyZipPath);
+
+      // Only now, with a verified monthly archive on disk, remove the
+      // original dailies for this month (skip any that were already
+      // missing, nothing to delete there)
+      filesToArchive.forEach(function (file) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch (err) {
+          console.error(
+            "[MONTHLY ARCHIVE] Failed to delete daily archive " +
+              file.entryName +
+              ":",
+            err.message,
+          );
+        }
+      });
+
+      console.log(
+        "[MONTHLY ARCHIVE] Removed " +
+          filesToArchive.length +
+          " daily archive(s) for " +
+          monthKey +
+          " now that they are safely consolidated",
+      );
+    });
+  };
+
+  // Finds any fully-elapsed calendar month (never the current month,
+  // which is still accumulating dailies) that has daily archives but no
+  // monthly archive yet, and compacts it. Idempotent — a month already
+  // compacted (its "<monthKey>-monthly.zip" already exists) is skipped.
+  var compactMonthlyArchives = function () {
     if (!logToFile) return;
 
     var archiveDir = path.join(logDir, "archive");
     if (!fs.existsSync(archiveDir)) return;
 
-    var maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-    var now = Date.now();
+    var currentMonthKey = dateFormat(new Date(), "yyyy-mm");
+    var dailyZipsByMonth = {};
+    var monthlyArchiveExists = {};
 
     fs.readdirSync(archiveDir).forEach(function (file) {
-      // Only process .zip files
       if (!file.endsWith(".zip")) return;
 
-      var filePath = path.join(archiveDir, file);
-      try {
-        var stats = fs.statSync(filePath);
-        if (now - stats.mtime.getTime() > maxAge) {
-          fs.unlinkSync(filePath);
-          console.log("Deleted old archive: " + file);
-        }
-      } catch (err) {
-        console.error(
-          "Error checking/deleting archive " + file + ":",
-          err.message
-        );
+      var monthlyMatch = file.match(/^(\d{4}-\d{2})-monthly\.zip$/);
+      if (monthlyMatch) {
+        monthlyArchiveExists[monthlyMatch[1]] = true;
+        return;
       }
+
+      var dailyMatch = file.match(/^(\d{4}-\d{2})-\d{2}-\d{6}\.zip$/);
+      if (!dailyMatch) return;
+
+      var monthKey = dailyMatch[1];
+      // Never touch the current, still-accumulating month
+      if (monthKey === currentMonthKey) return;
+
+      dailyZipsByMonth[monthKey] = dailyZipsByMonth[monthKey] || [];
+      dailyZipsByMonth[monthKey].push(file);
     });
+
+    Object.keys(dailyZipsByMonth).forEach(function (monthKey) {
+      if (monthlyArchiveExists[monthKey]) return;
+      compactSingleMonth(monthKey, dailyZipsByMonth[monthKey]);
+    });
+  };
+
+  var cleanOldArchives = function () {
+    if (!logToFile) return;
+
+    // Past-month daily archives are consolidated into one monthly
+    // archive rather than being deleted. Monthly archives themselves are
+    // never auto-deleted.
+    compactMonthlyArchives();
   };
 
   var formatBytes = function (bytes) {
@@ -1421,17 +1679,17 @@ var PoolLogger = function (configuration) {
             console.log(
               "[LOGGER] Stream " +
                 streamName +
-                " does not exist, creating it..."
+                " does not exist, creating it...",
             );
             try {
               var newStream = fs.createWriteStream(
                 path.join(logDir, streamName + ".log"),
-                { flags: "a" }
+                { flags: "a" },
               );
               newStream.on("error", function (err) {
                 console.error(
                   "[LOGGER] Error on recreated stream " + streamName + ":",
-                  err.message
+                  err.message,
                 );
               });
               logStreams[streamName] = newStream;
@@ -1439,7 +1697,7 @@ var PoolLogger = function (configuration) {
             } catch (err) {
               console.error(
                 "[LOGGER] Failed to create stream " + streamName + ":",
-                err.message
+                err.message,
               );
               return false;
             }
@@ -1461,9 +1719,9 @@ var PoolLogger = function (configuration) {
                 (stream.destroyed
                   ? "destroyed"
                   : stream.closed
-                  ? "closed"
-                  : "not writable") +
-                ", recreating..."
+                    ? "closed"
+                    : "not writable") +
+                ", recreating...",
             );
             try {
               // Destroy old stream if not already destroyed
@@ -1478,14 +1736,14 @@ var PoolLogger = function (configuration) {
               // Create new stream
               var newStream = fs.createWriteStream(
                 path.join(logDir, streamName + ".log"),
-                { flags: "a" }
+                { flags: "a" },
               );
 
               // Add error handler
               newStream.on("error", function (err) {
                 console.error(
                   "[LOGGER] Error on recreated stream " + streamName + ":",
-                  err.message
+                  err.message,
                 );
               });
 
@@ -1497,7 +1755,7 @@ var PoolLogger = function (configuration) {
             } catch (err) {
               console.error(
                 "[LOGGER] Failed to recreate stream " + streamName + ":",
-                err.message
+                err.message,
               );
               return false;
             }
@@ -1513,25 +1771,25 @@ var PoolLogger = function (configuration) {
             "[LOGGER] Failed to write to stream " +
               (streamName || "unknown") +
               ":",
-            err.message
+            err.message,
           );
           // Try to recreate stream after write failure
           if (streamName) {
             console.log(
               "[LOGGER] Attempting to recreate stream " +
                 streamName +
-                " after write failure..."
+                " after write failure...",
             );
             try {
               stream.destroy();
               var newStream = fs.createWriteStream(
                 path.join(logDir, streamName + ".log"),
-                { flags: "a" }
+                { flags: "a" },
               );
               newStream.on("error", function (err) {
                 console.error(
                   "[LOGGER] Error on recreated stream " + streamName + ":",
-                  err.message
+                  err.message,
                 );
               });
               logStreams[streamName] = newStream;
@@ -1541,7 +1799,7 @@ var PoolLogger = function (configuration) {
                 "[LOGGER] Failed to recreate stream " +
                   streamName +
                   " after write error:",
-                retryErr.message
+                retryErr.message,
               );
               return false;
             }
@@ -1683,7 +1941,7 @@ var PoolLogger = function (configuration) {
     } else if (textLower.includes("disconnected")) {
       metrics.connections.current = Math.max(
         0,
-        metrics.connections.current - 1
+        metrics.connections.current - 1,
       );
     }
 
@@ -1714,10 +1972,10 @@ var PoolLogger = function (configuration) {
     process.on("message", function (msg) {
       if (msg && msg.cmd === "log_rotation") {
         console.log(
-          "[LOG ROTATION] Worker received rotation notification from master"
+          "[LOG ROTATION] Worker received rotation notification from master",
         );
         console.log(
-          "[LOG ROTATION] Recreating all log streams in worker process..."
+          "[LOG ROTATION] Recreating all log streams in worker process...",
         );
 
         // Recreate all streams
@@ -1736,7 +1994,7 @@ var PoolLogger = function (configuration) {
             newStream.on("error", function (err) {
               console.error(
                 "[LOG ROTATION] Error on worker stream " + key + ":",
-                err.message
+                err.message,
               );
             });
 
@@ -1745,7 +2003,7 @@ var PoolLogger = function (configuration) {
           } catch (err) {
             console.error(
               "[LOG ROTATION] Worker failed to recreate stream " + key + ":",
-              err.message
+              err.message,
             );
           }
         });
@@ -1755,7 +2013,7 @@ var PoolLogger = function (configuration) {
             recreated +
             "/" +
             Object.keys(logStreams).length +
-            " streams"
+            " streams",
         );
       }
     });
@@ -1861,7 +2119,7 @@ var PoolLogger = function (configuration) {
         "error",
         "Logger",
         "UncaughtException",
-        err.stack || err.message || err
+        err.stack || err.message || err,
       );
     } else {
       // Fallback to console if log streams are closed
@@ -1875,7 +2133,7 @@ var PoolLogger = function (configuration) {
         "error",
         "Logger",
         "UnhandledRejection",
-        "Reason: " + (reason.stack || reason)
+        "Reason: " + (reason.stack || reason),
       );
     } else {
       console.error("[UnhandledRejection]", reason.stack || reason);
