@@ -67,7 +67,12 @@
         "maxDiff": 9000000000,
         "targetTime": 30,
         "retargetTime": 200,
-        "variancePercent": 5
+        "variancePercent": 5,
+        "minerConfigurable": {
+          "targetTime": { "min": 15, "max": 120 },
+          "retargetTime": { "min": 60, "max": 600 },
+          "variancePercent": { "min": 5, "max": 50 }
+        }
       }
     },
     "50273": {
@@ -79,7 +84,12 @@
         "maxDiff": 9000000000,
         "targetTime": 35,
         "retargetTime": 240,
-        "variancePercent": 5
+        "variancePercent": 5,
+        "minerConfigurable": {
+          "targetTime": { "min": 15, "max": 120 },
+          "retargetTime": { "min": 60, "max": 600 },
+          "variancePercent": { "min": 5, "max": 50 }
+        }
       }
     },
     "50274": {
@@ -91,7 +101,12 @@
         "maxDiff": 9000000000,
         "targetTime": 40,
         "retargetTime": 260,
-        "variancePercent": 7
+        "variancePercent": 7,
+        "minerConfigurable": {
+          "targetTime": { "min": 15, "max": 120 },
+          "retargetTime": { "min": 60, "max": 600 },
+          "variancePercent": { "min": 5, "max": 50 }
+        }
       }
     },
     "50276": {
@@ -103,7 +118,12 @@
         "maxDiff": 9000000000,
         "targetTime": 45,
         "retargetTime": 290,
-        "variancePercent": 7
+        "variancePercent": 7,
+        "minerConfigurable": {
+          "targetTime": { "min": 15, "max": 120 },
+          "retargetTime": { "min": 60, "max": 600 },
+          "variancePercent": { "min": 5, "max": 50 }
+        }
       }
     }
   },

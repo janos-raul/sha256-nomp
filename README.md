@@ -22,6 +22,11 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Dual Mining** - Support pool and solo mining simultaneously
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 
+### Recent Updates (v1.4.7)
+
+- **NEW**: Optional miner-configurable variable difficulty (`tt=`/`rt=`/`vp=` password params) — lets experienced miners tune their own retarget timing within operator-defined bounds, per port, off by default
+- **IMPROVED**: Getting Started page documents the new tuning parameters, with a clear "most miners don't need this" framing for casual users
+
 ### Recent Updates (v1.4.6)
 
 - **FIXED**: Coinbase transaction framing bug that corrupted the block's merkle root when `txMessages` was enabled — pool signature is now embedded as a standards-compliant OP_RETURN output instead of invalid trailing bytes
@@ -451,7 +456,18 @@ Pool configurations define operational settings for each coin's mining pool. Eac
                 "maxDiff": 500000,       // Maximum difficulty
                 "targetTime": 30,        // Target time between shares (seconds)
                 "retargetTime": 200,     // How often to adjust difficulty (seconds)
-                "variancePercent": 5     // Allowed variance percentage
+                "variancePercent": 5,    // Allowed variance percentage
+
+                // Optional: lets miners override targetTime/retargetTime/
+                // variancePercent per-connection via tt=/rt=/vp= password
+                // params, each clamped to the range given here. Omit a
+                // setting (or the whole block) to keep it operator-only —
+                // see "Miner-Configurable VarDiff" below.
+                "minerConfigurable": {
+                    "targetTime": { "min": 15, "max": 120 },
+                    "retargetTime": { "min": 60, "max": 600 },
+                    "variancePercent": { "min": 5, "max": 50 }
+                }
             }
         },
         "50213": {                       // Higher difficulty port for larger miners
@@ -464,6 +480,8 @@ Pool configurations define operational settings for each coin's mining pool. Eac
                 "targetTime": 35,
                 "retargetTime": 240,
                 "variancePercent": 5
+                // No minerConfigurable here — this port's varDiff timing
+                // is fully operator-controlled; tt=/rt=/vp= are ignored.
             }
         }
     },
@@ -659,8 +677,34 @@ Miners can pass one or more of the following via the stratum password field, com
 | `m=solo`     | Mine solo instead of pool mode                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `d=<value>`  | Set the miner's _starting_ difficulty immediately on connect, overriding the port's configured default                                                                                                                                                                                                                                                                                                                                  |
 | `md=<value>` | Set a _minimum_ difficulty floor — variable difficulty will retarget freely above this value but will never drop the miner below it, even if their share timing suggests it should. Useful for large ASICs (S19/S21/T21-class) to reduce unnecessary share traffic. The floor is clamped between the port's own `minDiff` and `maxDiff`, so it can raise the effective floor but can never push it above the port's configured ceiling. |
+| `tt=<value>` | Requested varDiff target time (seconds between shares). Only takes effect on ports with `minerConfigurable.targetTime` set; clamped to that range. Ignored (falls back to the port default) otherwise. |
+| `rt=<value>` | Requested varDiff retarget time (seconds between adjustments). Only takes effect on ports with `minerConfigurable.retargetTime` set; clamped to that range. Ignored otherwise. |
+| `vp=<value>` | Requested varDiff variance percent. Only takes effect on ports with `minerConfigurable.variancePercent` set; clamped to that range. Ignored otherwise. |
 
 Example: `-p m=solo,d=1000000,md=500000` starts the miner at difficulty 1,000,000 and guarantees it never retargets below 500,000.
+
+#### Miner-Configurable VarDiff (tt=/rt=/vp=)
+
+For experienced miners who know their own hashrate, a port can optionally let miners tune how their own
+variable difficulty behaves, instead of only using the operator's fixed per-port settings. This is
+**off by default** — a port only accepts `tt=`/`rt=`/`vp=` if its config explicitly includes a
+`varDiff.minerConfigurable` block (see the `50212` example under [Pool config](#pool-config) above).
+
+How it behaves:
+
+- **Disabled ports ignore the parameters silently.** No error, no rejection — the connection proceeds
+  normally using the port's own defaults, exactly as if the miner hadn't sent them.
+- **Values are always clamped**, never rejected outright. A request outside the operator's configured
+  `min`/`max` range is silently adjusted to the nearest allowed value rather than causing a connection
+  failure — there's no way for a miner to misconfigure this into something harmful to the pool.
+- **Settings are locked in at the miner's first submitted share** and apply for the rest of that
+  connection's session; reconnecting re-evaluates them from the current password.
+- Each of the three settings (`targetTime`, `retargetTime`, `variancePercent`) can be enabled
+  independently — a port can allow miner-configurable `targetTime` while keeping `retargetTime` and
+  `variancePercent` operator-only, for example.
+
+Example: `-p m=solo,tt=30,rt=180,vp=20` requests a 30-second target time between shares, retargeting
+every 180 seconds, with 20% variance tolerance — each only honored if that port's config allows it.
 
 #### Multi-Version Support (mining.multi_version)
 
