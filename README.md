@@ -321,8 +321,8 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
 
     // Block explorer URLs
     "explorer": {
-        "txURL": "https://blockstream.info/tx/",      // Transaction explorer URL
-        "blockURL": "https://blockstream.info/block/" // Block explorer URL
+        "txURL": "https://blockstream.info/tx/",        // Transaction explorer URL
+        "blockURL": "https://blockstream.info/block/"   // Block explorer URL
     },
 
     // RPC daemon connection (used by blockConfirmations.js and other utilities)
@@ -401,12 +401,12 @@ Pool configurations define operational settings for each coin's mining pool. Eac
     "address": "YOUR_POOL_WALLET_ADDRESS",    // Main pool payout address
 
     "rewardRecipients": {
-        // IMPORTANT: This is a COINBASE-LEVEL split, deducted BEFORE poolFee/soloFee!
-        // If you set this > 0, it reduces the block reward available for fee calculation
-        // Example: 6.25 BTC block with 1.0% here = 0.0625 BTC to fee address at coinbase
-        //          Remaining 6.1875 BTC is then split by poolFee/soloFee percentages
-        // RECOMMENDED: Set to 0.0 and use poolFee/soloFee instead for simpler accounting
-        "YOUR_FEE_ADDRESS": 0.0          // Coinbase reward split (0.0 = disabled, recommended)
+                                        // IMPORTANT: This is a COINBASE-LEVEL split, deducted BEFORE poolFee/soloFee!
+                                        // If you set this > 0, it reduces the block reward available for fee calculation
+                                        // Example: 6.25 BTC block with 1.0% here = 0.0625 BTC to fee address at coinbase
+                                        // Remaining 6.1875 BTC is then split by poolFee/soloFee percentages
+                                        // RECOMMENDED: Set to 0.0 and use poolFee/soloFee instead for simpler accounting
+        "YOUR_FEE_ADDRESS": 0.0         // Coinbase reward split (0.0 = disabled, recommended)
     },
 
     // Payment processing configuration
@@ -449,9 +449,9 @@ Pool configurations define operational settings for each coin's mining pool. Eac
             "varDiff": {                 // Variable difficulty settings
                 "minDiff": 10000,        // Minimum difficulty
                 "maxDiff": 500000,       // Maximum difficulty
-                "targetTime": 15,        // Target time between shares (seconds)
-                "retargetTime": 90,      // How often to adjust difficulty (seconds)
-                "variancePercent": 30    // Allowed variance percentage
+                "targetTime": 30,        // Target time between shares (seconds)
+                "retargetTime": 200,     // How often to adjust difficulty (seconds)
+                "variancePercent": 5     // Allowed variance percentage
             }
         },
         "50213": {                       // Higher difficulty port for larger miners
@@ -461,9 +461,9 @@ Pool configurations define operational settings for each coin's mining pool. Eac
             "varDiff": {
                 "minDiff": 50000,
                 "maxDiff": 5000000,
-                "targetTime": 25,
-                "retargetTime": 180,
-                "variancePercent": 35
+                "targetTime": 35,
+                "retargetTime": 240,
+                "variancePercent": 5
             }
         }
     },
@@ -678,9 +678,9 @@ Add the `multiVersion` configuration to your coin config (`coins/*.json`):
     // ... other settings ...
 
     "multiVersion": {
-        "enabled": true,        // Enable mining.multi_version support
-        "maxVersions": 4,       // Maximum versions a miner can request (1-16)
-        "generationMode": "sequential"    // Version generation mode
+        "enabled": true,                    // Enable mining.multi_version support
+        "maxVersions": 4,                   // Maximum versions a miner can request (1-16)
+        "generationMode": "sequential"      // Version generation mode
     }
 }
 ```
