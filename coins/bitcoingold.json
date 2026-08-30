@@ -40,8 +40,8 @@
   },
 
   "explorer": {
-    "txURL": "https://explore.bitcoingold.site/tx/",
-    "blockURL": "https://explore.bitcoingold.site/block/"
+    "txURL": "https://mempool.bitcoingold.site/tx/",
+    "blockURL": "https://mempool.bitcoingold.site/block/"
   },
 
   "rpc": {
