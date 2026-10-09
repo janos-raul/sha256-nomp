@@ -34,7 +34,7 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - **FIXED**: The connection count in the 5-minute stats never went down; regtest was reported as "Mainnet" at startup
 - **NEW**: `/api/stats` shows merged mining per coin (`merged_with`, `merge_mined_by`, `mergedMining`)
 - **IMPROVED**: Block confirmation counts are updated by each coin's payment processor every `confirmationsInterval` seconds (default 120) for every coin, including aux coins; the standalone `libs/blockConfirmations.js` (hard-coded daemons, S256/BTGS missing) is removed
-- **UPDATED**: Dependencies (no known vulnerabilities); Node.js 24 required
+- **UPDATED**: Dependencies (no known vulnerabilities); Node.js 24 required — redis 3 → 6 (through `libs/redisCompat.js`, which keeps the v3 callback API and replies), express 4 → 5, archiver 7 → 8, dateformat 4 → 5; unused axios and nonce removed
 
 ### Recent Updates (v1.4.7)
 

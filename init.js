@@ -4,7 +4,7 @@ var os = require("os");
 var cluster = require("cluster");
 
 var extend = require("extend");
-var redis = require("redis");
+var redis = require("./libs/redisCompat.js"); // node-redis 6 with the v3 callback API
 
 var PoolLogger = require("./libs/logUtil.js");
 var CliListener = require("./libs/cliListener.js");

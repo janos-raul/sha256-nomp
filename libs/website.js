@@ -5,7 +5,7 @@ var crypto = require("crypto");
 
 var async = require("async");
 var watch = require("node-watch");
-var redis = require("redis");
+var redis = require("./redisCompat.js"); // node-redis 6 with the v3 callback API
 var bcrypt = require("bcryptjs");
 
 var dot = require("dot");
@@ -1039,7 +1039,7 @@ module.exports = function (logger) {
       return res.status(403).json({ error: "Admin center not enabled" });
     }
 
-    verifyAdminPassword(req.body.password, function (isValid) {
+    verifyAdminPassword((req.body || {}).password, function (isValid) {
       if (isValid) {
         var session = createSession(ip);
         logger.info(
@@ -1063,7 +1063,7 @@ module.exports = function (logger) {
   // Admin logout endpoint
   app.post("/api/admin/logout", adminLimiter, function (req, res) {
     var ip = getRealIP(req);
-    var sessionId = req.body.sessionId;
+    var sessionId = (req.body || {}).sessionId;
 
     if (sessionId) {
       destroySession(sessionId);
@@ -1098,8 +1098,8 @@ module.exports = function (logger) {
     }
 
     // Validate session token instead of password
-    var sessionId = req.body.sessionId;
-    var token = req.body.token;
+    var sessionId = (req.body || {}).sessionId;
+    var token = (req.body || {}).token;
 
     if (!sessionId || !token) {
       logger.warning(

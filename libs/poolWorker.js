@@ -1,5 +1,5 @@
 var Stratum = require("stratum-pool");
-var redis = require("redis");
+var redis = require("./redisCompat.js"); // node-redis 6 with the v3 callback API
 
 var ShareProcessor = require("./shareProcessor.js");
 

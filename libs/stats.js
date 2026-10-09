@@ -1,4 +1,4 @@
-var redis = require("redis");
+var redis = require("./redisCompat.js"); // node-redis 6 with the v3 callback API
 var async = require("async");
 
 var algos = require("stratum-pool/lib/algoProperties.js");
