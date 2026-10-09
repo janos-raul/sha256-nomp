@@ -62,7 +62,7 @@
     "stratum-pool": "https://github.com/janos-raul/node-stratum-pool.git#main"
   },
   "engines": {
-    "node": ">=18",
+    "node": ">=24",
     "npm": ">=11"
   },
   "overrides": {
