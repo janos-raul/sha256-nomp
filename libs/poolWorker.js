@@ -33,6 +33,15 @@ module.exports = function (logger) {
   // Store worker passwords for solo detection
   var workerPasswords = {};
 
+  function isSoloWorker(workerName) {
+    var passwordLower = (workerPasswords[workerName] || "").toLowerCase();
+    return (
+      passwordLower === "solo" ||
+      passwordLower.includes("m=solo") ||
+      passwordLower.includes("solo=true")
+    );
+  }
+
   // Performance tracking
   var performanceStats = {
     connections: {},
@@ -418,6 +427,10 @@ module.exports = function (logger) {
       shareProcessor.handleShare(isValidShare, isValidBlock, data);
     };
 
+    handlers.auxBlock = function (accepted, data) {
+      shareProcessor.handleAuxBlock(accepted, data);
+    };
+
     var authorizeFN = function (ip, port, workerName, password, callback) {
       var authStart = Date.now();
 
@@ -554,19 +567,7 @@ module.exports = function (logger) {
         data.worker = data.worker.replace(/:/g, "-");
 
       // DETECT SOLO MINING FROM STORED PASSWORD
-      var isSoloMining = false;
-      var password = workerPasswords[data.worker] || "";
-
-      if (password) {
-        var passwordLower = password.toLowerCase();
-        if (
-          passwordLower === "solo" ||
-          passwordLower.includes("m=solo") ||
-          passwordLower.includes("solo=true")
-        ) {
-          isSoloMining = true;
-        }
-      }
+      var isSoloMining = isSoloWorker(data.worker);
 
       // ADD SOLO FLAG TO DATA BEFORE PASSING TO HANDLER
       data.isSoloMining = isSoloMining;
@@ -734,6 +735,48 @@ module.exports = function (logger) {
         isSoloMining: isSoloMining,
         data: data,
       });
+    });
+
+    // Merged mining (phase 1): aux block rewards go to the aux chain's
+    // pool address, including blocks found by solo miners.
+    pool.on("auxBlock", function (accepted, data) {
+      if (data.worker != undefined)
+        data.worker = data.worker.replace(/:/g, "-");
+      data.isSoloMining = isSoloWorker(data.worker);
+
+      var summary =
+        data.symbol +
+        " Height: " +
+        data.auxHeight +
+        ", Hash: " +
+        data.auxHash +
+        ", Worker: " +
+        data.worker +
+        (data.isSoloMining ? " [SOLO share, paid to pool address]" : " [POOL]") +
+        ", Parent: " +
+        data.parentHash;
+
+      if (accepted) {
+        logger.special(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "[AUX BLOCK FOUND!] " +
+            summary +
+            ", Reward: " +
+            (data.auxCoinbaseValue / 100000000) +
+            " coins",
+        );
+      } else {
+        logger.error(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "[INVALID AUX BLOCK] Rejected (" + data.error + ") - " + summary,
+        );
+      }
+
+      handlers.auxBlock(accepted, data);
     });
 
     pool.on("difficultyUpdate", function (workerName, diff) {

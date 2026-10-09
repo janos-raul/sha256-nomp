@@ -203,6 +203,45 @@ module.exports = function (logger, poolConfig) {
       });
   }
 
+  // Merged mining (phase 1): record aux blocks for reference only. They pay
+  // to the aux chain's pool address, so nothing here feeds the payment
+  // processor (no blocksPending entry, no share accounting).
+  this.handleAuxBlock = function (accepted, auxData) {
+    var key = coin + ":auxBlocks:" + auxData.coin;
+    var record = JSON.stringify({
+      time: Date.now(),
+      accepted: accepted,
+      error: auxData.error || null,
+      height: auxData.auxHeight,
+      hash: auxData.auxHash,
+      reward: auxData.auxCoinbaseValue,
+      parentHash: auxData.parentHash,
+      parentHeight: auxData.parentHeight,
+      worker: auxData.worker,
+      isSoloMining: auxData.isSoloMining || false,
+      shareDiff: auxData.shareDiff,
+    });
+
+    connection
+      .multi([
+        ["lpush", key, record],
+        ["ltrim", key, 0, 999],
+      ])
+      .exec(function (err) {
+        if (err) {
+          perfStats.redisErrors++;
+          logger.error(
+            logSystem,
+            logComponent,
+            logSubCat,
+            "Error recording aux block " + auxData.auxHash + ": " + JSON.stringify(err),
+          );
+        } else {
+          perfStats.redisWrites++;
+        }
+      });
+  };
+
   this.handleShare = function (isValidShare, isValidBlock, shareData) {
     var processStart = Date.now();
     var redisCommands = [];

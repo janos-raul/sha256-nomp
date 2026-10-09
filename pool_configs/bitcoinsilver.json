@@ -128,6 +128,32 @@
     }
   },
 
+  "mergedMining": {
+    "enabled": false,
+    "_comment_mergedMining": "Phase 1, testnet only: Namecoin-style AuxPoW with one aux chain. With merged mining on, blockIdentifier is capped at 30 bytes.",
+    "_comment_knownLimitation": "Aux block rewards go to the aux chain's pool address, including blocks found by solo miners (logged with worker and solo flag). Before production, solo miners must get aux rewards to their own address (phase 2).",
+    "auxPollInterval": 5000,
+    "auxChains": [
+      {
+        "coin": "sha256coin",
+        "symbol": "S256",
+        "chainId": 598,
+        "byteOrder": "namecoin",
+        "slotRule": "namecoin",
+        "_comment_aux": "byteOrder/slotRule default to namecoin, the only standard implemented in phase 1",
+        "address": "YOUR_S256_POOL_ADDRESS",
+        "daemons": [
+          {
+            "host": "127.0.0.1",
+            "port": 25332,
+            "user": "rpcuser",
+            "password": "YOUR_RPC_PASSWORD"
+          }
+        ]
+      }
+    ]
+  },
+
   "poolId": "main",
   "_comment_poolId": "use it for region identification: eu, us, asia or keep default if you have one stratum instance for one coin",
 
