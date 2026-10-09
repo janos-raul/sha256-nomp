@@ -84,11 +84,12 @@ SHA256-NOMP comes pre-configured with the following coins:
 | Coin           | Symbol | Algorithm | Ports       | Min Confirmations | Block Time |
 | -------------- | ------ | --------- | ----------- | ----------------- | ---------- |
 | Bitcoin        | BTC    | SHA256    | 50212-50216 | 101               | 10 min     |
-| Bitcoin Silver | BTCS   | SHA256    | 50222-50226 | 201               | 5 min      |
+| Bitcoin Silver | BTCS   | SHA256    | 50222-50227 | 201               | 5 min      |
 | Bitcoin Gold   | BTGS   | SHA256    | 50292-50296 | 101               | 10 min     |
 | Mytherra       | MYT    | SHA256    | 50232-50236 | 101               | 5 min      |
 | Bitcoin II     | BC2    | SHA256    | 50242-50246 | 101               | 10 min     |
 | SHA256COIN     | S256   | SHA256    | 50272-50276 | 201               | 20 min     |
+| ElevenSeventyFive | ESF | SHA256    | 50282-50286 | 101               | 10 min     |
 
 All coins support:
 
@@ -97,6 +98,7 @@ All coins support:
 - ✅ Solo and pool mining modes
 - ✅ Variable difficulty per port
 - ✅ Multiple mining ports for different hashrates
+- ✅ Merged mining of S256 for solo miners (all except S256 and ESF themselves); Bitcoin Silver port 50227 merge-mines ESF instead
 
 ### Community
 
@@ -721,7 +723,8 @@ If you leave out an aux coin's address, its blocks are still found and submitted
 
 - `enabled: false` turns merged mining off on every port; a port without `auxGroup` mines the parent coin only.
 - **Each aux coin needs its own pool config** (e.g. `pool_configs/sha256coin.json`) with `paymentProcessing.enabled` and `paymentProcessing.soloMining` on, using the same daemon/wallet and pool address as in `auxCoins`. Merged-mined blocks are recorded there as solo blocks of the miner's aux address, and that pool's payment processor pays the finder (minus its `soloFee`) once the block matures. The portal refuses to start if this config is missing.
-- Namecoin-standard coins (S256, Namecoin, …) can share a group: add the coin to `auxCoins` and its name to the group. A coin with `byteOrder: "reversed"` or `slotRule: "modulo"` (ESF: chain ID 1175, `addressParam` `esf`) must be alone in its own group, on its own port(s).
+- Namecoin-standard coins (S256, Namecoin, …) can share a group: add the coin to `auxCoins` and its name to the group. A coin with `byteOrder: "reversed"` or `slotRule: "modulo"` must be alone in its own group, on its own port(s).
+- **ESF example** (`pool_configs/bitcoinsilver.json`): `auxCoins.esf1175coin` (ElevenSeventyFive, chain ID 1175, `byteOrder: "reversed"`, `slotRule: "modulo"`, `addressParam: "esf"`) in group `esf`, used by port **50227** — solo miners there mine BTCS + ESF with `m=solo,esf=<ESF address>`, while ports 50222–50226 mine BTCS + S256. ESF's own pool config is `pool_configs/esf1175coin.json` (coin file `coins/esf1175coin.json`), which pays the ESF solo blocks. ESF has no `createauxblock`; the pool uses `getauxblock` automatically. ESF accepts merge-mined blocks from its block 31733.
 - With merged mining on, `blockIdentifier` is capped at 30 bytes to keep the coinbase scriptSig within 100 bytes.
 - Every aux block is logged (`[AUX BLOCK FOUND!]`) and listed in Redis under `<coin>:auxBlocks:<auxcoin>`.
 

@@ -129,6 +129,25 @@
           "variancePercent": { "min": 5, "max": 50 }
         }
       }
+    },
+    "50227": {
+      "diff": 250000,
+      "tls": false,
+      "soloMining": true,
+      "auxGroup": "esf",
+      "_comment_auxGroup": "BTCS + ESF for solo miners (password m=solo,esf=<ESF address>); the other ports are BTCS + S256",
+      "varDiff": {
+        "minDiff": 25000,
+        "maxDiff": 9000000000,
+        "targetTime": 40,
+        "retargetTime": 260,
+        "variancePercent": 7,
+        "minerConfigurable": {
+          "targetTime": { "min": 15, "max": 120 },
+          "retargetTime": { "min": 60, "max": 600 },
+          "variancePercent": { "min": 5, "max": 50 }
+        }
+      }
     }
   },
 
@@ -150,10 +169,26 @@
           "user": "rpcuser",
           "password": "YOUR_RPC_PASSWORD"
         }
+      },
+      "esf1175coin": {
+        "symbol": "ESF",
+        "chainId": 1175,
+        "byteOrder": "reversed",
+        "slotRule": "modulo",
+        "addressParam": "esf",
+        "address": "YOUR_ESF_POOL_ADDRESS",
+        "_comment_esf": "ElevenSeventyFive: tree root written byte-reversed, slot = nonce % size, work via getauxblock (no createauxblock). Merged mining from ESF block 31733.",
+        "daemon": {
+          "host": "127.0.0.1",
+          "port": 25359,
+          "user": "rpcuser",
+          "password": "YOUR_RPC_PASSWORD"
+        }
       }
     },
     "groups": {
-      "standard": ["sha256coin"]
+      "standard": ["sha256coin"],
+      "esf": ["esf1175coin"]
     },
     "_comment_groups": "Namecoin-standard coins can share a group. A coin with byteOrder reversed or slotRule modulo (e.g. ESF) must be alone in its own group, on its own port."
   },
