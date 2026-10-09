@@ -575,7 +575,7 @@
               "EH/s",
             ];
             let unitIndex = 0;
-            let rate = hr;
+            let rate = Number(hr) || 0;
             while (rate >= 1000 && unitIndex < units.length - 1) {
               rate /= 1000;
               unitIndex++;
@@ -588,7 +588,8 @@
             if (!diff || diff === 0) return "0";
             const units = ["", "K", "M", "G", "T", "P", "E"];
             let unitIndex = 0;
-            let value = diff;
+            let value = Number(diff) || 0;
+            if (value > 0 && value < 0.01) return value.toExponential(2);
             while (value >= 1000 && unitIndex < units.length - 1) {
               value /= 1000;
               unitIndex++;
@@ -733,7 +734,7 @@
         if (!hr || hr === 0) return "0 H/s";
         const units = ["H/s", "KH/s", "MH/s", "GH/s", "TH/s", "PH/s", "EH/s"];
         let unitIndex = 0;
-        let rate = hr;
+        let rate = Number(hr) || 0;
         while (rate >= 1000 && unitIndex < units.length - 1) {
           rate /= 1000;
           unitIndex++;
@@ -745,7 +746,8 @@
         if (!diff || diff === 0) return "0";
         const units = ["", "K", "M", "G", "T", "P", "E"];
         let unitIndex = 0;
-        let value = diff;
+        let value = Number(diff) || 0;
+        if (value > 0 && value < 0.01) return value.toExponential(2);
         while (value >= 1000 && unitIndex < units.length - 1) {
           value /= 1000;
           unitIndex++;
@@ -951,7 +953,7 @@
         if (!hr || hr === 0) return "0 H/s";
         const units = ["H/s", "KH/s", "MH/s", "GH/s", "TH/s", "PH/s", "EH/s"];
         let unitIndex = 0;
-        let rate = hr;
+        let rate = Number(hr) || 0;
         while (rate >= 1000 && unitIndex < units.length - 1) {
           rate /= 1000;
           unitIndex++;

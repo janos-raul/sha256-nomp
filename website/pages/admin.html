@@ -1857,6 +1857,144 @@
             flex-wrap: wrap;
         }
     }
+
+    /* ================= console theme overrides (v1.5.0) =================
+       The rules above are the original admin styles; these bring them in
+       line with the site theme without touching markup or admin.js. */
+    .admin-container, .admin-dashboard { max-width: none; padding: 0; }
+    .admin-login, .admin-sidebar, .admin-content, .settings-card, .pool-card, .status-card,
+    .health-section, .activity-section, .config-editor-section, .log-files-sidebar, .log-viewer-main,
+    .config-modal-content, .pool-modal-content, .confirm-dialog, .stat-box, .detail-section {
+        background: var(--panel) !important; border: 1px solid var(--line) !important;
+        border-radius: var(--r) !important; box-shadow: none !important; backdrop-filter: none !important;
+    }
+    .admin-login { max-width: 420px; padding: 22px !important; position: relative; }
+    .admin-login::before { content: ""; position: absolute; top: -1px; left: -1px; width: 8px; height: 8px; border: solid var(--accent); border-width: 1px 0 0 1px; }
+    .admin-login h2, .admin-header h1 {
+        font: 700 22px/1.1 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.04em;
+        color: var(--text-hi) !important; background: none !important; -webkit-text-fill-color: currentColor !important;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .admin-login h2 i, .admin-header h1 i { color: var(--accent); font-size: 0.8em; }
+    .admin-login p { font-size: 12.5px; }
+    .admin-login label, .form-group label, .config-form-group label {
+        font: 600 10.5px var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted) !important;
+    }
+    .admin-header { padding: 0 0 12px !important; margin-bottom: 12px !important; border-bottom: 1px solid var(--line) !important; }
+    .admin-grid { gap: 12px !important; }
+    .admin-sidebar { padding: 0 !important; align-self: start; }
+    .admin-sidebar h3 {
+        margin: 0 !important; padding: 10px 14px !important; border-bottom: 1px solid var(--line);
+        font: 600 11.5px/1.2 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi) !important;
+    }
+    .admin-menu { padding: 6px !important; display: grid; gap: 2px; }
+    .admin-nav-link {
+        display: flex !important; align-items: center; gap: 10px; padding: 9px 10px !important;
+        border: 1px solid transparent !important; border-radius: var(--r) !important; background: none !important;
+        font: 600 10.5px/1 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text) !important;
+    }
+    .admin-nav-link i { width: 14px; font-size: 11px; opacity: 0.8; }
+    .admin-nav-link:hover { color: var(--text-hi) !important; border-color: var(--line) !important; text-decoration: none; }
+    .admin-nav-link.active { color: var(--accent) !important; border-color: var(--accent) !important; background: var(--accent-soft) !important; }
+    .admin-content { padding: 0 !important; min-width: 0; }
+    .admin-section > h2 {
+        margin: 0 0 12px !important; padding: 10px 14px !important; border-bottom: 1px solid var(--line);
+        font: 600 11.5px/1.2 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi) !important;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .admin-section > h2 i, .admin-section h3 i { color: var(--accent); }
+    .admin-section { padding: 0 0 14px !important; }
+    .admin-section > :not(h2) { margin-left: 14px; margin-right: 14px; }
+    .admin-section h3 {
+        font: 600 11px/1.2 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-hi) !important;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .status-cards { gap: 12px !important; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important; }
+    .status-card { padding: 12px 14px !important; }
+    .status-card-content { gap: 12px !important; align-items: center; }
+    .status-card-icon {
+        width: 30px !important; height: 30px !important; min-width: 30px; font-size: 12px !important; border-radius: var(--r) !important;
+        border: 1px solid color-mix(in srgb, currentColor 50%, transparent) !important; background: transparent !important;
+    }
+    .status-card-label, .stat-label, .info-label, .pool-info-label, .health-metric-label {
+        font: 600 10px var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted) !important;
+    }
+    .status-card-value, .stat-value, .health-metric-value {
+        font: 600 18px/1.15 var(--font-mono) !important; color: var(--text-hi) !important; -webkit-text-fill-color: currentColor !important;
+        background: none !important;
+    }
+    .status-card-subtitle { font: 500 10.5px var(--font-mono) !important; color: var(--muted) !important; }
+    .info-value, .pool-info-value { font: 500 12.5px var(--font-mono) !important; color: var(--text-hi) !important; }
+    .settings-card-header, .config-modal-header, .pool-modal-header, .confirm-dialog-header, .pool-card-header, .health-header, .log-viewer-header {
+        padding: 10px 14px !important; border-bottom: 1px solid var(--line) !important; background: none !important;
+    }
+    .settings-card-header h3 { margin: 0 !important; }
+    .settings-card-header p { font-size: 11.5px; color: var(--muted); margin: 4px 0 0; }
+    .settings-card-body { padding: 14px !important; }
+    .warning-box {
+        border: 1px solid color-mix(in srgb, var(--bad) 45%, transparent) !important; border-left: 2px solid var(--bad) !important;
+        background: color-mix(in srgb, var(--bad) 7%, transparent) !important; border-radius: var(--r) !important;
+        color: var(--text-hi) !important; font-size: 12px; padding: 10px 12px !important;
+    }
+    .warning-box strong { color: var(--bad); }
+    .btn-admin, .btn-logout, .btn-modal-secondary, .btn-config-action, .btn-view-details, .btn-confirm-cancel, .log-control-btn {
+        font: 600 10.5px/1 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.14em;
+        color: var(--text-hi) !important; background: var(--panel) !important; border: 1px solid var(--line-hi) !important;
+        border-radius: var(--r) !important; padding: 9px 12px !important; box-shadow: none !important; transform: none !important;
+    }
+    .btn-admin:hover, .btn-logout:hover, .btn-modal-secondary:hover, .btn-config-action:hover, .btn-view-details:hover,
+    .btn-confirm-cancel:hover, .log-control-btn:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
+    .admin-login button[type="submit"], .btn-modal-primary {
+        font: 600 11px/1 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.14em;
+        background: var(--accent) !important; color: var(--on-accent) !important; border: 1px solid var(--accent) !important;
+        border-radius: var(--r) !important; box-shadow: none !important; transform: none !important;
+    }
+    .btn-restart, .btn-confirm-danger {
+        font: 600 11px/1 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.14em;
+        background: transparent !important; color: var(--bad) !important; border: 1px solid var(--bad) !important;
+        border-radius: var(--r) !important; box-shadow: none !important; transform: none !important; padding: 10px 14px !important;
+    }
+    .btn-restart:hover, .btn-confirm-danger:hover { background: color-mix(in srgb, var(--bad) 12%, transparent) !important; }
+    .status-badge, .pool-status, .restart-status, .pool-coin-badge {
+        font: 600 9.5px/1.4 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.12em;
+        border-radius: var(--r) !important; padding: 3px 7px !important;
+    }
+    .summary-table th, .pool-summary-table th { background: none !important; }
+    .summary-table, .pool-summary-table { border: 1px solid var(--line); }
+    .log-viewer-content { background: var(--bg) !important; border-radius: 0 !important; }
+    .log-line { font: 500 11.5px/1.55 var(--font-mono) !important; }
+    .log-file-item { border-radius: var(--r) !important; }
+    .log-file-item.active, .log-file-item:hover { background: var(--accent-soft) !important; border-color: var(--accent) !important; }
+    .config-modal-overlay, .pool-modal-overlay, .confirm-dialog-overlay { backdrop-filter: none !important; background: rgba(0, 0, 0, 0.6) !important; }
+    .message-preview { border-radius: var(--r) !important; }
+    .summary-table th, .pool-summary-table th, .summary-table thead th {
+        font: 600 10px/1.2 var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted) !important; padding: 8px 12px !important;
+    }
+    .summary-table td, .pool-summary-table td { font: 500 12px var(--font-mono) !important; padding: 8px 12px !important; }
+    .activity-grid { gap: 12px !important; }
+    .activity-section h4, .activity-list h4, .activity-section > div > h4 {
+        font: 600 11px var(--font-display) !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-hi) !important;
+    }
+    .activity-item { padding: 8px 10px !important; gap: 10px !important; border-radius: var(--r) !important; background: var(--panel-2) !important; border: 1px solid var(--line) !important; }
+    .activity-icon { width: 26px !important; height: 26px !important; min-width: 26px; font-size: 11px !important; border-radius: var(--r) !important; background: transparent !important; border: 1px solid var(--line-hi) !important; }
+    .activity-title { font: 600 12px var(--font-mono) !important; color: var(--text-hi) !important; }
+    .activity-meta, .activity-details, .activity-time { font: 500 10.5px var(--font-mono) !important; color: var(--muted) !important; }
+    .config-item { padding: 10px 12px !important; border-radius: var(--r) !important; background: var(--panel-2) !important; border: 1px solid var(--line) !important; }
+    .config-item-name { font: 600 12.5px var(--font-mono) !important; color: var(--text-hi) !important; }
+    .config-item-meta, .config-item-info small { font: 500 11px var(--font-mono) !important; color: var(--muted) !important; }
+    .health-metric { border-radius: var(--r) !important; background: var(--panel-2) !important; border: 1px solid var(--line) !important; }
+
+    /* theme: compact logs and pool message */
+    .log-file-item { padding: 9px 12px !important; margin-bottom: 6px !important; }
+    .log-file-name { font-family: var(--font-mono) !important; font-size: 12px !important; color: var(--text-hi) !important; }
+    .log-file-meta { font-family: var(--font-mono) !important; font-size: 10.5px !important; color: var(--muted) !important; }
+    .log-viewer-title { font-family: var(--font-mono) !important; font-size: 12px !important; letter-spacing: .06em; text-transform: uppercase; color: var(--text-hi) !important; }
+    .log-control { font-family: var(--font-mono) !important; font-size: 11px !important; padding: 6px 10px !important; background: var(--bg-2) !important; color: var(--text) !important; border: 1px solid var(--line-hi) !important; border-radius: var(--r) !important; }
+    .log-empty, .log-viewer-empty { font-size: 12px !important; }
+    #poolMessageText, .config-form-group textarea { font-family: var(--font-mono) !important; font-size: 12px !important; background: var(--bg-2) !important; color: var(--text) !important; border: 1px solid var(--line-hi) !important; border-radius: var(--r) !important; }
+    .color-label { padding: 12px !important; font-size: 10.5px !important; border-radius: var(--r) !important; border-width: 1px !important; }
+    .color-label i { font-size: 16px !important; }
+    .message-preview-content span, .message-preview-content i { font-size: 13px !important; }
 </style>
 
 <div class="admin-container">
