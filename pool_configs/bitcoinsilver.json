@@ -133,7 +133,7 @@
   },
 
   "mergedMining": {
-    "enabled": false,
+    "enabled": true,
     "_comment_mergedMining": "Namecoin-style merged mining for SOLO miners only (password m=solo). Pool-mode miners always get plain BTCS jobs. A port opts in with auxGroup. Solo miners add one payout address per aux coin to the password, e.g. m=solo,s256=<address>; each aux coin's own pool config (payments + soloMining on) pays the finder minus its solo fee. A coin with no address given stays in the pool wallet. With merged mining on, blockIdentifier is capped at 30 bytes.",
     "auxPollInterval": 5000,
     "auxCoins": {

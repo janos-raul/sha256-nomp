@@ -3,6 +3,7 @@
   "coin": "sha256coin.json",
   "asicboost": true,
   "blockIdentifier": "https://sha256coin.eu/",
+  "_comment_mergedMining": "S256 is the aux coin the other pools (bitcoin, bitcoinsilver, ...) merge-mine for their solo miners. This pool's payment processor pays those S256 solo blocks to the miners' s256= addresses, so keep paymentProcessing.enabled and paymentProcessing.soloMining on, use the same daemon/wallet as auxCoins.sha256coin in the other configs, and the same pool address.",
 
   "security": {
     "enabled": true,

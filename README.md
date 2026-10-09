@@ -21,6 +21,18 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
 - ✅ **Dual Mining** - Support pool and solo mining simultaneously
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
+- ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF) on the same work, each paid to their own address (v1.5.0)
+
+### Recent Updates (v1.5.0)
+
+- **NEW**: Merged mining (Namecoin-style AuxPoW) for solo miners — aux coins are defined once in `mergedMining.auxCoins`, grouped in `mergedMining.groups`, and enabled per port with `auxGroup`. Solo miners add one payout address per aux coin to the password (`m=solo,s256=<address>`), checked with that coin's daemon at login. Each aux coin's own pool config pays the finder, minus its solo fee. Pool-mode miners keep plain jobs. See [Merged Mining](#merged-mining-solo-miners)
+- **NEW**: Several Namecoin-standard aux coins in one merged-mining tree; ESF-style coins (reversed byte order, modulo slot, `getauxblock`) in their own group
+- **FIXED**: A TLS (`stratum+ssl`) or HTTP connection to a plain stratum port no longer gets the IP banned — rental services such as MiningRigRentals try TLS first and were locked out for 10 minutes
+- **FIXED**: Fee recipients (`rewardRecipients`) now take their output script from the daemon: bech32 fee addresses were skipped and P2SH fee addresses got a wrong (unspendable) script
+- **FIXED**: Coinbase timestamps from 2038-01-19 would have crashed job creation; non-ASCII `blockIdentifier`s got a wrong length; mining-key payout addresses had a double checksum
+- **FIXED**: A bare `solo` or `solo=true` password now selects solo mining in the stratum layer too, matching the payout side
+- **FIXED**: The connection count in the 5-minute stats never went down; regtest was reported as "Mainnet" at startup
+- **UPDATED**: Dependencies (no known vulnerabilities); Node.js 24 required
 
 ### Recent Updates (v1.4.7)
 
@@ -105,7 +117,7 @@ _Building high-performance SHA256 mining infrastructure_
 #### Requirements
 
 - Coin daemon(s) (find the coin's repo and build latest version from source or use the already built ones)
-- [Node.js](http://nodejs.org/) v16+ ([follow these installation instructions](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager))
+- [Node.js](http://nodejs.org/) v24+ (see `.nvmrc`; [installation instructions](https://nodejs.org/en/download))
 - [Redis](http://redis.io/) key-value store v2.6+ ([follow these instructions](http://redis.io/topics/quickstart))
 
 ##### Seriously
@@ -668,18 +680,65 @@ Example connections:
 - **CGMiner**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo`
 - **With custom difficulty**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo,d=65536`
 
+#### Merged Mining (Solo Miners)
+
+Solo miners can merge-mine aux coins on the same work as the parent coin (Namecoin-style AuxPoW). Pool-mode miners are not affected: they always get plain parent jobs.
+
+**For miners** — mine solo on a merged-mining port and add an address for each aux coin you want paid:
+
+```
+Username: YOUR_PARENT_COIN_ADDRESS.worker
+Password: m=solo,s256=YOUR_S256_ADDRESS
+```
+
+If you leave out an aux coin's address, its blocks are still found and submitted, but the reward stays in the pool wallet.
+
+**For operators** — in the parent coin's pool config (all pool configs except `sha256coin.json` ship with S256 merged mining enabled):
+
+```json
+"mergedMining": {
+  "enabled": true,
+  "auxPollInterval": 5000,
+  "auxCoins": {
+    "sha256coin": {
+      "symbol": "S256",
+      "chainId": 598,
+      "byteOrder": "namecoin",
+      "slotRule": "namecoin",
+      "addressParam": "s256",
+      "address": "YOUR_S256_POOL_ADDRESS",
+      "daemon": { "host": "127.0.0.1", "port": 25332, "user": "rpcuser", "password": "YOUR_RPC_PASSWORD" }
+    }
+  },
+  "groups": {
+    "standard": ["sha256coin"]
+  }
+},
+"ports": {
+  "50222": { "diff": 15000, "soloMining": true, "auxGroup": "standard", "varDiff": { "...": "..." } }
+}
+```
+
+- `enabled: false` turns merged mining off on every port; a port without `auxGroup` mines the parent coin only.
+- **Each aux coin needs its own pool config** (e.g. `pool_configs/sha256coin.json`) with `paymentProcessing.enabled` and `paymentProcessing.soloMining` on, using the same daemon/wallet and pool address as in `auxCoins`. Merged-mined blocks are recorded there as solo blocks of the miner's aux address, and that pool's payment processor pays the finder (minus its `soloFee`) once the block matures. The portal refuses to start if this config is missing.
+- Namecoin-standard coins (S256, Namecoin, …) can share a group: add the coin to `auxCoins` and its name to the group. A coin with `byteOrder: "reversed"` or `slotRule: "modulo"` (ESF: chain ID 1175, `addressParam` `esf`) must be alone in its own group, on its own port(s).
+- With merged mining on, `blockIdentifier` is capped at 30 bytes to keep the coinbase scriptSig within 100 bytes.
+- Every aux block is logged (`[AUX BLOCK FOUND!]`) and listed in Redis under `<coin>:auxBlocks:<auxcoin>`.
+
 #### Password Parameters
 
 Miners can pass one or more of the following via the stratum password field, comma-separated:
 
 | Parameter    | Description                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `m=solo`     | Mine solo instead of pool mode                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `m=solo`     | Mine solo instead of pool mode (a bare `solo` or `solo=true` works too)                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `d=<value>`  | Set the miner's _starting_ difficulty immediately on connect, overriding the port's configured default                                                                                                                                                                                                                                                                                                                                  |
 | `md=<value>` | Set a _minimum_ difficulty floor — variable difficulty will retarget freely above this value but will never drop the miner below it, even if their share timing suggests it should. Useful for large ASICs (S19/S21/T21-class) to reduce unnecessary share traffic. The floor is clamped between the port's own `minDiff` and `maxDiff`, so it can raise the effective floor but can never push it above the port's configured ceiling. |
 | `tt=<value>` | Requested varDiff target time (seconds between shares). Only takes effect on ports with `minerConfigurable.targetTime` set; clamped to that range. Ignored (falls back to the port default) otherwise. |
 | `rt=<value>` | Requested varDiff retarget time (seconds between adjustments). Only takes effect on ports with `minerConfigurable.retargetTime` set; clamped to that range. Ignored otherwise. |
 | `vp=<value>` | Requested varDiff variance percent. Only takes effect on ports with `minerConfigurable.variancePercent` set; clamped to that range. Ignored otherwise. |
+
+| `s256=<address>`, `esf=<address>`, … | Merged mining payout address for an aux coin; the key is that coin's `addressParam`. Only used by solo miners on ports with an `auxGroup`. Checked with the coin's daemon at login; an invalid address refuses the login. See [Merged Mining](#merged-mining-solo-miners). |
 
 Example: `-p m=solo,d=1000000,md=500000` starts the miner at difficulty 1,000,000 and guarantees it never retargets below 500,000.
 
