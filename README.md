@@ -32,6 +32,8 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - **FIXED**: Coinbase timestamps from 2038-01-19 would have crashed job creation; non-ASCII `blockIdentifier`s got a wrong length; mining-key payout addresses had a double checksum
 - **FIXED**: A bare `solo` or `solo=true` password now selects solo mining in the stratum layer too, matching the payout side
 - **FIXED**: The connection count in the 5-minute stats never went down; regtest was reported as "Mainnet" at startup
+- **NEW**: `/api/stats` shows merged mining per coin (`merged_with`, `merge_mined_by`, `mergedMining`)
+- **IMPROVED**: Block confirmation counts are updated by each coin's payment processor every `confirmationsInterval` seconds (default 120) for every coin, including aux coins; the standalone `libs/blockConfirmations.js` (hard-coded daemons, S256/BTGS missing) is removed
 - **UPDATED**: Dependencies (no known vulnerabilities); Node.js 24 required
 
 ### Recent Updates (v1.4.7)
@@ -344,7 +346,7 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
         "blockURL": "https://blockstream.info/block/"   // Block explorer URL
     },
 
-    // RPC daemon connection (used by blockConfirmations.js and other utilities)
+    // RPC daemon connection (reference only: the portal uses the daemons in the pool config)
     "rpc": {
         "host": "127.0.0.1",              // Daemon host
         "port": 8332,                     // Daemon RPC port
@@ -359,7 +361,7 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
 - The value that actually gates payouts is `pool_configs/<coin>.json` -> `paymentProcessing.minConf` — the coin config's own `minConf` is a reference/documentation copy only and isn't read by the payment processor
 - Bitcoin typically uses 101 confirmations, Bitcoin Silver uses 201
 - ASICBoost is enabled by default for optimal performance with modern ASIC miners
-- The `rpc` section is used by maintenance scripts like `blockConfirmations.js`
+- The `rpc` section is for reference only; the portal connects to the daemons listed in `pool_configs/<coin>.json`
 
 ##### Pool config
 
@@ -727,6 +729,7 @@ If you leave out an aux coin's address, its blocks are still found and submitted
 - **ESF example** (`pool_configs/bitcoinsilver.json`): `auxCoins.esf1175coin` (ElevenSeventyFive, chain ID 1175, `byteOrder: "reversed"`, `slotRule: "modulo"`, `addressParam: "esf"`) in group `esf`, used by port **50227** — solo miners there mine BTCS + ESF with `m=solo,esf=<ESF address>`, while ports 50222–50226 mine BTCS + S256. ESF's own pool config is `pool_configs/esf1175coin.json` (coin file `coins/esf1175coin.json`), which pays the ESF solo blocks. ESF has no `createauxblock`; the pool uses `getauxblock` automatically. ESF accepts merge-mined blocks from its block 31733.
 - With merged mining on, `blockIdentifier` is capped at 30 bytes to keep the coinbase scriptSig within 100 bytes.
 - Every aux block is logged (`[AUX BLOCK FOUND!]`) and listed in Redis under `<coin>:auxBlocks:<auxcoin>`.
+- `/api/stats` shows merged mining per coin: `merged_with` in the YIIMP-style shape pool listing sites read (`{"merged_with": "S256,ESF"}`, or `"0"`), `merge_mined_by` on aux coins (e.g. `["BTCS"]`), and `mergedMining` with each aux coin's symbol, chain ID, ports and password example.
 
 #### Password Parameters
 
@@ -932,156 +935,17 @@ are commented in [scripts/blocknotify.c](scripts/blocknotify.c).
 
 #### 3) Block Confirmation Monitoring
 
-SHA256-NOMP includes a utility script for monitoring block confirmations: `libs/blockConfirmations.js`
+Confirmation counts of found blocks (shown on the website while a block matures) are kept up to date by each coin's payment processor. Besides its payment run (`paymentInterval`), it reads `getblock` confirmations for every pending pool and solo block every `confirmationsInterval` seconds (default 120, minimum 30) and stores them in Redis (`<coin>:blocksPendingConfirms`). This covers every coin with payment processing enabled — including merged-mining aux coins — with nothing extra to configure:
 
-##### What is blockConfirmations.js?
-
-This script checks the confirmation status of pending blocks (both pool and solo) and updates their status in Redis. It's useful for:
-
-- Monitoring block maturity before payouts
-- Detecting orphaned blocks
-- Tracking confirmation progress
-- Debugging payment issues
-
-##### How blockConfirmations.js Works
-
-The script performs the following steps:
-
-1. **Connects to Redis** - Reads pending blocks from the pool's Redis database
-2. **Queries Coin Daemons** - Checks each pending block against the blockchain via RPC
-3. **Updates Confirmations** - Records the current confirmation count for each block
-4. **Detects Orphans** - Identifies blocks that are no longer in the main chain
-5. **Generates Report** - Provides detailed statistics about block status
-
-##### Using blockConfirmations.js - Step by Step
-
-**Step 1: Configure the Script**
-
-Edit `libs/blockConfirmations.js` and update the `poolConfigs` object with your coin configurations:
-
-```javascript
-const poolConfigs = {
-  bitcoin: {
-    daemon: {
-      host: "127.0.0.1",
-      port: 8332,
-      user: "rpcuser",
-      password: "rpcpassword",
-    },
-    minConfirmations: 101, // Must match your pool config minConf
-  },
-  bitcoinsilver: {
-    daemon: {
-      host: "127.0.0.1",
-      port: 10013,
-      user: "rpcuser",
-      password: "rpcpassword",
-    },
-    minConfirmations: 201,
-  },
-  // Add more coins as needed
-};
+```json
+"paymentProcessing": {
+  "enabled": true,
+  "paymentInterval": 3600,
+  "confirmationsInterval": 120
+}
 ```
 
-**Step 2: Ensure Redis is Running**
-
-The script requires Redis to be running and accessible:
-
-```bash
-redis-cli ping
-# Should return: PONG
-```
-
-**Step 3: Run the Script**
-
-Execute the script from the pool's root directory:
-
-```bash
-node libs/blockConfirmations.js
-```
-
-**Step 4: Interpret the Output**
-
-The script provides detailed output:
-
-```
-[SPECIAL] [BlockConfirm] [Init] === Block Confirmation Tracker Started ===
-[INFO] [BlockConfirm] [Init] Checking confirmations for: bitcoin, bitcoinsilver, mytherra
-[INFO] [BlockConfirm] [bitcoin] Starting block confirmation check...
-[INFO] [BlockConfirm] [bitcoin] Found 3 pending pool blocks
-[INFO] [BlockConfirm] [bitcoin] POOL block 850123: 45/101 confirmations
-[INFO] [BlockConfirm] [bitcoin] POOL block 850124: 23/101 confirmations
-[SPECIAL] [BlockConfirm] [bitcoin] POOL block 850100 CONFIRMED! 101/101 confirmations
-[INFO] [BlockConfirm] [bitcoin] Found 1 pending SOLO blocks
-[SPECIAL] [BlockConfirm] [bitcoin] ★ SOLO block 850095 by bc1q...xyz CONFIRMED! 120/101 confirmations
-[WARNING] [BlockConfirm] [bitcoin] POOL block 850050 ORPHANED!
-[SPECIAL] [BlockConfirm] [Summary] === Confirmation Check Complete ===
-[INFO] [BlockConfirm] [Summary] Runtime: 1247ms
-[INFO] [BlockConfirm] [Summary] Pool blocks: 3 (Confirmed: 1)
-[INFO] [BlockConfirm] [Summary] Solo blocks: 1 (Confirmed: 1)
-[WARNING] [BlockConfirm] [Summary] Orphaned blocks detected: 1
-```
-
-**Step 5: Automate with Cron (Optional)**
-
-For regular monitoring, add to your crontab:
-
-```bash
-# Check block confirmations every 10 minutes
-*/10 * * * * cd /path/to/sha256-nomp && /usr/bin/node libs/blockConfirmations.js >> logs/block-confirmations.log 2>&1
-```
-
-##### Understanding Block Confirmations
-
-**What are confirmations?**
-
-- Each new block added to the blockchain after your block counts as one confirmation
-- Confirmations make blocks more secure and less likely to be orphaned
-- Most pools require 101-201 confirmations before paying out miners
-
-**Block States:**
-
-- **Pending**: Block found but not yet confirmed (0 - minConf confirmations)
-- **Confirmed**: Block has reached required confirmations (≥ minConf)
-- **Orphaned**: Block no longer in the main chain (confirmations = -1)
-
-**Why blocks get orphaned:**
-
-- Another miner found a competing block at the same height
-- Network propagation delays
-- Chain reorganizations
-
-**Confirmation Requirements by Coin:**
-
-- Bitcoin (BTC): 101 confirmations (~16.8 hours)
-- Bitcoin Silver (BTCS): 201 confirmations (~16.8 hours, 5 min blocks)
-- Mytherra (MYT): 101 confirmations (~8.4 hours, 5 min blocks)
-- Bitcoin II (BC2): 101 confirmations (~16.8 hours)
-
-##### Troubleshooting
-
-**Script can't connect to Redis:**
-
-```bash
-# Check if Redis is running
-sudo systemctl status redis
-
-# Start Redis if needed
-sudo systemctl start redis
-```
-
-**RPC connection errors:**
-
-- Verify daemon is running and synced
-- Check RPC credentials in blockConfirmations.js
-- Ensure firewall allows RPC connections
-- Verify RPC port is correct for each coin
-
-**No pending blocks found:**
-
-- Normal if no recent blocks were found
-- Check that pool has been running and miners are connected
-- Verify Redis contains block data: `redis-cli keys "*blocksPending*"`
+A block that leaves the main chain shows `-1` confirmations until the next payment run moves it to the orphaned (kicked) blocks. The old standalone `libs/blockConfirmations.js` script (hard-coded daemons, run by `stats.js`) has been removed in v1.5.0.
 
 #### 4) Start the portal
 

@@ -328,7 +328,84 @@ function SetupForPool(logger, poolOptions, setupFinished) {
     paymentInterval = setTimeout(processPayments, paymentIntervalSecs * 1000);
     //paymentInterval = setInterval(processPayments, paymentIntervalSecs * 1000);
     //setTimeout(processPayments, 100);
+    if (!confirmationsInterval) {
+      updateConfirmations();
+      confirmationsInterval = setInterval(updateConfirmations, confirmationsIntervalSecs * 1000);
+    }
     setupFinished(true);
+  }
+
+  /*
+  Confirmation counts of pending blocks for the website
+  (<coin>:blocksPendingConfirms). The payment run updates them too, but only
+  every paymentInterval; this lighter timer only reads getblock
+  confirmations (-1 = no longer in the main chain) and pays nothing.
+  Replaces the old standalone libs/blockConfirmations.js.
+  */
+  var confirmationsInterval;
+  var confirmationsIntervalSecs = Math.max(
+    30,
+    parseInt(processingConfig.confirmationsInterval, 10) || 120,
+  );
+
+  function updateConfirmations() {
+    redisClient
+      .multi([
+        ["smembers", coin + ":blocksPending"],
+        ["smembers", coin + ":blocksPending:solo"],
+      ])
+      .exec(function (err, replies) {
+        if (err) {
+          logger.error(
+            logSystem,
+            logComponent,
+            "Confirmations: could not read pending blocks from redis " + JSON.stringify(err),
+          );
+          return;
+        }
+        var hashes = [].concat(replies[0] || [], replies[1] || []).map(function (r) {
+          return r.split(":")[0];
+        });
+        if (hashes.length === 0) return;
+
+        daemon.batchCmd(
+          hashes.map(function (h) {
+            return ["getblock", [h]];
+          }),
+          function (error, results) {
+            if (error || !Array.isArray(results)) {
+              logger.warning(
+                logSystem,
+                logComponent,
+                "Confirmations: getblock batch failed " + JSON.stringify(error),
+              );
+              return;
+            }
+            var updates = [];
+            results.forEach(function (r, i) {
+              if (r && r.result && typeof r.result.confirmations === "number") {
+                updates.push(["hset", coin + ":blocksPendingConfirms", hashes[i], r.result.confirmations]);
+              }
+            });
+            if (updates.length === 0) return;
+            redisClient.multi(updates).exec(function (err) {
+              if (err) {
+                logger.error(
+                  logSystem,
+                  logComponent,
+                  "Confirmations: redis update failed " + JSON.stringify(err),
+                );
+              } else {
+                logger.debug(
+                  logSystem,
+                  logComponent,
+                  "Confirmations updated for " + updates.length + " pending block(s)",
+                );
+              }
+            });
+          },
+        );
+      });
   }
 
   async.parallel([validateAddress, getBalance], asyncComplete);

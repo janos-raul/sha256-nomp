@@ -48,6 +48,70 @@ function sortProperties(obj, sortedBy, isNumericSort, reverse) {
 }
 
 module.exports = function (logger, portalConfig, poolConfigs) {
+  /*
+  Merged mining as the API shows it, from the pool configs:
+  - a parent coin lists the aux coins its ports actually merge-mine
+    (merged mining enabled, coin in a group used by an auxGroup port);
+  - an aux coin lists the parent coins merge-mining it.
+  merged_with mirrors the YIIMP-style field merged-mining pools expose
+  ({"merged_with": "S256,ESF"}, or "0" when none), which pool listing
+  sites read; mergedMining is the structured form.
+  */
+  var mergedMiningInfo = (function () {
+    var info = {};
+    var symbolOf = function (name, auxCfg) {
+      var c = poolConfigs[name] && poolConfigs[name].coin;
+      return ((auxCfg && auxCfg.symbol) || (c && c.symbol) || name).toUpperCase();
+    };
+    Object.keys(poolConfigs).forEach(function (name) {
+      info[name] = { auxCoins: [], parents: [] };
+    });
+    Object.keys(poolConfigs).forEach(function (parent) {
+      var mm = poolConfigs[parent].mergedMining;
+      if (!mm || mm.enabled !== true || !mm.auxCoins || !mm.groups) return;
+      var portsByCoin = {};
+      Object.keys(poolConfigs[parent].ports || {}).forEach(function (port) {
+        var members = mm.groups[poolConfigs[parent].ports[port].auxGroup] || [];
+        members.forEach(function (aux) {
+          (portsByCoin[aux] = portsByCoin[aux] || []).push(Number(port));
+        });
+      });
+      Object.keys(portsByCoin).forEach(function (aux) {
+        var cfg = mm.auxCoins[aux] || {};
+        info[parent].auxCoins.push({
+          name: aux,
+          symbol: symbolOf(aux, cfg),
+          chainId: cfg.chainId,
+          addressParam: cfg.addressParam,
+          ports: portsByCoin[aux],
+        });
+        var key = aux.toLowerCase();
+        if (info[key]) info[key].parents.push(symbolOf(parent));
+      });
+    });
+    return info;
+  })();
+
+  function mergedMiningStats(coinName) {
+    var mi = mergedMiningInfo[coinName] || { auxCoins: [], parents: [] };
+    var symbols = mi.auxCoins.map(function (c) {
+      return c.symbol;
+    });
+    return {
+      merged_with: { merged_with: symbols.length ? symbols.join(",") : "0" },
+      merge_mined_by: mi.parents,
+      mergedMining: {
+        enabled: mi.auxCoins.length > 0,
+        soloOnly: true,
+        coins: mi.auxCoins.map(function (c) {
+          return Object.assign({}, c, {
+            password: "m=solo," + c.addressParam + "=<" + c.symbol + " address>",
+          });
+        }),
+      },
+    };
+  }
+
   var _this = this;
 
   var logSystem = "Stats";
@@ -891,6 +955,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   poolConfigs[coinName]?.paymentProcessing?.minimumPayment || 0,
                 poolFee: poolConfigs[coinName]?.paymentProcessing?.poolFee || 0,
                 soloFee: poolConfigs[coinName]?.paymentProcessing?.soloFee || 0,
+                ...mergedMiningStats(coinName),
                 hashrates: replies[i + 1],
                 poolStats: {
                   blockheight: replies[i + 2]
@@ -1951,6 +2016,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             payout_system: coinStats.payout_system,
             payout_systems: coinStats.payout_systems,
 
+            // Merged mining (solo miners only)
+            merged_with: coinStats.merged_with,
+            merge_mined_by: coinStats.merge_mined_by,
+            mergedMining: coinStats.mergedMining,
+
             // Hashrates grouped together
             hashrate: coinStats.hashrate,
             hashrateString: coinStats.hashrateString,
@@ -2260,15 +2330,3 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     return hashrate.toFixed(2) + byteUnits[i];
   }
 };
-
-const { exec } = require("child_process");
-
-if (!global.blockConfirmationsIntervalStarted) {
-  global.blockConfirmationsIntervalStarted = true;
-
-  setInterval(() => {
-    exec("node ./libs/blockConfirmations.js", () => {
-      // Silent execution: no logs, no error handling
-    });
-  }, 120000);
-}
