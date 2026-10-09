@@ -302,6 +302,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         _this.statHistory = _this.statHistory.sort(function (a, b) {
           return a.time - b.time;
         });
+        // Rebuild from the sorted history: a live sample may already have
+        // been added while redis was answering, and appending the loaded
+        // entries after it put the pool history (used by the charts) out
+        // of time order
+        _this.statPoolHistory = [];
         _this.statHistory.forEach(function (stats) {
           addStatPoolHistory(stats);
         });

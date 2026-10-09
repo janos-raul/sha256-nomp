@@ -1,318 +1,64 @@
 <style>
-    /* Workers Page Specific Styles */
-    .workers-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 2rem 1.5rem;
-    }
-
-    /* Header Section */
+    /* Miner Stats (workers list) — console theme; markup and logic unchanged */
+    .workers-container { display: grid; gap: 12px; }
     .workers-header {
-        background: var(--bg-card);
-        border-radius: 1rem;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        border: 1px solid var(--border);
-        position: relative;
-        overflow: hidden;
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 420px); gap: 0;
+        background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); position: relative;
     }
-
-    .workers-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: var(--gradient);
+    .workers-header::before, .workers-header::after {
+        content: ""; position: absolute; width: 8px; height: 8px; border-color: var(--accent); border-style: solid; pointer-events: none;
     }
-
-    .pool-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 2rem;
-    }
-
+    .workers-header::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+    .workers-header::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+    @media (max-width: 860px) { .workers-header { grid-template-columns: 1fr; } .miner-lookup { border-left: 0 !important; border-top: 1px solid var(--line); } }
+    .pool-info { padding: 14px; min-width: 0; }
     .pool-title {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: var(--text-primary);
+        display: flex; align-items: center; gap: 10px; margin: 0 0 12px;
+        font: 600 12px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi);
     }
-
-    .pool-stats {
-        display: flex;
-        gap: 2rem;
-        flex-wrap: wrap;
-        font-size: 0.95rem;
-    }
-
-    .pool-stat {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--text-secondary);
-    }
-
-    .pool-stat i {
-        color: var(--accent);
-    }
-
-    .pool-stat strong {
-        color: var(--text-primary);
-        margin-left: 0.25rem;
-    }
-
-    /* Miner Lookup */
-    .miner-lookup {
-        background: var(--bg-secondary);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        margin-top: 1.5rem;
-    }
-
-    .lookup-label {
-        display: block;
-        color: var(--text-secondary);
-        margin-bottom: 0.75rem;
-        font-size: 0.95rem;
-    }
-
-    .lookup-group {
-        display: flex;
-        gap: 0.75rem;
-    }
-
-    .lookup-input {
-        flex: 1;
-        background: var(--bg-primary);
-        border: 1px solid var(--border);
-        color: var(--text-primary);
-        padding: 0.75rem 1rem;
-        border-radius: 0.5rem;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .lookup-input:focus {
-        outline: none;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
+    .pool-title i { color: var(--accent); font-size: 12px; }
+    .pool-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); }
+    @media (max-width: 640px) { .pool-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .pool-stat { display: grid; gap: 4px; padding: 10px 12px; border-left: 1px solid var(--line); min-width: 0; }
+    .pool-stat:first-child { border-left: 0; }
+    .pool-stat i { display: none; }
+    .pool-stat span { font: 600 10px var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+    .pool-stat strong { font: 600 14px var(--font-mono); color: var(--text-hi); font-variant-numeric: tabular-nums; }
+    .miner-lookup { padding: 14px; border-left: 1px solid var(--line); display: grid; gap: 8px; align-content: center; }
+    .lookup-label { font: 600 10.5px var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--accent); }
+    .lookup-label i { margin-right: 6px; }
+    .lookup-group { display: flex; gap: 6px; }
+    .lookup-input { flex: 1; min-width: 0; }
     .lookup-button {
-        background: var(--gradient);
-        color: white;
-        border: none;
-        padding: 0.75rem 2rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
+        font: 600 10.5px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.14em;
+        background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); border-radius: var(--r); padding: 0 14px; cursor: pointer;
     }
-
-    .lookup-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-    }
-
-    /* Workers Section */
-    .workers-section {
-        margin-bottom: 2rem;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-title {
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
+    .lookup-button:hover { filter: brightness(1.08); }
+    .workers-section { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
+    .section-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+    .section-title { margin: 0; font: 600 11.5px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi); }
+    .section-info { font: 500 11px var(--font-mono); color: var(--muted); }
     .miner-badge {
-        display: inline-block;
-        padding: 0.3rem 0.8rem;
-        border-radius: 0.5rem;
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
+        display: inline-flex; padding: 2px 6px; font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase;
+        border: 1px solid var(--line-hi); border-radius: var(--r); color: var(--text);
     }
-
-    .badge-pool {
-        background: rgba(16, 185, 129, 0.2);
-        color: var(--success);
-    }
-
-    .badge-solo {
-        background: rgba(245, 158, 11, 0.2);
-        color: var(--warning);
-    }
-
-    .section-info {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-    }
-
-    /* Workers Table */
-    .workers-table-wrapper {
-        background: var(--bg-card);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        border: 1px solid var(--border);
-        overflow-x: auto;
-    }
-
-    .workers-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .workers-table thead {
-        background: var(--bg-secondary);
-        border-bottom: 2px solid var(--border);
-    }
-
-    .workers-table th {
-        padding: 1rem;
-        text-align: left;
-        color: var(--text-secondary);
-        font-weight: 600;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .workers-table tbody tr {
-        border-bottom: 1px solid var(--border);
-        transition: all 0.3s ease;
-    }
-
-    .workers-table tbody tr:hover {
-        background: rgba(59, 130, 246, 0.05);
-    }
-
-    .workers-table td {
-        padding: 1rem;
-        color: var(--text-primary);
-        font-size: 0.95rem;
-    }
-
-    .worker-address {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .worker-address a {
-        color: var(--accent);
-        text-decoration: none;
-        font-weight: 500;
-    }
-
-    .worker-address a:hover {
-        text-decoration: underline;
-    }
-
-    .worker-count {
-        font-size: 0.6rem;
-        color: var(--text-secondary);
-        margin-left: 0.5rem;
-    }
-
-    .efficiency-good {
-        color: var(--success);
-        font-weight: 600;
-    }
-
-    .efficiency-medium {
-        color: var(--warning);
-        font-weight: 600;
-    }
-
-    .efficiency-bad {
-        color: var(--danger);
-        font-weight: 600;
-    }
-
-    /* No Workers Message */
-    .no-workers {
-        text-align: center;
-        padding: 3rem;
-        color: var(--text-secondary);
-        background: var(--bg-secondary);
-        border-radius: 0.75rem;
-        margin: 1rem 0;
-    }
-
-    .no-workers i {
-        font-size: 3rem;
-        color: var(--text-muted);
-        margin-bottom: 1rem;
-        display: block;
-    }
-
-    /* Pagination Info */
-    .pagination-info {
-        text-align: center;
-        padding: 1rem;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        background: var(--bg-secondary);
-        border-radius: 0 0 1rem 1rem;
-        margin-top: -1px;
-    }
-
-    /* Solo Section */
-    .solo-section {
-        position: relative;
-        margin-top: 3rem;
-    }
-
-    .solo-divider {
-        height: 2px;
-        background: linear-gradient(to right, transparent, var(--warning), transparent);
-        margin: 2rem 0;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .pool-info {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .pool-stats {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .workers-table-wrapper {
-            padding: 0.75rem;
-        }
-
-        .workers-table {
-            font-size: 0.85rem;
-        }
-
-        .workers-table th,
-        .workers-table td {
-            padding: 0.75rem 0.5rem;
-        }
-
-        /* Hide less important columns on mobile */
-        .workers-table th:nth-child(3),
-        .workers-table td:nth-child(3),
-        .workers-table th:nth-child(6),
-        .workers-table td:nth-child(6) {
-            display: none;
-        }
-    }
+    .badge-pool { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+    .badge-solo { color: var(--aux); border-color: color-mix(in srgb, var(--aux) 55%, transparent); background: var(--aux-soft); }
+    .workers-table-wrapper { overflow-x: auto; }
+    .workers-table { width: 100%; border-collapse: collapse; }
+    .workers-table td { white-space: nowrap; }
+    .worker-address { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .worker-address a { color: var(--text-hi); font: 500 12px var(--font-mono); }
+    .worker-address a:hover { color: var(--accent); text-decoration: none; }
+    .worker-count { color: var(--muted); font-size: 11px; margin-left: 4px; }
+    .efficiency-good { color: var(--good); }
+    .efficiency-medium { color: var(--warn); }
+    .efficiency-bad { color: var(--bad); }
+    .no-workers { padding: 22px 14px; text-align: center; color: var(--muted); font: 500 12px var(--font-mono); }
+    .no-workers i { display: block; font-size: 18px; margin-bottom: 8px; opacity: 0.5; }
+    .pagination-info { padding: 8px 14px; border-top: 1px solid var(--line); font: 500 11px var(--font-mono); color: var(--muted); }
+    .solo-divider { height: 0; }
+    .solo-section .section-title { color: var(--text-hi); }
 </style>
 
 {{

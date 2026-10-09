@@ -111,6 +111,56 @@
     dot.textContent = state === "live" ? "LIVE" : state === "connecting" ? "CONNECTING" : "OFFLINE";
   }
 
+  // ---------- Chart.js styling from the theme ----------
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  // Series colours for multi-line charts: theme accent and aux first
+  window.themeChartColors = function () {
+    return [cssVar("--accent"), cssVar("--aux"), cssVar("--good"), "#a78bfa", cssVar("--warn"), "#f472b6", "#60a5fa", cssVar("--bad")];
+  };
+  window.applyChartTheme = function () {
+    if (!window.Chart || !Chart.defaults) return;
+    var d = Chart.defaults;
+    d.color = cssVar("--muted");
+    d.borderColor = cssVar("--line");
+    d.font.family = '"JetBrains Mono", ui-monospace, Consolas, monospace';
+    d.font.size = 10.5;
+    var tip = d.plugins && d.plugins.tooltip;
+    if (tip) {
+      tip.backgroundColor = cssVar("--panel");
+      tip.borderColor = cssVar("--line-hi");
+      tip.borderWidth = 1;
+      tip.cornerRadius = 2;
+      tip.titleColor = cssVar("--text-hi");
+      tip.bodyColor = cssVar("--text");
+      tip.padding = 10;
+    }
+    var legend = d.plugins && d.plugins.legend;
+    if (legend && legend.labels) {
+      legend.labels.usePointStyle = true;
+      legend.labels.pointStyle = "rect";
+      legend.labels.boxWidth = 8;
+      legend.labels.boxHeight = 8;
+    }
+  };
+  function restyleCharts() {
+    window.applyChartTheme();
+    if (!window.Chart || !Chart.instances) return;
+    Object.keys(Chart.instances).forEach(function (k) {
+      var c = Chart.instances[k];
+      try {
+        ["x", "y"].forEach(function (axis) {
+          var sc = c.options.scales && c.options.scales[axis];
+          if (!sc) return;
+          if (sc.grid) sc.grid.color = cssVar("--line");
+          if (sc.ticks) sc.ticks.color = cssVar("--muted");
+        });
+        c.update("none");
+      } catch (e) {}
+    });
+  }
+
   // ---------- small SVG chart for the pages ----------
   // sets: [{ data: [[timeMs, value], ...], color: "var(--accent)" }]
   window.drawLineChart = function (svg, sets, options) {
@@ -176,6 +226,8 @@
   // ---------- boot ----------
   document.addEventListener("DOMContentLoaded", function () {
     applyTheme(store("theme") === "light" ? "light" : "dark");
+    window.applyChartTheme();
+    document.addEventListener("themechange", restyleCharts);
     var btn = document.getElementById("theme-toggle");
     if (btn) {
       btn.addEventListener("click", function () {
