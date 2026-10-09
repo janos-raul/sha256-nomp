@@ -6,10 +6,8 @@ var statData = [];
 var poolKeys = [];
 
 // Chart.js default options
-Chart.defaults.color = "#94a3b8";
-Chart.defaults.borderColor = "rgba(255, 255, 255, 0.1)";
-Chart.defaults.font.family =
-  "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+// Chart.js styling comes from the site theme (static/theme.js)
+if (typeof window.applyChartTheme === "function") window.applyChartTheme();
 
 // Destroy all existing charts
 function destroyAllCharts() {
@@ -60,8 +58,7 @@ function initCharts() {
             },
           },
           tooltip: {
-            backgroundColor: "rgba(26, 31, 46, 0.95)",
-            padding: 12,
+                        padding: 12,
             cornerRadius: 8,
             callbacks: {
               label: function (context) {
@@ -90,7 +87,7 @@ function initCharts() {
           y: {
             beginAtZero: true,
             grid: {
-              color: "rgba(255, 255, 255, 0.05)",
+              
             },
             ticks: {
               callback: function (value) {
@@ -127,8 +124,7 @@ function initCharts() {
             },
           },
           tooltip: {
-            backgroundColor: "rgba(26, 31, 46, 0.95)",
-            padding: 12,
+                        padding: 12,
             cornerRadius: 8,
             callbacks: {
               label: function (context) {
@@ -158,7 +154,7 @@ function initCharts() {
           y: {
             beginAtZero: true,
             grid: {
-              color: "rgba(255, 255, 255, 0.05)",
+              
             },
             ticks: {
               precision: 0,
@@ -220,14 +216,10 @@ function buildChartData() {
   }
 
   // Prepare datasets for Chart.js
-  var colors = [
-    "rgb(59, 130, 246)", // Blue
-    "rgb(168, 85, 247)", // Purple
-    "rgb(16, 185, 129)", // Green
-    "rgb(245, 158, 11)", // Orange
-    "rgb(239, 68, 68)", // Red
-    "rgb(236, 72, 153)", // Pink
-  ];
+  var colors =
+    typeof window.themeChartColors === "function"
+      ? window.themeChartColors()
+      : ["#f2b33d", "#3fd3ff", "#36d399", "#a78bfa", "#ff9f43", "#f472b6"];
 
   var hashDatasets = [];
   var pendingDatasets = [];
@@ -395,32 +387,13 @@ function createPieCharts() {
     var data = [];
     var backgroundColors = [];
     var borderColors = [];
-    var colors = [
-      "rgba(59, 130, 246, 0.8)", // Blue
-      "rgba(168, 85, 247, 0.8)", // Purple
-      "rgba(16, 185, 129, 0.8)", // Green
-      "rgba(245, 158, 11, 0.8)", // Orange
-      "rgba(239, 68, 68, 0.8)", // Red
-      "rgba(236, 72, 153, 0.8)", // Pink
-      "rgba(34, 211, 238, 0.8)", // Cyan
-      "rgba(251, 191, 36, 0.8)", // Yellow
-      "rgba(163, 230, 53, 0.8)", // Lime
-      "rgba(100, 116, 139, 0.8)", // Slate
-    ];
-
-    // Brighter versions for borders
-    var borderColorsArray = [
-      "rgb(59, 130, 246)", // Blue
-      "rgb(168, 85, 247)", // Purple
-      "rgb(16, 185, 129)", // Green
-      "rgb(245, 158, 11)", // Orange
-      "rgb(239, 68, 68)", // Red
-      "rgb(236, 72, 153)", // Pink
-      "rgb(34, 211, 238)", // Cyan
-      "rgb(251, 191, 36)", // Yellow
-      "rgb(163, 230, 53)", // Lime
-      "rgb(100, 116, 139)", // Slate
-    ];
+    // Theme palette: translucent fill, solid border
+    var themeColors =
+      typeof window.themeChartColors === "function"
+        ? window.themeChartColors()
+        : ["#f2b33d", "#3fd3ff", "#36d399", "#a78bfa", "#ff9f43", "#f472b6", "#60a5fa", "#ff5c7a"];
+    var colors = themeColors.map(function (c) { return c + "cc"; });
+    var borderColorsArray = themeColors;
 
     for (var i = 0; i < sorted.length; i++) {
       var finderName = sorted[i][0];
@@ -500,8 +473,7 @@ function createPieCharts() {
             },
           },
           tooltip: {
-            backgroundColor: "rgba(26, 31, 46, 0.95)",
-            titleColor: "#e2e8f0",
+                        titleColor: "#e2e8f0",
             bodyColor: "#cbd5e1",
             padding: 14,
             cornerRadius: 8,
