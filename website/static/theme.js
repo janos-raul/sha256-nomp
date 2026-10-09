@@ -100,7 +100,7 @@
 
   // ---------- live indicator ----------
   function updateLive() {
-    var dot = document.getElementById("live-dot");
+    var dot = document.getElementById("live-status");
     if (!dot) return;
     var src = window.statsSource;
     var state = !src || typeof EventSource === "undefined" ? "connecting"
