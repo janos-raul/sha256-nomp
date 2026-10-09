@@ -203,43 +203,83 @@ module.exports = function (logger, poolConfig) {
       });
   }
 
-  // Merged mining (phase 1): record aux blocks for reference only. They pay
-  // to the aux chain's pool address, so nothing here feeds the payment
-  // processor (no blocksPending entry, no share accounting).
+  // Merged mining (solo miners only). Every aux block is logged in
+  // <coin>:auxBlocks:<auxcoin>. An accepted block whose finder gave an
+  // address for that coin is also recorded as a solo block in the aux
+  // coin's own keys, exactly as its own pool records one, so the aux coin's
+  // payment processor pays the finder (minus its solo fee). Without an
+  // address the reward stays in the pool wallet.
   this.handleAuxBlock = function (accepted, auxData) {
-    var key = coin + ":auxBlocks:" + auxData.coin;
-    var record = JSON.stringify({
-      time: Date.now(),
-      accepted: accepted,
-      error: auxData.error || null,
-      height: auxData.auxHeight,
-      hash: auxData.auxHash,
-      reward: auxData.auxCoinbaseValue,
-      parentHash: auxData.parentHash,
-      parentHeight: auxData.parentHeight,
-      worker: auxData.worker,
-      isSoloMining: auxData.isSoloMining || false,
-      shareDiff: auxData.shareDiff,
-    });
+    var auxCoin = auxData.coin;
+    var logKey = coin + ":auxBlocks:" + auxCoin;
+    var dateNow = Date.now();
+    var workerName = (auxData.worker || "").split(".")[1] || "default";
+    var paid = accepted && auxData.auxAddress && auxData.txHash;
+    var auxWorker = paid ? auxData.auxAddress + "." + workerName : null;
 
-    connection
-      .multi([
-        ["lpush", key, record],
-        ["ltrim", key, 0, 999],
-      ])
-      .exec(function (err) {
-        if (err) {
-          perfStats.redisErrors++;
-          logger.error(
-            logSystem,
-            logComponent,
-            logSubCat,
-            "Error recording aux block " + auxData.auxHash + ": " + JSON.stringify(err),
-          );
-        } else {
-          perfStats.redisWrites++;
-        }
-      });
+    var redisCommands = [
+      [
+        "lpush",
+        logKey,
+        JSON.stringify({
+          time: dateNow,
+          accepted: accepted,
+          error: auxData.error || null,
+          height: auxData.auxHeight,
+          hash: auxData.auxHash,
+          txHash: auxData.txHash || null,
+          reward: auxData.auxCoinbaseValue,
+          parentHash: auxData.parentHash,
+          parentHeight: auxData.parentHeight,
+          worker: auxData.worker,
+          auxAddress: auxData.auxAddress || null,
+          paidToFinder: !!paid,
+          shareDiff: auxData.shareDiff,
+        }),
+      ],
+      ["ltrim", logKey, 0, 999],
+    ];
+
+    if (paid) {
+      redisCommands.push(
+        [
+          "sadd",
+          auxCoin + ":blocksPending:solo",
+          [auxData.auxHash, auxData.txHash, auxData.auxHeight, auxWorker, dateNow].join(":"),
+        ],
+        ["hset", auxCoin + ":shares:round" + auxData.auxHeight + ":solo", auxWorker, "1"],
+        ["hset", auxCoin + ":shares:times" + auxData.auxHeight, auxData.auxAddress, "1"],
+        ["hincrby", auxCoin + ":stats:solo", "validBlocks", 1],
+        ["hincrby", auxCoin + ":stats", "validBlocks", 1],
+        ["hincrby", auxCoin + ":workers:solo:" + auxWorker, "blocks", 1],
+        ["hset", auxCoin + ":lastBlock:solo", "height", auxData.auxHeight],
+        ["hset", auxCoin + ":lastBlock:solo", "worker", auxWorker],
+        ["hset", auxCoin + ":lastBlock:solo", "time", dateNow],
+      );
+    }
+
+    connection.multi(redisCommands).exec(function (err) {
+      if (err) {
+        perfStats.redisErrors++;
+        logger.error(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "Error recording aux block " + auxData.auxHash + ": " + JSON.stringify(err),
+        );
+        return;
+      }
+      perfStats.redisWrites++;
+      if (paid) {
+        logger.info(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "Aux block " + auxData.auxHash + " queued for " + auxCoin +
+            " solo payout to " + auxData.auxAddress,
+        );
+      }
+    });
   };
 
   this.handleShare = function (isValidShare, isValidBlock, shareData) {

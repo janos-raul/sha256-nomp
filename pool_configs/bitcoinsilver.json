@@ -62,6 +62,7 @@
       "diff": 15000,
       "tls": false,
       "soloMining": true,
+      "auxGroup": "standard",
       "varDiff": {
         "minDiff": 1500,
         "maxDiff": 9000000000,
@@ -79,6 +80,7 @@
       "diff": 50000,
       "tls": false,
       "soloMining": true,
+      "auxGroup": "standard",
       "varDiff": {
         "minDiff": 5000,
         "maxDiff": 9000000000,
@@ -96,6 +98,7 @@
       "diff": 250000,
       "tls": false,
       "soloMining": true,
+      "auxGroup": "standard",
       "varDiff": {
         "minDiff": 25000,
         "maxDiff": 9000000000,
@@ -113,6 +116,7 @@
       "diff": 1000000,
       "tls": false,
       "soloMining": true,
+      "auxGroup": "standard",
       "varDiff": {
         "minDiff": 100000,
         "maxDiff": 9000000000,
@@ -130,28 +134,28 @@
 
   "mergedMining": {
     "enabled": false,
-    "_comment_mergedMining": "Phase 1, testnet only: Namecoin-style AuxPoW with one aux chain. With merged mining on, blockIdentifier is capped at 30 bytes.",
-    "_comment_knownLimitation": "Aux block rewards go to the aux chain's pool address, including blocks found by solo miners (logged with worker and solo flag). Before production, solo miners must get aux rewards to their own address (phase 2).",
+    "_comment_mergedMining": "Namecoin-style merged mining for SOLO miners only (password m=solo). Pool-mode miners always get plain BTCS jobs. A port opts in with auxGroup. Solo miners add one payout address per aux coin to the password, e.g. m=solo,s256=<address>; each aux coin's own pool config (payments + soloMining on) pays the finder minus its solo fee. A coin with no address given stays in the pool wallet. With merged mining on, blockIdentifier is capped at 30 bytes.",
     "auxPollInterval": 5000,
-    "auxChains": [
-      {
-        "coin": "sha256coin",
+    "auxCoins": {
+      "sha256coin": {
         "symbol": "S256",
         "chainId": 598,
         "byteOrder": "namecoin",
         "slotRule": "namecoin",
-        "_comment_aux": "byteOrder/slotRule default to namecoin, the only standard implemented in phase 1",
+        "addressParam": "s256",
         "address": "YOUR_S256_POOL_ADDRESS",
-        "daemons": [
-          {
-            "host": "127.0.0.1",
-            "port": 25332,
-            "user": "rpcuser",
-            "password": "YOUR_RPC_PASSWORD"
-          }
-        ]
+        "daemon": {
+          "host": "127.0.0.1",
+          "port": 25332,
+          "user": "rpcuser",
+          "password": "YOUR_RPC_PASSWORD"
+        }
       }
-    ]
+    },
+    "groups": {
+      "standard": ["sha256coin"]
+    },
+    "_comment_groups": "Namecoin-standard coins can share a group. A coin with byteOrder reversed or slotRule modulo (e.g. ESF) must be alone in its own group, on its own port."
   },
 
   "poolId": "main",

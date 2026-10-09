@@ -737,12 +737,13 @@ module.exports = function (logger) {
       });
     });
 
-    // Merged mining (phase 1): aux block rewards go to the aux chain's
-    // pool address, including blocks found by solo miners.
+    // Merged mining (solo miners only): an aux block pays the pool's aux
+    // address; the aux coin's own payment processor then pays the finder's
+    // address from the password (e.g. s256=...), minus the solo fee. With
+    // no address for that coin the reward stays in the pool wallet.
     pool.on("auxBlock", function (accepted, data) {
       if (data.worker != undefined)
         data.worker = data.worker.replace(/:/g, "-");
-      data.isSoloMining = isSoloWorker(data.worker);
 
       var summary =
         data.symbol +
@@ -752,7 +753,9 @@ module.exports = function (logger) {
         data.auxHash +
         ", Worker: " +
         data.worker +
-        (data.isSoloMining ? " [SOLO share, paid to pool address]" : " [POOL]") +
+        (data.auxAddress
+          ? " [SOLO, paid to " + data.auxAddress + "]"
+          : " [SOLO, no address given: kept in pool wallet]") +
         ", Parent: " +
         data.parentHash;
 
