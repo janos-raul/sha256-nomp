@@ -4,10 +4,13 @@
     .ms { display: grid; gap: 12px; }
     .ms-pane { display: grid; gap: 12px; }
     .ms-pane[hidden] { display: none; }
-    .ms-top { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; }
+    .ms-top { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; }
     @media (max-width: 900px) { .ms-top { grid-template-columns: 1fr; } }
     .ms-side { display: grid; gap: 12px; align-content: start; }
     .ms-side .kv { font-size: 12px; }
+    /* one line per row: values never wrap under their label */
+    .ms-side .kv > div { padding: 7px 12px; white-space: nowrap; }
+    .ms-side .kv > div:nth-child(even) { overflow: hidden; text-overflow: ellipsis; }
     .ms-lookup { padding: 12px 14px; display: grid; gap: 8px; }
     .ms-lookup label { font: 600 10.5px var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--accent); }
     .ms-lookup label i { margin-right: 6px; }
@@ -168,9 +171,9 @@
                     <div class="kv">
                         <div>Network hash</div><div>{{=ps.networkHashString || '0 H/s'}}</div>
                         <div>Difficulty</div><div>{{=readableDiff(ps.networkDiff)}}</div>
-                        <div>Pool hash</div><div>{{=poolData.poolHashrateString || '0 H/s'}} <span class="sub">({{=poolData.poolMinerCount || 0}} miners)</span></div>
+                        <div>Pool hash</div><div>{{=poolData.poolHashrateString || '0 H/s'}} <span class="sub">· {{=poolData.poolMinerCount || 0}} {{=poolData.poolMinerCount === 1 ? 'miner' : 'miners'}}</span></div>
                         {{? poolData.soloMining }}
-                        <div>Solo hash</div><div>{{=poolData.soloHashrateString || '0 H/s'}} <span class="sub">({{=poolData.soloMinerCount || 0}} miners)</span></div>
+                        <div>Solo hash</div><div>{{=poolData.soloHashrateString || '0 H/s'}} <span class="sub">· {{=poolData.soloMinerCount || 0}} {{=poolData.soloMinerCount === 1 ? 'miner' : 'miners'}}</span></div>
                         {{?}}
                         {{? poolData.mergedHashrate !== undefined }}
                         <div>Merged hash</div><div title="Merge-mined via {{=(poolData.merge_mined_by || []).join(', ')}}"><span class="cyan">{{=poolData.mergedHashrateString || '0 H/s'}}</span> <span class="sub">· {{=poolData.mergedMinerCount || 0}} {{=poolData.mergedMinerCount === 1 ? 'miner' : 'miners'}}</span></div>
