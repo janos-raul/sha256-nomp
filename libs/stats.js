@@ -418,6 +418,61 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     return null;
   }
 
+  /*
+  Merged (aux) coins: their shares are mined, and recorded, on the parent
+  coin, so the aux coin's own pool shows no workers or hashrate. Solo
+  workers that merge-mine a coin carry `merged` ("VMESH+ESF", from their
+  share's port). Each aux coin gets the hashrate merge-mining it:
+  mergedWorkers (worker -> { hashrate, hashrateString, parent }),
+  mergedHashrate(String), mergedMinerCount, mergedWorkerCount. Kept apart
+  from hashrate/workers so global totals do not count the same hashes twice.
+  */
+  function addMergedHashrate(pools) {
+    var auxBySymbol = {};
+    Object.keys(mergedMiningInfo).forEach(function (parent) {
+      mergedMiningInfo[parent].auxCoins.forEach(function (aux) {
+        auxBySymbol[aux.symbol] = aux.name.toLowerCase();
+      });
+    });
+    Object.keys(pools).forEach(function (name) {
+      var mi = mergedMiningInfo[name];
+      if (!mi || !mi.parents.length) return;
+      pools[name].mergedWorkers = {};
+      pools[name].mergedHashrate = 0;
+    });
+    Object.keys(pools).forEach(function (parentName) {
+      var parent = pools[parentName];
+      var parentSymbol = (parent.symbol || parentName).toUpperCase();
+      Object.keys(parent.soloWorkers || {}).forEach(function (worker) {
+        var w = parent.soloWorkers[worker];
+        if (!w.merged || !(w.hashrate > 0)) return;
+        String(w.merged).split("+").forEach(function (symbol) {
+          var aux = pools[auxBySymbol[symbol]];
+          if (!aux || !aux.mergedWorkers) return;
+          aux.mergedWorkers[worker] = {
+            name: worker,
+            hashrate: w.hashrate,
+            hashrateString: w.hashrateString,
+            parent: parentSymbol,
+            isSolo: true,
+          };
+          aux.mergedHashrate += w.hashrate;
+        });
+      });
+    });
+    Object.keys(pools).forEach(function (name) {
+      var aux = pools[name];
+      if (!aux.mergedWorkers) return;
+      var miners = {};
+      Object.keys(aux.mergedWorkers).forEach(function (w) {
+        miners[w.split(".")[0]] = true;
+      });
+      aux.mergedWorkerCount = Object.keys(aux.mergedWorkers).length;
+      aux.mergedMinerCount = Object.keys(miners).length;
+      aux.mergedHashrateString = _this.getReadableHashRateString(aux.mergedHashrate);
+    });
+  }
+
   function addStatPoolHistory(stats) {
     var data = {
       time: stats.time,
@@ -426,6 +481,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     for (var pool in stats.pools) {
       data.pools[pool] = {
         hashrate: stats.pools[pool].hashrate,
+        mergedHashrate: stats.pools[pool].mergedHashrate || 0,
         workerCount: stats.pools[pool].workerCount,
         blocks: stats.pools[pool].blocks,
         soloBlocks: stats.pools[pool].soloBlocks || {
@@ -2193,6 +2249,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             algoStats.soloHashrate || 0,
           );
         });
+
+        addMergedHashrate(allCoinStats);
 
         _this.stats = portalStats;
 

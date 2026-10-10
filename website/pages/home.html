@@ -98,7 +98,7 @@
     <article class="panel home-pool" data-pool="{{=pool}}">
       <div class="panel-head">
         <h2><span class="coin-mark{{? isAux }} aux{{?}}">{{=(p.symbol || pool).slice(0, 4)}}</span>{{=cap(pool)}} Pool</h2>
-        <span class="mono {{? isAux }}cyan{{??}}amber{{?}}" id="statsHashrate{{=pool}}">{{=p.hashrateString || '0 H/s'}}</span>
+        <span class="mono {{? isAux }}cyan{{??}}amber{{?}}" id="statsHashrate{{=pool}}">{{=(p.hashrate > 0 || !(p.mergedHashrate > 0)) ? (p.hashrateString || '0 H/s') : p.mergedHashrateString + ' merged'}}</span>
       </div>
       <div class="kv">
         <div>Miners</div><div id="statsMiners{{=pool}}">{{=p.minerCount || 0}} <span class="sub">({{=p.poolMinerCount || 0}} pool / {{=p.soloMinerCount || 0}} solo)</span></div>
@@ -186,7 +186,7 @@
         if (p.blocks) { t.b += (p.blocks.confirmed || 0) + (p.blocks.pending || 0); t.pe += p.blocks.pending || 0; }
         $("#statsMiners" + pool).html((p.minerCount || 0) + ' <span class="sub">(' + (p.poolMinerCount || 0) + " pool / " + (p.soloMinerCount || 0) + " solo)</span>");
         $("#statsWorkers" + pool).html((p.workerCount || 0) + ' <span class="sub">(' + (p.poolWorkerCount || 0) + " pool / " + (p.soloWorkerCount || 0) + " solo)</span>");
-        $("#statsHashrate" + pool).text(p.hashrateString || "0 H/s");
+        $("#statsHashrate" + pool).text(p.hashrate > 0 || !(p.mergedHashrate > 0) ? (p.hashrateString || "0 H/s") : p.mergedHashrateString + " merged");
         if (ps.networkDiff) $("#statsNetworkDiff_" + pool).text(readableDiff(ps.networkDiff));
         if (ps.networkBlocks) $("#statsNetworkBlocks_" + pool).text(ps.networkBlocks);
         var lb = document.getElementById("statsLastBlock_" + pool);

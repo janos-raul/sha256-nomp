@@ -57,6 +57,11 @@
         }
         return luck.toFixed(2) + ' days';
     }
+    /* own hashrate, or for a merge-mined-only coin the hashrate merging it */
+    function tabHr(p) {
+        if (p.hashrate > 0 || !(p.mergedHashrate > 0)) return p.hashrateString || '0 H/s';
+        return p.mergedHashrateString + ' merged';
+    }
     function diffString(d) {
         return it.getReadableDifficultyString ? it.getReadableDifficultyString(d) : String(d);
     }
@@ -67,7 +72,7 @@
         {{ for (var pool in it.stats.pools) { var tp = it.stats.pools[pool]; }}
         <button type="button" class="coin-tab" role="tab" data-pool="{{=pool}}">
             <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=cap(tp.name)}}
-            <span class="hr" id="psTabHr{{=pool}}">{{=tp.hashrateString || '0 H/s'}}</span>
+            <span class="hr" id="psTabHr{{=pool}}">{{=tabHr(tp)}}</span>
         </button>
         {{ } }}
     </div>
@@ -96,6 +101,9 @@
                         <div>Workers</div><div id="psWorkers{{=pool}}">{{=p.workerCount || 0}}</div>
                         <div>Hashrate</div><div id="psHashrate{{=pool}}">{{=p.hashrateString || '0 H/s'}}</div>
                         <div>Average</div><div id="psHashrateAvg{{=pool}}">…</div>
+                        {{? p.mergedHashrate !== undefined }}
+                        <div>Merged hash</div><div><span class="cyan" id="psMerged{{=pool}}">{{=p.mergedHashrateString || '0 H/s'}}</span> <span class="sub">(<span id="psMergedMiners{{=pool}}">{{=p.mergedMinerCount || 0}}</span> miners, via {{=(p.merge_mined_by || []).join(', ')}})</span></div>
+                        {{?}}
                         <div>Luck</div><div id="psLuck{{=pool}}">{{=luckString(p.luckDays)}}</div>
                         <div>Net share</div><div id="psShare{{=pool}}">{{=share.toFixed(share >= 1 ? 2 : 5)}}%</div>
                         <div>Fees</div><div>{{=p.poolFee || 0}}% pool{{? p.soloMining }} · {{=p.soloFee || 0}}% solo{{?}}</div>
@@ -132,7 +140,7 @@
 
             <div class="ps-side">
                 <div class="panel">
-                    <div class="panel-head"><h2>Hashrate</h2><div class="legend"><span class="amber ps-chart-span">history</span></div></div>
+                    <div class="panel-head"><h2>Hashrate</h2><div class="legend"><span class="amber ps-chart-span">history</span>{{? p.mergedHashrate !== undefined }}<span class="cyan">merged</span>{{?}}</div></div>
                     <div class="panel-body"><svg class="chart ps-chart" data-pool="{{=pool}}" viewBox="0 0 320 160" preserveAspectRatio="none" role="img" aria-label="{{=p.name}} pool hashrate history"></svg></div>
                 </div>
                 <div class="panel">
@@ -204,12 +212,20 @@
                 var p = h.pools && h.pools[pool];
                 return [h.time * 1000, p ? parseFloat(p.hashrate) || 0 : 0];
             });
+            // hashrate merge-mining this coin (aux coins), as a second line
+            var merged = history.map(function (h) {
+                var p = h.pools && h.pools[pool];
+                return [h.time * 1000, p ? parseFloat(p.mergedHashrate) || 0 : 0];
+            });
+            var hasMerged = merged.some(function (x) { return x[1] > 0; });
             var times = pts.map(function (p) { return p[0]; });
             var span = pts.length > 1 ? (Math.max.apply(null, times) - Math.min.apply(null, times)) / 3600000 : 0;
             $(el).find('.ps-chart-span').text('last ' + (span >= 1 ? Math.round(span) + 'h' : Math.round(span * 60) + 'm'));
             var avg = pts.length ? pts.reduce(function (s, p) { return s + p[1]; }, 0) / pts.length : 0;
             $('#psHashrateAvg' + pool).text(hashrate(avg));
-            window.drawLineChart(svg, [{ data: pts, color: 'var(--accent)' }], {
+            var sets = [{ data: pts, color: 'var(--accent)' }];
+            if (hasMerged) sets.push({ data: merged, color: 'var(--aux)' });
+            window.drawLineChart(svg, sets, {
                 width: 320, height: 160,
                 format: function (v) { return hashrate(v).replace('/s', ''); },
                 empty: 'No history yet'
@@ -341,7 +357,12 @@
         Object.keys(stats.pools).forEach(function (pool) {
             var p = stats.pools[pool], ps = p.poolStats || {};
             var pb = p.poolBlocks || {}, sb = p.soloBlocks || {};
-            $('#psTabHr' + pool + ', #psHashrate' + pool).text(p.hashrateString || '0 H/s');
+            $('#psHashrate' + pool).text(p.hashrateString || '0 H/s');
+            $('#psTabHr' + pool).text(p.hashrate > 0 || !(p.mergedHashrate > 0) ? (p.hashrateString || '0 H/s') : p.mergedHashrateString + ' merged');
+            if (p.mergedHashrate !== undefined) {
+                $('#psMerged' + pool).text(p.mergedHashrateString || '0 H/s');
+                $('#psMergedMiners' + pool).text(p.mergedMinerCount || 0);
+            }
             $('#psMiners' + pool).text(p.minerCount || 0);
             $('#psWorkers' + pool).text(p.workerCount || 0);
             $('#psHeight' + pool).text(ps.networkBlocks || 0);

@@ -134,7 +134,7 @@
         {{ for (var pool in it.stats.pools) { var tp = it.stats.pools[pool]; }}
         <button type="button" class="coin-tab" role="tab" data-pool="{{=pool}}">
             <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=capitalizeFirstLetter(tp.name)}}
-            <span class="hr">{{=tp.hashrateString || '0 H/s'}}</span>
+            <span class="hr">{{=(tp.hashrate > 0 || !(tp.mergedHashrate > 0)) ? (tp.hashrateString || '0 H/s') : tp.mergedHashrateString + ' merged'}}</span>
         </button>
         {{ } }}
     </div>
@@ -143,8 +143,17 @@
     {{ var poolData = it.stats.pools[pool]; var ps = poolData.poolStats || {}; }}
     {{
         var miners = aggregateWorkersByAddress(poolData.poolWorkers, false)
-            .concat(poolData.soloMining ? aggregateWorkersByAddress(poolData.soloWorkers, true) : [])
-            .sort(function (a, b) { return b.hashrate - a.hashrate; });
+            .concat(poolData.soloMining ? aggregateWorkersByAddress(poolData.soloWorkers, true) : []);
+        /* aux coin: the solo miners merge-mining it on a parent coin */
+        var mergedMiners = aggregateWorkersByAddress(poolData.mergedWorkers || {}, true);
+        mergedMiners.forEach(function (m) {
+            var via = [];
+            for (var w in poolData.mergedWorkers) {
+                if (w.split('.')[0] === m.address && via.indexOf(poolData.mergedWorkers[w].parent) === -1) via.push(poolData.mergedWorkers[w].parent);
+            }
+            m.via = via; m.merged = [];
+        });
+        miners = miners.concat(mergedMiners).sort(function (a, b) { return b.hashrate - a.hashrate; });
     }}
     <section class="ms-pane" role="tabpanel" data-pool="{{=pool}}" hidden>
         <div class="ms-top">
@@ -162,6 +171,9 @@
                         <div>Pool hash</div><div>{{=poolData.poolHashrateString || '0 H/s'}} <span class="sub">({{=poolData.poolMinerCount || 0}} miners)</span></div>
                         {{? poolData.soloMining }}
                         <div>Solo hash</div><div>{{=poolData.soloHashrateString || '0 H/s'}} <span class="sub">({{=poolData.soloMinerCount || 0}} miners)</span></div>
+                        {{?}}
+                        {{? poolData.mergedHashrate !== undefined }}
+                        <div>Merged hash</div><div><span class="cyan">{{=poolData.mergedHashrateString || '0 H/s'}}</span> <span class="sub">({{=poolData.mergedMinerCount || 0}} miners, via {{=(poolData.merge_mined_by || []).join(', ')}})</span></div>
                         {{?}}
                         <div>Payout</div><div>{{=poolData.paymentMode === 'pplnt' ? 'PPLNT' : 'PROP'}} {{=poolData.poolFee || 0}}%{{? poolData.soloMining }} · solo {{=poolData.soloFee || 0}}%{{?}}</div>
                     </div>
@@ -207,14 +219,21 @@
                                     <a href="/workers/{{!miner.address}}" class="hot-swapper">{{!miner.address}}</a>
                                     {{? miner.isSolo }}<span class="miner-badge badge-solo">Solo</span>{{??}}<span class="miner-badge badge-pool">Pool</span>{{?}}
                                     {{? miner.merged.length }}<span class="miner-badge badge-merged" title="Merge-mining {{!miner.merged.join(', ')}}">+ {{!miner.merged.join(' + ')}}</span>{{?}}
+                                    {{? miner.via && miner.via.length }}<span class="miner-badge badge-merged" title="Merge-mines {{!poolData.symbol}} while mining {{!miner.via.join(', ')}}">via {{!miner.via.join(', ')}}</span>{{?}}
                                 </div>
                             </td>
                             <td>{{=miner.workerCount}}</td>
+                            {{? miner.via && miner.via.length }}
+                            <td class="muted" colspan="3">shares counted on {{!miner.via.join(', ')}}</td>
+                            <td>{{=miner.hashrateString}}</td>
+                            <td>—</td>
+                            {{??}}
                             <td>{{=getReadableSharesString(miner.shares)}}</td>
                             <td>{{=getReadableSharesString(miner.currRoundShares)}}</td>
                             <td><span class="{{=effClass}}">{{=eff}}%</span></td>
                             <td>{{=miner.hashrateString}}</td>
                             <td>{{=miner.luckDays}}</td>
+                            {{?}}
                         </tr>
                         {{ } }}
                     </tbody>
@@ -260,9 +279,15 @@
                 var p = h.pools && h.pools[pool];
                 return [h.time * 1000, p ? parseFloat(p.hashrate) || 0 : 0];
             });
+            var merged = history.map(function (h) {
+                var p = h.pools && h.pools[pool];
+                return [h.time * 1000, p ? parseFloat(p.mergedHashrate) || 0 : 0];
+            });
             var span = pts.length > 1 ? (Math.max.apply(null, pts.map(function (p) { return p[0]; })) - Math.min.apply(null, pts.map(function (p) { return p[0]; }))) / 3600000 : 0;
             $(svg).closest('.panel').find('.ms-chart-span').text('last ' + (span >= 1 ? Math.round(span) + 'h' : Math.round(span * 60) + 'm'));
-            window.drawLineChart(svg, [{ data: pts, color: 'var(--accent)' }], {
+            var sets = [{ data: pts, color: 'var(--accent)' }];
+            if (merged.some(function (x) { return x[1] > 0; })) sets.push({ data: merged, color: 'var(--aux)' });
+            window.drawLineChart(svg, sets, {
                 format: function (v) { return msReadableHashrate(v).replace('/s', ''); },
                 empty: 'Hashrate history starts when miners connect'
             });
