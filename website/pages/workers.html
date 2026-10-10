@@ -44,10 +44,6 @@
     .efficiency-good { color: var(--good); }
     .efficiency-medium { color: var(--warn); }
     .efficiency-bad { color: var(--bad); }
-    .block-status { font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; }
-    .block-status.confirmed { color: var(--good); }
-    .block-status.pending { color: var(--warn); }
-    .block-status.orphaned, .block-status.kicked { color: var(--bad); }
     .ms-blocks .muted { color: var(--muted); }
     .no-workers { padding: 22px 14px; text-align: center; color: var(--muted); font: 500 12px var(--font-mono); }
     .no-workers i { display: block; font-size: 18px; margin-bottom: 8px; opacity: 0.5; }
@@ -240,7 +236,8 @@
         </div>
 
         {{ var explorer = (it.poolsConfigs && it.poolsConfigs[pool] && it.poolsConfigs[pool].coin && it.poolsConfigs[pool].coin.explorer) || {}; }}
-        <div class="panel ms-blocks" data-pool="{{=pool}}" data-block-url="{{=explorer.blockURL || ''}}">
+        {{ var pp = (it.poolsConfigs && it.poolsConfigs[pool] && it.poolsConfigs[pool].paymentProcessing) || {}; }}
+        <div class="panel ms-blocks" data-pool="{{=pool}}" data-block-url="{{=explorer.blockURL || ''}}" data-min-conf="{{=parseInt(pp.minConf, 10) || 0}}">
             <div class="panel-head"><h2>Recent blocks</h2><a class="label hot-swapper" href="/stats">All blocks</a></div>
             <div class="workers-table-wrapper">
                 <table class="workers-table">
@@ -320,8 +317,10 @@
                 var finder = address
                     ? '<div class="worker-address"><a href="/workers/' + msEsc(address) + '" class="hot-swapper" title="' + msEsc(address) + '">' + msEsc(short) + '</a>' + badge + '</div>'
                     : badge;
-                var status = msEsc(b.status || 'pending');
-                return '<tr><td>' + heightCell + '</td><td class="muted" title="' + msEsc(new Date(b.time * 1000).toLocaleString()) + '">' + msAgo(b.time) + '</td><td>' + finder + '</td><td><span class="block-status ' + status + '">' + status + '</span></td></tr>';
+                var status = window.blockStatusHtml
+                    ? window.blockStatusHtml(b, panel.getAttribute('data-min-conf'))
+                    : msEsc(b.status || 'pending');
+                return '<tr><td>' + heightCell + '</td><td class="muted" title="' + msEsc(new Date(b.time * 1000).toLocaleString()) + '">' + msAgo(b.time) + '</td><td>' + finder + '</td><td>' + status + '</td></tr>';
             }).join('');
         });
     }

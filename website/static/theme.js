@@ -6,6 +6,7 @@
   - LIVE indicator follows the live stats connection
   - CoinGecko price widget: slower scroll, colors from the theme
   - paginateRows(): client-side pager for long tables (payments, miners)
+  - blockStatusHtml(): block status with confirmations spinner/progress bar
   - drawLineChart(): small SVG line/area chart used by the pages
 */
 (function () {
@@ -265,13 +266,51 @@
       info.textContent = from + 1 + "\u2013" + to + " of " + rows.length;
       btns.innerHTML = "";
       button('<i class="fas fa-chevron-left"></i>', "Previous", page - 1).disabled = page === 0;
+      // first, last and two pages either side of the current one
+      var last = -1;
       for (var i = 0; i < pages; i++) {
+        if (i !== 0 && i !== pages - 1 && Math.abs(i - page) > 2) continue;
+        if (last >= 0 && i - last > 1) {
+          var gap = document.createElement("span");
+          gap.className = "pager-gap";
+          gap.textContent = "\u2026";
+          btns.appendChild(gap);
+        }
         var b = button(String(i + 1), "Page " + (i + 1), i);
         if (i === page) b.classList.add("active");
+        last = i;
       }
       button('<i class="fas fa-chevron-right"></i>', "Next", page + 1).disabled = page === pages - 1;
     }
     show(0);
+  };
+
+  /* ---------- block status ----------
+     Same display as Pool Stats: spinner, confirmations and a progress bar
+     while pending, a check when confirmed. `b` is an /api/blocks entry. */
+  window.blockStatusHtml = function (b, minConf) {
+    var esc = function (t) {
+      return String(t).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    };
+    var st = b.status || "pending";
+    var confirmed = '<span class="bstat confirmed"><i class="fas fa-check-circle"></i> Confirmed</span>';
+    if (st === "confirmed") return confirmed;
+    if (st !== "pending") return '<span class="bstat ' + esc(st) + '">' + esc(st) + "</span>";
+    minConf = parseInt(minConf, 10) || 0;
+    if (b.confirmations == null || !minConf) {
+      return '<span class="bstat pending"><i class="fas fa-clock"></i> Pending</span>';
+    }
+    if (b.confirmations >= minConf) return confirmed;
+    var pct = Math.min(100, Math.max(0, (b.confirmations / minConf) * 100));
+    return (
+      '<div class="bstat-stack">' +
+      '<div><i class="fas fa-spinner fa-spin"></i>' + b.confirmations + "/" + minConf + "</div>" +
+      '<div class="bstat-progress"><div class="bstat-bar"><div class="bstat-fill' +
+      (b.type === "solo" ? " solo" : "") + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+      Math.round(pct) + "%</div></div>"
+    );
   };
 
   /* ---------- CoinGecko price widget ----------

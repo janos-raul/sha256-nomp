@@ -566,7 +566,8 @@ window.initStatsCharts = function () {
 };
 
 // Live updates via global statsUpdate event - use the unified system from main.js
-$(document).on("statsUpdate", function (event, stats) {
+// (namespaced: hot-swap loads this script again on every visit)
+$(document).off("statsUpdate.poolStats").on("statsUpdate.poolStats", function (event, stats) {
   if (document.hidden || !document.querySelector(".stats-container")) return;
 
   try {

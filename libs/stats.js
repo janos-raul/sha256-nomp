@@ -284,7 +284,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
   // Flags aux coin blocks that were merge-mined: their hashes are in the
   // parent's <parent>:auxBlocks:<aux> log (last 1000, see shareProcessor).
-  // Sets block.mergedBy to the parent coin's symbol.
+  // Sets block.mergedBy to the parent coin's symbol and block.mergedFinder
+  // to the parent-chain worker that found it.
   function markMergedBlocks(allBlocks, done) {
     var lookups = [];
     Object.keys(mergedMiningInfo).forEach(function (parent) {
@@ -306,7 +307,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         (replies[i] || []).forEach(function (entry) {
           try {
             var e = JSON.parse(entry);
-            if (e.accepted && e.hash) hashes[e.hash] = parentSymbol;
+            if (e.accepted && e.hash) hashes[e.hash] = { by: parentSymbol, worker: e.worker || null };
           } catch (ex) {}
         });
       });
@@ -314,8 +315,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         var block = allBlocks[id];
         var hashes = byPool[String(block.pool).toLowerCase()];
         if (!hashes) return;
-        var by = hashes[block.data.split(":")[0]];
-        if (by) block.mergedBy = by;
+        var hit = hashes[block.data.split(":")[0]];
+        if (hit) {
+          block.mergedBy = hit.by;
+          block.mergedFinder = hit.worker;
+        }
       });
       done();
     });

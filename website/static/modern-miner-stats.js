@@ -524,8 +524,16 @@ $(document).ready(function () {
     // Load initial data
     loadWorkerStats();
 
-    // Listen to the global statsUpdate event instead of creating another EventSource
-    $(document).on("statsUpdate", function (event, globalStats) {
+    // Listen to the global statsUpdate event instead of creating another EventSource.
+    // Hot-swap loads this script again on every visit to a miner page, so the
+    // handler is namespaced (replaced, not stacked) and unbinds itself once the
+    // miner page is gone; stacked handlers each polled worker_stats and hit
+    // the API rate limit.
+    $(document).off("statsUpdate.minerStats").on("statsUpdate.minerStats", function (event, globalStats) {
+      if (!document.getElementById("workerHashrateChart")) {
+        $(document).off("statsUpdate.minerStats");
+        return;
+      }
       if (document.hidden) return;
 
       // Only reload worker stats data when global stats update

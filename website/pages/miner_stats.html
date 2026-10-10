@@ -32,20 +32,19 @@
     .section-line { display: none; }
     .section-title { margin: 0; font: 600 11.5px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi); }
     .section-title i { color: var(--accent); margin-right: 8px; }
-    .workers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding: 12px; }
-    .worker-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
-    .worker-card.pool { border-top: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); }
-    .worker-card.solo { border-top: 1px solid color-mix(in srgb, var(--aux) 60%, transparent); }
-    .worker-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
-    .worker-name { font: 600 12px var(--font-mono); color: var(--text-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-    .worker-badge { flex: none; padding: 2px 6px; font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line-hi); border-radius: var(--r); }
+    .table-wrap { overflow-x: auto; }
+    .mw-table { width: 100%; border-collapse: collapse; }
+    .mw-table td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .mw-name { display: flex; align-items: center; gap: 6px; }
+    .mw-name strong { font: 600 12px var(--font-mono); color: var(--text-hi); margin-right: 4px; }
+    .worker-badge { flex: none; padding: 2px 6px; font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line-hi); border-radius: var(--r); white-space: nowrap; }
     .worker-badge.badge-pool { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
     .worker-badge.badge-solo { color: var(--aux); border-color: color-mix(in srgb, var(--aux) 55%, transparent); background: var(--aux-soft); }
-    .worker-stats { display: grid; }
-    .worker-stat { display: flex; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--line); }
-    .worker-stat:last-child { border-bottom: 0; }
-    .worker-stat-label { font: 600 9.5px/1.9 var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
-    .worker-stat-value { font: 500 12px var(--font-mono); color: var(--text-hi); text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .worker-badge.badge-merged { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
+    .last-share-time.stale { color: var(--warn); }
+    .last-share-diff { color: var(--muted); margin-left: 6px; }
+    .mw-empty { padding: 22px 14px; text-align: center; color: var(--muted); font: 500 12px var(--font-mono); }
+    .mw-muted { color: var(--muted); }
 </style>
 
 <div class="miner-stats-container">
@@ -110,26 +109,44 @@
         </div>
     </div>
 
-    <!-- Pool Workers Section -->
-    <div id="poolWorkersSection" class="workers-section" style="display:none;">
+    <!-- Workers: one row each -->
+    <div id="workersSection" class="workers-section">
         <div class="section-divider">
-            <h3 class="section-title">
-                <i class="fas fa-server"></i> Pool Workers
-            </h3>
-            <div class="section-line"></div>
+            <h3 class="section-title"><i class="fas fa-server"></i> Workers</h3>
+            <span class="label" id="workersCount"></span>
         </div>
-        <div id="boxesPoolWorkers" class="workers-grid"></div>
+        <div class="table-wrap">
+            <table class="mw-table">
+                <thead>
+                    <tr><th>Worker</th><th>Hashrate</th><th>Average</th><th>Difficulty</th><th>Round shares</th><th>Best share</th><th>Last share</th><th>Luck</th></tr>
+                </thead>
+                <tbody id="workersRows"><tr><td colspan="8"><div class="mw-empty">Loading workers…</div></td></tr></tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Solo Workers Section -->
-    <div id="soloWorkersSection" class="workers-section" style="display:none;">
+    <!-- Blocks this miner found (incl. merge-mined aux blocks) -->
+    {{
+        var mwCoins = {};
+        for (var mwPool in it.stats.pools) {
+            var mwCfg = (it.poolsConfigs && it.poolsConfigs[mwPool] && it.poolsConfigs[mwPool].coin) || {};
+            var mwPP = (it.poolsConfigs && it.poolsConfigs[mwPool] && it.poolsConfigs[mwPool].paymentProcessing) || {};
+            mwCoins[mwPool] = { symbol: it.stats.pools[mwPool].symbol || mwPool, blockURL: (mwCfg.explorer && mwCfg.explorer.blockURL) || '', minConf: parseInt(mwPP.minConf, 10) || 0 };
+        }
+    }}
+    <div id="foundBlocksSection" class="workers-section" data-coins='{{=JSON.stringify(mwCoins).replace(/'/g, "&#39;")}}'>
         <div class="section-divider">
-            <h3 class="section-title">
-                <i class="fas fa-user"></i> Solo Workers
-            </h3>
-            <div class="section-line"></div>
+            <h3 class="section-title"><i class="fas fa-cube"></i> Found blocks</h3>
+            <span class="label" id="foundBlocksCount"></span>
         </div>
-        <div id="boxesSoloWorkers" class="workers-grid"></div>
+        <div class="table-wrap">
+            <table class="mw-table" id="foundBlocksTable">
+                <thead>
+                    <tr><th>Coin</th><th>Height</th><th>Found</th><th>Worker</th><th>Type</th><th>Status</th></tr>
+                </thead>
+                <tbody><tr><td colspan="6"><div class="mw-empty">Loading blocks…</div></td></tr></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -156,110 +173,102 @@
         return worker;
     };
 
-    // Modern worker display function
+    function mwEsc(t) {
+        return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    // One table row per worker; the cell ids are filled by updateWorkerStats()
+    // in modern-miner-stats.js
     function addWorkerToDisplay(name, htmlSafeName, workerObj, isSolo) {
-        var htmlToAdd = '';
-        var cardClass = isSolo ? 'solo' : 'pool';
-        var badgeClass = isSolo ? 'badge-solo' : 'badge-pool';
-        var badgeText = isSolo ? 'SOLO' : 'POOL';
-
-        // Ensure we display "noname" if no worker name is provided
-        var displayName = name;
-        if (!displayName || displayName.trim().length === 0) {
-            displayName = "no-name";
+        var displayName = (name && name.trim()) ? name : 'no-name';
+        var badges = isSolo
+            ? '<span class="worker-badge badge-solo">Solo</span>'
+            : '<span class="worker-badge badge-pool">Pool</span>';
+        if (workerObj && workerObj.merged) {
+            badges += '<span class="worker-badge badge-merged" title="Merge-mining ' + mwEsc(String(workerObj.merged).split('+').join(', ')) + '">+ ' + mwEsc(String(workerObj.merged).split('+').join(' + ')) + '</span>';
         }
-
-        htmlToAdd = '<div class="worker-card ' + cardClass + '" id="worker_' + htmlSafeName + '">';
-        htmlToAdd += '<div class="worker-header">';
-        htmlToAdd += '<div class="worker-name">' + displayName.replace(/[^\w\s\-]/gi, '') + '</div>';
-        htmlToAdd += '<span class="worker-badge ' + badgeClass + '">' + badgeText + '</span>';
-        htmlToAdd += '</div>';
-        htmlToAdd += '<div class="worker-stats">';
-
-        // Hashrate Now
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-tachometer-alt"></i> Hashrate</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsHashrate' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Hashrate Avg
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-gauge"></i> Average</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsHashrateAvg' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Difficulty
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-unlock-alt"></i> Difficulty</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsDiff' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Shares
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-cog"></i> Shares</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsShares' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Best Share
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-trophy"></i> Best Share</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsBestShare' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Last Share
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-bolt"></i> Last Share</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsLastShare' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Luck
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-clock"></i> Luck</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsLuckDays' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Immature
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-hourglass-half"></i> Immature</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsImmature' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Balance
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-wallet"></i> Balance</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsBalance' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Paid
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-money-bill"></i> Paid</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsPaid' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        htmlToAdd += '</div></div>';
-
-        var targetContainer = isSolo ? "#boxesSoloWorkers" : "#boxesPoolWorkers";
-        var targetSection = isSolo ? "#soloWorkersSection" : "#poolWorkersSection";
-
-        $(targetSection).show();
-        $(targetContainer).append(htmlToAdd);
+        var cell = function (id) { return '<td id="' + id + htmlSafeName + '">…</td>'; };
+        $('#workersRows').append(
+            '<tr id="worker_' + htmlSafeName + '">' +
+            '<td><div class="mw-name"><strong>' + mwEsc(displayName) + '</strong>' + badges + '</div></td>' +
+            cell('statsHashrate') + cell('statsHashrateAvg') + cell('statsDiff') + cell('statsShares') +
+            cell('statsBestShare') + cell('statsLastShare') + cell('statsLuckDays') +
+            '</tr>');
     }
 
     function rebuildWorkerDisplay() {
-        $("#boxesPoolWorkers").html("");
-        $("#boxesSoloWorkers").html("");
-        $("#poolWorkersSection").hide();
-        $("#soloWorkersSection").hide();
-
-        if (window.statData && window.statData.workers) {
-            for (var w in window.statData.workers) {
-                var worker = window.statData.workers[w];
-                var isSolo = worker.isSolo === true;
-                var htmlSafeWorkerName = (isSolo ? 'solo_' : '') + w.split('.').join('_').replace(/[^\w\s\-]/gi, '');
-                var saneWorkerName = getWorkerNameFromAddress(w);
-                addWorkerToDisplay(saneWorkerName, htmlSafeWorkerName, worker, isSolo);
-            }
+        $('#workersRows').html('');
+        var names = window.statData && window.statData.workers ? Object.keys(window.statData.workers).sort() : [];
+        names.forEach(function (w) {
+            var worker = window.statData.workers[w];
+            var isSolo = worker.isSolo === true;
+            var htmlSafeWorkerName = (isSolo ? 'solo_' : '') + w.split('.').join('_').replace(/[^\w\s\-]/gi, '');
+            addWorkerToDisplay(getWorkerNameFromAddress(w), htmlSafeWorkerName, worker, isSolo);
+        });
+        $('#workersCount').text(names.length ? names.length + (names.length === 1 ? ' worker' : ' workers') : '');
+        if (!names.length) {
+            $('#workersRows').html('<tr><td colspan="8"><div class="mw-empty">No active workers</div></td></tr>');
         }
+    }
+
+    // Blocks found by this address, on every coin. Merge-mined aux blocks are
+    // paid to the miner's aux address, so they are matched on parentWorker.
+    function mwAgo(sec) {
+        var d = Math.max(0, Math.floor(Date.now() / 1000 - sec));
+        if (d < 60) return d + 's ago';
+        if (d < 3600) return Math.floor(d / 60) + 'm ago';
+        if (d < 86400) return Math.floor(d / 3600) + 'h ago';
+        return Math.floor(d / 86400) + 'd ago';
+    }
+    var mwBlocksLoaded = 0;
+    function loadFoundBlocks() {
+        var section = document.getElementById('foundBlocksSection');
+        if (!section || !_miner) return;
+        mwBlocksLoaded = Date.now();
+        var coins = {};
+        try { coins = JSON.parse(section.getAttribute('data-coins')) || {}; } catch (e) {}
+        $.getJSON('/api/blocks', function (data) {
+            var mine = [];
+            Object.keys(data || {}).forEach(function (pool) {
+                (data[pool] || []).forEach(function (b) {
+                    var own = String(b.miner || '').split('.')[0] === _miner;
+                    var merged = String(b.parentWorker || '').split('.')[0] === _miner;
+                    if (own || merged) mine.push({ pool: pool, b: b, worker: merged ? b.parentWorker : b.miner });
+                });
+            });
+            mine.sort(function (x, y) { return (y.b.time || 0) - (x.b.time || 0); });
+            var table = document.getElementById('foundBlocksTable');
+            var tbody = table.querySelector('tbody');
+            $('#foundBlocksCount').text(mine.length ? mine.length + (mine.length === 1 ? ' block' : ' blocks') : '');
+            if (!mine.length) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="mw-empty"><i class="fas fa-cube"></i> No blocks found yet</div></td></tr>';
+                if (window.paginateRows) window.paginateRows(table, [], 10);
+                return;
+            }
+            tbody.innerHTML = mine.map(function (m) {
+                var b = m.b, coin = coins[m.pool] || { symbol: m.pool, blockURL: '' };
+                var height = mwEsc(b.height);
+                var heightCell = coin.blockURL && b.hash
+                    ? '<a href="' + mwEsc(coin.blockURL + b.hash) + '" target="_blank" rel="noopener">#' + height + '</a>'
+                    : '#' + height;
+                var type = (b.type === 'solo'
+                    ? '<span class="worker-badge badge-solo">Solo</span>'
+                    : '<span class="worker-badge badge-pool">Pool</span>')
+                    + (b.mergedBy ? ' <span class="worker-badge badge-merged" title="Merge-mined via ' + mwEsc(b.mergedBy) + '">via ' + mwEsc(b.mergedBy) + '</span>' : '');
+                var status = window.blockStatusHtml ? window.blockStatusHtml(b, coin.minConf) : mwEsc(b.status || 'pending');
+                return '<tr>' +
+                    '<td><span class="coin-mark">' + mwEsc(String(coin.symbol).slice(0, 4)) + '</span></td>' +
+                    '<td>' + heightCell + '</td>' +
+                    '<td class="mw-muted" title="' + mwEsc(new Date(b.time * 1000).toLocaleString()) + '">' + mwAgo(b.time) + '</td>' +
+                    '<td>' + mwEsc(getWorkerNameFromAddress(m.worker || '')) + '</td>' +
+                    '<td>' + type + '</td>' +
+                    '<td>' + status + '</td>' +
+                    '</tr>';
+            }).join('');
+            if (window.paginateRows) window.paginateRows(table, tbody.querySelectorAll('tr'), 10);
+        });
     }
 
     // Make functions globally available
@@ -268,6 +277,11 @@
 
     // Initialize - prevent double loading
     $(document).ready(function () {
+        loadFoundBlocks();
+        $(document).off('statsUpdate.foundBlocks').on('statsUpdate.foundBlocks', function () {
+            if (!document.getElementById('foundBlocksSection')) { $(document).off('statsUpdate.foundBlocks'); return; }
+            if (!document.hidden && Date.now() - mwBlocksLoaded > 60000) loadFoundBlocks();
+        });
         console.log('Initializing miner stats for:', _miner);
 
         // Check if script is already loaded to prevent double loading
