@@ -55,7 +55,9 @@ module.exports = function (logger, portalConfig, poolConfigs) {
   - an aux coin lists the parent coins merge-mining it.
   merged_with mirrors the YIIMP-style field merged-mining pools expose
   ({"merged_with": "S256,ESF"}, or "0" when none), which pool listing
-  sites read; mergedMining is the structured form.
+  sites read; merged is the other common shape
+  ("[{algorithm:sha256,symbol:esf,name:esf1175coin}]", a string);
+  mergedMining is the structured form.
   */
   var mergedMiningInfo = (function () {
     var info = {};
@@ -97,7 +99,19 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     var symbols = mi.auxCoins.map(function (c) {
       return c.symbol;
     });
+    // "merged" in the shape other pools publish for listing sites, e.g.
+    // "[{algorithm:scrypt,symbol:doge,name:dogecoin}]" - a string, not JSON.
+    // Only on coins that merge-mine something.
+    var merged = mi.auxCoins.map(function (c) {
+      var auxCoin = (poolConfigs[c.name] && poolConfigs[c.name].coin) || {};
+      return (
+        "{algorithm:" + String(auxCoin.algorithm || "sha256").toLowerCase() +
+        ",symbol:" + c.symbol.toLowerCase() +
+        ",name:" + String(auxCoin.name || c.name).toLowerCase() + "}"
+      );
+    });
     return {
+      merged: merged.length ? "[" + merged.join(",") + "]" : undefined,
       merged_with: { merged_with: symbols.length ? symbols.join(",") : "0" },
       merge_mined_by: mi.parents,
       mergedMining: {
@@ -2137,6 +2151,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             payout_systems: coinStats.payout_systems,
 
             // Merged mining (solo miners only)
+            merged: coinStats.merged,
             merged_with: coinStats.merged_with,
             merge_mined_by: coinStats.merge_mined_by,
             mergedMining: coinStats.mergedMining,
