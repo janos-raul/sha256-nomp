@@ -135,7 +135,7 @@
       "tls": false,
       "soloMining": true,
       "auxGroup": "esf",
-      "_comment_auxGroup": "BTCS + ESF for solo miners (password m=solo,esf=<ESF address>); the other ports are BTCS + S256",
+      "_comment_auxGroup": "BTCS + ESF for solo miners (password m=solo,esf=<ESF address>); the other ports are BTCS + S256 + VMESH",
       "varDiff": {
         "minDiff": 25000,
         "maxDiff": 9000000000,
