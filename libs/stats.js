@@ -286,7 +286,25 @@ module.exports = function (logger, portalConfig, poolConfigs) {
   // parent's <parent>:auxBlocks:<aux> log (last 1000, see shareProcessor).
   // Sets block.mergedBy to the parent coin's symbol and block.mergedFinder
   // to the parent-chain worker that found it.
+  var mergedHashCache = { at: 0, byPool: null };
   function markMergedBlocks(allBlocks, done) {
+    var apply = function (byPool) {
+      Object.keys(allBlocks).forEach(function (id) {
+        var block = allBlocks[id];
+        var hashes = byPool[String(block.pool).toLowerCase()];
+        if (!hashes) return;
+        var hit = hashes[block.data.split(":")[0]];
+        if (hit) {
+          block.mergedBy = hit.by;
+          block.mergedFinder = hit.worker;
+        }
+      });
+      done();
+    };
+    // the aux logs hold up to 1000 entries per coin; parse them at most every 15s
+    if (mergedHashCache.byPool && Date.now() - mergedHashCache.at < 15000) {
+      return apply(mergedHashCache.byPool);
+    }
     var lookups = [];
     Object.keys(mergedMiningInfo).forEach(function (parent) {
       mergedMiningInfo[parent].auxCoins.forEach(function (aux) {
@@ -311,17 +329,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           } catch (ex) {}
         });
       });
-      Object.keys(allBlocks).forEach(function (id) {
-        var block = allBlocks[id];
-        var hashes = byPool[String(block.pool).toLowerCase()];
-        if (!hashes) return;
-        var hit = hashes[block.data.split(":")[0]];
-        if (hit) {
-          block.mergedBy = hit.by;
-          block.mergedFinder = hit.worker;
-        }
-      });
-      done();
+      mergedHashCache = { at: Date.now(), byPool: byPool };
+      apply(byPool);
     });
   }
 
@@ -832,10 +841,13 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           ["hgetall", ":shares:diffCurrent:solo"], // index 21
           ["zrange", ":shares:bestDiff", "0", "-1", "WITHSCORES"], // index 22
           ["zrange", ":shares:bestDiff:solo", "0", "-1", "WITHSCORES"], // index 23
+          // drop solo hashrate samples older than the window, like :hashrate above
+          // (appended last so the reply indexes above stay the same)
+          ["zremrangebyscore", ":hashrate:solo", "-inf", "(" + windowTime], // index 24
         ];
 
         //var commandsPerCoin = redisCommandTemplates.length;
-        var commandsPerCoin = 24; // Hardcode this to be sure
+        var commandsPerCoin = 25; // Hardcode this to be sure
 
         // ENHANCED: Solo mining data indices
         var soloSharesIndex = 9; // :shares:roundCurrent:solo position

@@ -204,9 +204,9 @@
                         <tr>
                             <td>
                                 <div class="worker-address">
-                                    <a href="/workers/{{=miner.address}}" class="hot-swapper">{{=miner.address}}</a>
+                                    <a href="/workers/{{!miner.address}}" class="hot-swapper">{{!miner.address}}</a>
                                     {{? miner.isSolo }}<span class="miner-badge badge-solo">Solo</span>{{??}}<span class="miner-badge badge-pool">Pool</span>{{?}}
-                                    {{? miner.merged.length }}<span class="miner-badge badge-merged" title="Merge-mining {{=miner.merged.join(', ')}}">+ {{=miner.merged.join(' + ')}}</span>{{?}}
+                                    {{? miner.merged.length }}<span class="miner-badge badge-merged" title="Merge-mining {{!miner.merged.join(', ')}}">+ {{!miner.merged.join(' + ')}}</span>{{?}}
                                 </div>
                             </td>
                             <td>{{=miner.workerCount}}</td>
