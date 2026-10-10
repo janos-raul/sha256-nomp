@@ -4,6 +4,7 @@
   - network bar: scrolls when wider than the screen, updated from the live
     stats stream (statsUpdate events triggered by main.js)
   - LIVE indicator follows the live stats connection
+  - CoinGecko price widget: slower scroll, colors from the theme
   - drawLineChart(): small SVG line/area chart used by the pages
 */
 (function () {
@@ -224,6 +225,38 @@
   };
 
   // ---------- boot ----------
+  /* ---------- CoinGecko price widget ----------
+     The widget renders in an open shadow root with light-mode colors, which
+     are unreadable on the dark bar. Theme variables inherit into the shadow
+     tree, so a style added there follows the dark/light toggle. The widget
+     re-renders on data refresh, so the style is re-added when it goes missing. */
+  var GECKO_CSS =
+    ".gecko-marquee-scroll-1,.gecko-marquee-scroll-2{animation-duration:50s!important}" +
+    ".gecko-widget{color:var(--text)!important;font-weight:500}" +
+    ".gecko-text-dark{color:var(--text-hi)!important;fill:var(--text-hi)!important}" +
+    ".gecko-text-light{color:var(--muted)!important;fill:var(--muted)!important}" +
+    ".gecko-up{color:var(--good)!important;fill:var(--good)!important}" +
+    ".gecko-down{color:var(--bad)!important;fill:var(--bad)!important}" +
+    "a:hover{color:var(--accent)!important}" +
+    ".gecko-divider,.gecko-outline{border-color:var(--line)!important}";
+
+  function styleGeckoWidget(widget, tries) {
+    var root = widget.shadowRoot;
+    if (!root) {
+      if (tries < 40) setTimeout(function () { styleGeckoWidget(widget, tries + 1); }, 250);
+      return;
+    }
+    function inject() {
+      if (root.querySelector("style[data-theme-override]")) return;
+      var st = document.createElement("style");
+      st.setAttribute("data-theme-override", "");
+      st.textContent = GECKO_CSS;
+      root.appendChild(st);
+    }
+    inject();
+    new MutationObserver(inject).observe(root, { childList: true });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     applyTheme(store("theme") === "light" ? "light" : "dark");
     window.applyChartTheme();
@@ -259,5 +292,8 @@
     }
     updateLive();
     setInterval(updateLive, 5000);
+
+    var gecko = document.querySelector("gecko-coin-price-marquee-widget");
+    if (gecko) styleGeckoWidget(gecko, 0);
   });
 })();

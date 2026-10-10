@@ -406,8 +406,18 @@ img {
 
 /* ---------- pool message banner ---------- */
 .pool-message-banner {
+  --msg: var(--accent);
   border-bottom: 1px solid var(--line);
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--msg) 10%, transparent);
+}
+.pool-message-banner.message-blue {
+  --msg: var(--aux);
+}
+.pool-message-banner.message-green {
+  --msg: var(--good);
+}
+.pool-message-banner.message-red {
+  --msg: var(--bad);
 }
 .pool-message-content {
   max-width: var(--max);
@@ -420,11 +430,11 @@ img {
   font: 500 12px var(--font-ui);
 }
 .pool-message-content .label {
-  color: var(--accent);
+  color: var(--msg);
   flex: none;
 }
 .pool-message-icon {
-  color: var(--accent);
+  color: var(--msg);
 }
 .pool-message-text-wrapper {
   min-width: 0;
@@ -1034,18 +1044,29 @@ main [class*="panel"] {
   max-width: var(--max);
   margin: 0 auto;
   padding: 16px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   gap: 16px;
-  flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
   font: 500 11px var(--font-mono);
   color: var(--muted);
+}
+.footer-hosted {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.footer-hosted .flag {
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--line);
 }
 .footer-links {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .footer-links a {
   color: var(--text);
@@ -1120,5 +1141,13 @@ main [class*="panel"] {
   .nav-item i {
     display: inline-block;
     width: 16px;
+  }
+  .footer-content {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .footer-links {
+    justify-content: center;
   }
 }

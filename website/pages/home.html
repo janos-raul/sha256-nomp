@@ -77,6 +77,18 @@
     </div>
   </section>
 
+  <!-- Chart + block feed -->
+  <section class="grid-12">
+    <div class="panel span-8">
+      <div class="panel-head"><h2>Pool hashrate</h2><div class="legend"><span class="amber" id="home-chart-span">history</span></div></div>
+      <div class="panel-body"><svg class="chart" id="home-chart" viewBox="0 0 760 190" preserveAspectRatio="none" role="img" aria-label="Pool hashrate history"></svg></div>
+    </div>
+    <div class="panel span-4">
+      <div class="panel-head"><h2>Latest blocks</h2><a class="label hot-swapper" href="/stats">All blocks</a></div>
+      <ul class="feed" id="home-feed"><li class="feed-empty">Loading blocks…</li></ul>
+    </div>
+  </section>
+
   <!-- Pool cards -->
   <section class="home-pools">
     {{ for (var pool in pools) { var p = pools[pool]; var ps = p.poolStats || {}; var cfg = (it.poolsConfigs && it.poolsConfigs[pool]) || {};
@@ -104,18 +116,6 @@
       </div>
     </article>
     {{ } }}
-  </section>
-
-  <!-- Chart + block feed -->
-  <section class="grid-12">
-    <div class="panel span-8">
-      <div class="panel-head"><h2>Pool hashrate</h2><div class="legend"><span class="amber" id="home-chart-span">history</span></div></div>
-      <div class="panel-body"><svg class="chart" id="home-chart" viewBox="0 0 760 190" preserveAspectRatio="none" role="img" aria-label="Pool hashrate history"></svg></div>
-    </div>
-    <div class="panel span-4">
-      <div class="panel-head"><h2>Latest blocks</h2><a class="label hot-swapper" href="/stats">All blocks</a></div>
-      <ul class="feed" id="home-feed"><li class="feed-empty">Loading blocks…</li></ul>
-    </div>
   </section>
 </div>
 
