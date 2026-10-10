@@ -719,10 +719,9 @@ module.exports = function (logger) {
             "'unsafe-inline'",
             "https://cdnjs.cloudflare.com",
             "https://cdn.jsdelivr.net",
-            "https://widgets.coingecko.com", // price marquee widget
           ],
-          // inline onclick/onchange handlers (admin, api, tbs, pool message close)
-          scriptSrcAttr: ["'unsafe-inline'"],
+          // no inline event handlers (onclick=...): pages bind with addEventListener
+          scriptSrcAttr: ["'none'"],
           styleSrc: [
             "'self'",
             "'unsafe-inline'",
@@ -738,7 +737,7 @@ module.exports = function (logger) {
           connectSrc: [
             "'self'",
             "https://cdn.jsdelivr.net",
-            "https://*.coingecko.com", // price widget data
+            "https://api.coingecko.com", // price bar (theme.js)
           ],
           frameAncestors: ["'none'"],
           objectSrc: ["'none'"],

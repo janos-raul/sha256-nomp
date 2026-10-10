@@ -684,17 +684,13 @@ module.exports = function (logger, poolConfig) {
           "1",
         ]);
 
-        // Clear solo round shares for new round
-        redisCommands.push(["del", coin + ":shares:roundCurrent:solo"]);
-
-        // Clear solo round times
-        redisCommands.push(["del", coin + ":shares:timesCurrent:solo"]);
-
-        // Clear solo round diffs
-        redisCommands.push(["del", coin + ":shares:diffCurrent:solo"]);
-
-        // Clear solo best-share diffs
-        redisCommands.push(["del", coin + ":shares:bestDiff:solo"]);
+        // Each solo miner has their own round: start a new one for the finder
+        // only. (Deleting these keys reset every solo miner's round shares and
+        // best share whenever anyone found a block.) The last-share time in
+        // :shares:timesCurrent:solo is kept; the finder just submitted a share.
+        redisCommands.push(["hdel", coin + ":shares:roundCurrent:solo", shareData.worker]);
+        redisCommands.push(["hdel", coin + ":shares:diffCurrent:solo", shareData.worker]);
+        redisCommands.push(["zrem", coin + ":shares:bestDiff:solo", shareData.worker]);
 
         // Update solo block stats
         redisCommands.push(["hincrby", coin + ":stats:solo", "validBlocks", 1]);

@@ -545,13 +545,25 @@ img {
 .net-item .sym.aux {
   color: var(--aux);
 }
-.price-widget {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
+.price-item {
+  align-items: center;
 }
-.price-widget gecko-coin-price-marquee-widget {
-  display: block;
+.price-item img {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.price-item .price-name {
+  color: var(--text-hi);
+}
+.price-item .sym {
+  color: var(--muted);
+}
+.price-item .up {
+  color: var(--good);
+}
+.price-item .down {
+  color: var(--bad);
 }
 
 /* ---------- page frame ---------- */

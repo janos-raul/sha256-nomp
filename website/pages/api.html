@@ -96,7 +96,7 @@
                         /api/stats
                         <i class="fas fa-external-link-alt"></i>
                     </a>
-                    <button class="copy-btn" onclick="copyToClipboard('/api/stats', this)">
+                    <button class="copy-btn" type="button" data-copy="/api/stats">
                         <i class="fas fa-copy"></i> Copy
                     </button>
                 </div>
@@ -151,7 +151,7 @@
                         /api/blocks
                         <i class="fas fa-external-link-alt"></i>
                     </a>
-                    <button class="copy-btn" onclick="copyToClipboard('/api/blocks', this)">
+                    <button class="copy-btn" type="button" data-copy="/api/blocks">
                         <i class="fas fa-copy"></i> Copy
                     </button>
                 </div>
@@ -181,7 +181,7 @@
                         /api/live_stats
                         <i class="fas fa-external-link-alt"></i>
                     </a>
-                    <button class="copy-btn" onclick="copyToClipboard('/api/live_stats', this)">
+                    <button class="copy-btn" type="button" data-copy="/api/live_stats">
                         <i class="fas fa-copy"></i> Copy
                     </button>
                     <span class="live-indicator">
@@ -226,7 +226,7 @@ source.onmessage = function(event) {
                         /api/pool_stats
                         <i class="fas fa-external-link-alt"></i>
                     </a>
-                    <button class="copy-btn" onclick="copyToClipboard('/api/pool_stats', this)">
+                    <button class="copy-btn" type="button" data-copy="/api/pool_stats">
                         <i class="fas fa-copy"></i> Copy
                     </button>
                 </div>
@@ -262,7 +262,7 @@ source.onmessage = function(event) {
                         /api/payments
                         <i class="fas fa-external-link-alt"></i>
                     </a>
-                    <button class="copy-btn" onclick="copyToClipboard('/api/payments', this)">
+                    <button class="copy-btn" type="button" data-copy="/api/payments">
                         <i class="fas fa-copy"></i> Copy
                     </button>
                 </div>
@@ -309,7 +309,7 @@ source.onmessage = function(event) {
                         /api/worker_stats
                         <i class="fas fa-question-circle"></i>
                     </span>
-                    <button class="copy-btn" onclick="copyToClipboard('/api/worker_stats?addr=YOUR_ADDRESS', this)">
+                    <button class="copy-btn" type="button" data-copy="/api/worker_stats?addr=YOUR_ADDRESS">
                         <i class="fas fa-copy"></i> Copy
                     </button>
                 </div>
@@ -414,6 +414,11 @@ eventSource.onerror = (error) => {
 </div>
 
 <script>
+    // copy buttons (no inline handlers: the CSP blocks them)
+    $(document).off('click.apiCopy').on('click.apiCopy', '.copy-btn[data-copy]', function () {
+        copyToClipboard(this.getAttribute('data-copy'), this);
+    });
+
     function copyToClipboard(text, button) {
         // Create full URL
         const fullUrl = window.location.origin + text;

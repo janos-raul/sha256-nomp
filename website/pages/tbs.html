@@ -94,10 +94,10 @@
         </h2>
         <div class="table-controls">
             <div class="search-box">
-                <input type="text" id="poolSearch" placeholder="Search pools..." onkeyup="filterTable()">
+                <input type="text" id="poolSearch" placeholder="Search pools...">
                 <i class="fas fa-search"></i>
             </div>
-            <button class="export-btn" onclick="exportTableToCSV()">
+            <button class="export-btn" type="button" id="tbsExport">
                 <i class="fas fa-download"></i>
                 Export CSV
             </button>
@@ -108,34 +108,34 @@
         <table class="modern-table" id="poolStatsTable">
             <thead>
                 <tr>
-                    <th onclick="sortTable(0)">
+                    <th data-sort="0">
                         Pool <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(1)">
+                    <th data-sort="1">
                         Algorithm <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(2)">
+                    <th data-sort="2">
                         Miners <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(3)">
+                    <th data-sort="3">
                         Valid Shares <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(4)">
+                    <th data-sort="4">
                         Invalid Shares <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(5)">
+                    <th data-sort="5">
                         Total Blocks <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(6)">
+                    <th data-sort="6">
                         Pending <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(7)">
+                    <th data-sort="7">
                         Confirmed <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(8)">
+                    <th data-sort="8">
                         Orphaned <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(9)">
+                    <th data-sort="9">
                         Hashrate <i class="fas fa-sort"></i>
                     </th>
                 </tr>
@@ -317,6 +317,13 @@
     }
 
     // Table filtering
+    // event bindings (no inline handlers: the CSP blocks them); namespaced so
+    // a hot-swap visit replaces them instead of stacking
+    $(document).off('.tbs')
+        .on('keyup.tbs', '#poolSearch', function () { filterTable(); })
+        .on('click.tbs', '#tbsExport', function () { exportTableToCSV(); })
+        .on('click.tbs', 'th[data-sort]', function () { sortTable(parseInt(this.getAttribute('data-sort'), 10)); });
+
     function filterTable() {
         const input = document.getElementById('poolSearch');
         const filter = input.value.toLowerCase();
@@ -349,24 +356,21 @@
         const ascending = sortDirection[columnIndex];
         
         rows.sort((a, b) => {
-            let aValue = a.getElementsByTagName('td')[columnIndex].textContent.trim();
-            let bValue = b.getElementsByTagName('td')[columnIndex].textContent.trim();
-            
-            // Remove commas and non-numeric characters for number comparison
-            aValue = aValue.replace(/[^0-9.-]/g, '');
-            bValue = bValue.replace(/[^0-9.-]/g, '');
-            
-            // Check if values are numbers
-            if (!isNaN(aValue) && !isNaN(bValue)) {
-                return ascending ? 
-                    parseFloat(aValue) - parseFloat(bValue) : 
-                    parseFloat(bValue) - parseFloat(aValue);
+            const aText = a.getElementsByTagName('td')[columnIndex].textContent.trim();
+            const bText = b.getElementsByTagName('td')[columnIndex].textContent.trim();
+
+            // Numbers: strip units/commas. Text columns (pool name) strip to ""
+            // and must use the text comparison, or nothing sorts.
+            const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+            const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return ascending ? aNum - bNum : bNum - aNum;
             }
-            
+
             // Text comparison
-            return ascending ? 
-                aValue.localeCompare(bValue) : 
-                bValue.localeCompare(aValue);
+            return ascending ?
+                aText.localeCompare(bText) :
+                bText.localeCompare(aText);
         });
         
         // Clear tbody and re-append sorted rows
@@ -377,7 +381,7 @@
         const headers = table.getElementsByTagName('th');
         for (let i = 0; i < headers.length; i++) {
             const icon = headers[i].querySelector('i');
-            if (icon && icon.classList.contains('fa-sort') || icon.classList.contains('fa-sort-up') || icon.classList.contains('fa-sort-down')) {
+            if (icon && (icon.classList.contains('fa-sort') || icon.classList.contains('fa-sort-up') || icon.classList.contains('fa-sort-down'))) {
                 if (i === columnIndex) {
                     icon.className = ascending ? 'fas fa-sort-up' : 'fas fa-sort-down';
                 } else {

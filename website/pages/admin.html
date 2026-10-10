@@ -2350,7 +2350,6 @@
                                             rows="3"
                                             style="resize: vertical; font-family: inherit;"
                                             placeholder="Enter your announcement message here..."
-                                            oninput="window.PoolMessage && window.PoolMessage.updatePreview()"
                                         ></textarea>
                                         <span class="input-hint">Maximum 500 characters</span>
                                     </div>
@@ -2361,28 +2360,28 @@
                                         </label>
                                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-top: 0.5rem;">
                                             <div class="color-option" data-color="blue">
-                                                <input type="radio" name="messageColor" id="colorBlue" value="blue" checked onchange="window.PoolMessage && window.PoolMessage.updatePreview()">
+                                                <input type="radio" name="messageColor" id="colorBlue" value="blue" checked>
                                                 <label for="colorBlue" class="color-label color-blue">
                                                     <i class="fas fa-info-circle"></i>
                                                     <span>Info (Blue)</span>
                                                 </label>
                                             </div>
                                             <div class="color-option" data-color="green">
-                                                <input type="radio" name="messageColor" id="colorGreen" value="green" onchange="window.PoolMessage && window.PoolMessage.updatePreview()">
+                                                <input type="radio" name="messageColor" id="colorGreen" value="green">
                                                 <label for="colorGreen" class="color-label color-green">
                                                     <i class="fas fa-check-circle"></i>
                                                     <span>Success (Green)</span>
                                                 </label>
                                             </div>
                                             <div class="color-option" data-color="yellow">
-                                                <input type="radio" name="messageColor" id="colorYellow" value="yellow" onchange="window.PoolMessage && window.PoolMessage.updatePreview()">
+                                                <input type="radio" name="messageColor" id="colorYellow" value="yellow">
                                                 <label for="colorYellow" class="color-label color-yellow">
                                                     <i class="fas fa-exclamation-triangle"></i>
                                                     <span>Warning (Yellow)</span>
                                                 </label>
                                             </div>
                                             <div class="color-option" data-color="red">
-                                                <input type="radio" name="messageColor" id="colorRed" value="red" onchange="window.PoolMessage && window.PoolMessage.updatePreview()">
+                                                <input type="radio" name="messageColor" id="colorRed" value="red">
                                                 <label for="colorRed" class="color-label color-red">
                                                     <i class="fas fa-exclamation-circle"></i>
                                                     <span>Alert (Red)</span>
@@ -2414,11 +2413,11 @@
                                 </div>
 
                                 <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.75rem;">
-                                    <button class="btn-modal-primary" id="btnSavePoolMessage" style="width: auto;" onclick="window.PoolMessage.saveMessage(); return false;">
+                                    <button class="btn-modal-primary" id="btnSavePoolMessage" type="button" style="width: auto;">
                                         <i class="fas fa-save"></i>
                                         Save Message
                                     </button>
-                                    <button class="btn-modal-secondary" id="btnClearPoolMessage" style="width: auto;" onclick="window.PoolMessage.confirmClearMessage(); return false;">
+                                    <button class="btn-modal-secondary" id="btnClearPoolMessage" type="button" style="width: auto;">
                                         <i class="fas fa-trash"></i>
                                         Clear Message
                                     </button>

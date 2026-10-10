@@ -223,9 +223,25 @@ module.exports = function (logger) {
     );
     var shareProcessor = new ShareProcessor(logger, poolOptions);
 
+    // Usernames are "address.worker". Addresses are plain alphanumerics; worker
+    // names are limited to letters, digits, "_", "-" and "." so a username can
+    // never carry markup into the website, logs or API (it shows up in all three).
+    var VALID_USERNAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
     handlers.auth = function (port, workerName, password, authCallback) {
       var authStart = Date.now();
-      const [wallet, worker] = (workerName || "").split(".", 2);
+      if (typeof workerName !== "string" || !VALID_USERNAME.test(workerName)) {
+        logger.warning(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "[Auth] Rejected username with invalid characters: " +
+            JSON.stringify(String(workerName).slice(0, 64)) +
+            " (allowed: letters, digits, . _ -)",
+        );
+        return authCallback(false);
+      }
+      const [wallet, worker] = workerName.split(".", 2);
 
       // If validation is disabled, accept all
       if (poolOptions.validateWorkerUsername !== true) {

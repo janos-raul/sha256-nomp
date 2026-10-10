@@ -32,7 +32,11 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - **FIXED**: Coinbase timestamps from 2038-01-19 would have crashed job creation; non-ASCII `blockIdentifier`s got a wrong length; mining-key payout addresses had a double checksum
 - **FIXED**: A bare `solo` or `solo=true` password now selects solo mining in the stratum layer too, matching the payout side
 - **FIXED**: The connection count in the 5-minute stats never went down; regtest was reported as "Mainnet" at startup
-- **NEW**: Redesigned website — dark by default with a light mode toggle, a scrolling network bar with height/difficulty/hashrate/last block per coin, and a live status indicator. The home page adds global stats, per-coin pool cards (fees, ports, merged coins), a hashrate chart and a latest-blocks feed; Getting Started builds the miner settings (URL, username, password with merged-mining addresses) for the chosen coin and port. Pool name, tagline, logos and price-ticker coins come from `website.branding` in `config.json`.
+- **NEW**: Redesigned website — dark by default with a light mode toggle, a scrolling network bar with height/difficulty/hashrate/last block per coin, and a live status indicator. The home page adds global stats, per-coin pool cards (fees, ports, merged coins), a hashrate chart and a latest-blocks feed; Getting Started builds the miner settings (URL, username, password with merged-mining addresses) for the chosen coin and port. Pool name, tagline, logos and price-ticker coins come from `website.branding` in `config.json`. Pool Stats and Miner Stats show one tab per coin, with paginated blocks and miners, confirmation progress, and badges for merged mining. Each miner page lists the miner's workers and the blocks they found.
+- **NEW**: The price bar reads the CoinGecko API directly (no third-party script on the site); the CDN libraries load with subresource integrity, and the Content Security Policy blocks inline event handlers
+- **CHANGED**: Stratum usernames may only contain letters, digits, `.`, `_` and `-` (`address.worker`); others are refused at login, so a worker name can never carry markup into the website, API or logs
+- **FIXED**: Finding a solo block reset the round shares and best share of every solo miner, not only the finder; solo hashrate samples were never trimmed from Redis
+- **CHANGED**: `website.adminCenter.enabled` is `false` in the shipped configs; enable it after setting `passwordHash`
 - **FIXED**: Admin Center pool management failed to load ("value.toFixed is not a function") when a coin reported its difficulty as text
 - **NEW**: `/api/stats` shows merged mining per coin (`merged_with`, `merge_mined_by`, `mergedMining`)
 - **IMPROVED**: Block confirmation counts are updated by each coin's payment processor every `confirmationsInterval` seconds (default 120) for every coin, including aux coins; the standalone `libs/blockConfirmations.js` (hard-coded daemons, S256/BTGS missing) is removed
@@ -692,6 +696,8 @@ Miners connect for solo mining using the password parameter:
 Username: YOUR_BITCOIN_ADDRESS
 Password: m=solo
 ```
+
+A worker name can follow the address (`YOUR_BITCOIN_ADDRESS.rig1`). Usernames may only use letters, digits, `.`, `_` and `-`; the pool refuses others at login.
 
 Example connections:
 

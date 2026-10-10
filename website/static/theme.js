@@ -4,7 +4,7 @@
   - network bar: scrolls when wider than the screen, updated from the live
     stats stream (statsUpdate events triggered by main.js)
   - LIVE indicator follows the live stats connection
-  - CoinGecko price widget: slower scroll, colors from the theme
+  - price bar: prices from the CoinGecko API, built here (no third-party script)
   - paginateRows(): client-side pager for long tables (payments, miners)
   - blockStatusHtml(): block status with confirmations spinner/progress bar
   - drawLineChart(): small SVG line/area chart used by the pages
@@ -57,7 +57,7 @@
     });
   }
 
-  function setupMarquee(track) {
+  function setupMarquee(track, pxPerSecond) {
     if (!track) return;
     // remove previous clones, then decide whether scrolling is needed
     track.querySelectorAll("[data-clone]").forEach(function (n) {
@@ -74,8 +74,8 @@
       clone.setAttribute("aria-hidden", "true");
       track.appendChild(clone);
     });
-    // constant speed: about 40px per second
-    track.style.setProperty("--marquee-duration", Math.max(20, Math.round(track.scrollWidth / 2 / 40)) + "s");
+    // constant speed: about 40px per second unless given
+    track.style.setProperty("--marquee-duration", Math.max(20, Math.round(track.scrollWidth / 2 / (pxPerSecond || 40))) + "s");
     track.classList.add("scrolling");
   }
 
@@ -314,36 +314,73 @@
     );
   };
 
-  /* ---------- CoinGecko price widget ----------
-     The widget renders in an open shadow root with light-mode colors, which
-     are unreadable on the dark bar. Theme variables inherit into the shadow
-     tree, so a style added there follows the dark/light toggle. The widget
-     re-renders on data refresh, so the style is re-added when it goes missing. */
-  var GECKO_CSS =
-    ".gecko-marquee-scroll-1,.gecko-marquee-scroll-2{animation-duration:50s!important}" +
-    ".gecko-widget{color:var(--text)!important;font-weight:500}" +
-    ".gecko-text-dark{color:var(--text-hi)!important;fill:var(--text-hi)!important}" +
-    ".gecko-text-light{color:var(--muted)!important;fill:var(--muted)!important}" +
-    ".gecko-up{color:var(--good)!important;fill:var(--good)!important}" +
-    ".gecko-down{color:var(--bad)!important;fill:var(--bad)!important}" +
-    "a:hover{color:var(--accent)!important}" +
-    ".gecko-divider,.gecko-outline{border-color:var(--line)!important}";
+  /* ---------- price bar ----------
+     Prices come straight from CoinGecko's public API and are rendered with
+     DOM methods (textContent), so no third-party script runs on the site and
+     nothing from the API is parsed as HTML. Refreshed every 5 minutes. */
+  var PRICE_REFRESH_MS = 5 * 60 * 1000;
 
-  function styleGeckoWidget(widget, tries) {
-    var root = widget.shadowRoot;
-    if (!root) {
-      if (tries < 40) setTimeout(function () { styleGeckoWidget(widget, tries + 1); }, 250);
-      return;
+  function formatUsd(v) {
+    v = Number(v);
+    if (!isFinite(v)) return "-";
+    if (v >= 1) return "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return "$" + v.toPrecision(4);
+  }
+
+  function priceItem(c) {
+    var item = document.createElement("div");
+    item.className = "net-item price-item";
+    if (typeof c.image === "string" && /^https:\/\/[a-z0-9.-]*coingecko\.com\//.test(c.image)) {
+      var img = document.createElement("img");
+      img.src = c.image;
+      img.alt = "";
+      img.width = 14;
+      img.height = 14;
+      img.loading = "lazy";
+      item.appendChild(img);
     }
-    function inject() {
-      if (root.querySelector("style[data-theme-override]")) return;
-      var st = document.createElement("style");
-      st.setAttribute("data-theme-override", "");
-      st.textContent = GECKO_CSS;
-      root.appendChild(st);
+    var name = document.createElement("span");
+    name.className = "price-name";
+    name.textContent = String(c.name || c.id || "");
+    var sym = document.createElement("span");
+    sym.className = "sym";
+    sym.textContent = String(c.symbol || "").toUpperCase();
+    var price = document.createElement("b");
+    price.textContent = formatUsd(c.current_price);
+    item.appendChild(name);
+    item.appendChild(sym);
+    item.appendChild(price);
+    var ch = Number(c.price_change_percentage_24h);
+    if (isFinite(ch)) {
+      var change = document.createElement("span");
+      change.className = ch >= 0 ? "up" : "down";
+      change.textContent = (ch >= 0 ? "\u25B2 " : "\u25BC ") + Math.abs(ch).toFixed(1) + "%";
+      item.appendChild(change);
     }
-    inject();
-    new MutationObserver(inject).observe(root, { childList: true });
+    return item;
+  }
+
+  function loadPrices(track) {
+    var ids = (track.getAttribute("data-coins") || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
+    if (!ids.length) return;
+    var url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&price_change_percentage=24h&ids=" + encodeURIComponent(ids.join(","));
+    fetch(url, { credentials: "omit", referrerPolicy: "no-referrer" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (list) {
+        if (!Array.isArray(list) || !list.length) throw new Error("no data");
+        var byId = {};
+        list.forEach(function (c) { if (c && c.id) byId[c.id] = c; });
+        track.textContent = "";
+        ids.forEach(function (id) { if (byId[id]) track.appendChild(priceItem(byId[id])); });
+        setupMarquee(track, 30);
+      })
+      .catch(function () {
+        // keep the last prices if we had them
+        if (!track.querySelector(".price-item")) track.textContent = "Prices unavailable";
+      });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -368,7 +405,11 @@
       var resizeTimer;
       window.addEventListener("resize", function () {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function () { setupMarquee(track); }, 250);
+        resizeTimer = setTimeout(function () {
+          setupMarquee(track);
+          var pt = document.getElementById("price-track");
+          if (pt && pt.querySelector(".price-item")) setupMarquee(pt, 30);
+        }, 250);
       });
     }
     setInterval(refreshAges, 15000);
@@ -382,7 +423,12 @@
     updateLive();
     setInterval(updateLive, 5000);
 
-    var gecko = document.querySelector("gecko-coin-price-marquee-widget");
-    if (gecko) styleGeckoWidget(gecko, 0);
+    var priceTrack = document.getElementById("price-track");
+    if (priceTrack) {
+      loadPrices(priceTrack);
+      setInterval(function () {
+        if (!document.hidden) loadPrices(priceTrack);
+      }, PRICE_REFRESH_MS);
+    }
   });
 })();
