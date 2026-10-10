@@ -5,6 +5,7 @@
     stats stream (statsUpdate events triggered by main.js)
   - LIVE indicator follows the live stats connection
   - CoinGecko price widget: slower scroll, colors from the theme
+  - paginateRows(): client-side pager for long tables (payments, miners)
   - drawLineChart(): small SVG line/area chart used by the pages
 */
 (function () {
@@ -225,6 +226,54 @@
   };
 
   // ---------- boot ----------
+  /* ---------- table pager ----------
+     Shows `perPage` of `rows` at a time with a pager bar inserted after
+     `anchor`. Calling it again on the same anchor replaces the old pager. */
+  window.paginateRows = function (anchor, rows, perPage) {
+    if (!anchor) return;
+    var next = anchor.nextElementSibling;
+    if (next && next.classList.contains("pager")) next.remove();
+    rows = Array.prototype.slice.call(rows);
+    var pages = Math.ceil(rows.length / perPage);
+    if (pages <= 1) {
+      rows.forEach(function (r) { r.style.display = ""; });
+      return;
+    }
+    var pager = document.createElement("div");
+    pager.className = "pager";
+    var info = document.createElement("span");
+    var btns = document.createElement("div");
+    btns.className = "pager-btns";
+    pager.appendChild(info);
+    pager.appendChild(btns);
+    anchor.insertAdjacentElement("afterend", pager);
+
+    function button(label, title, page) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = label;
+      b.title = title;
+      b.addEventListener("click", function () { show(page); });
+      btns.appendChild(b);
+      return b;
+    }
+    function show(page) {
+      page = Math.max(0, Math.min(pages - 1, page));
+      var from = page * perPage;
+      var to = Math.min(rows.length, from + perPage);
+      rows.forEach(function (r, i) { r.style.display = i >= from && i < to ? "" : "none"; });
+      info.textContent = from + 1 + "\u2013" + to + " of " + rows.length;
+      btns.innerHTML = "";
+      button('<i class="fas fa-chevron-left"></i>', "Previous", page - 1).disabled = page === 0;
+      for (var i = 0; i < pages; i++) {
+        var b = button(String(i + 1), "Page " + (i + 1), i);
+        if (i === page) b.classList.add("active");
+      }
+      button('<i class="fas fa-chevron-right"></i>', "Next", page + 1).disabled = page === pages - 1;
+    }
+    show(0);
+  };
+
   /* ---------- CoinGecko price widget ----------
      The widget renders in an open shadow root with light-mode colors, which
      are unreadable on the dark bar. Theme variables inherit into the shadow

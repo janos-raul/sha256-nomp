@@ -275,10 +275,51 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         pcb();
       },
       function (err) {
-        cback(allBlocks);
+        markMergedBlocks(allBlocks, function () {
+          cback(allBlocks);
+        });
       },
     );
   };
+
+  // Flags aux coin blocks that were merge-mined: their hashes are in the
+  // parent's <parent>:auxBlocks:<aux> log (last 1000, see shareProcessor).
+  // Sets block.mergedBy to the parent coin's symbol.
+  function markMergedBlocks(allBlocks, done) {
+    var lookups = [];
+    Object.keys(mergedMiningInfo).forEach(function (parent) {
+      mergedMiningInfo[parent].auxCoins.forEach(function (aux) {
+        lookups.push({ parent: parent, aux: aux.name });
+      });
+    });
+    if (!lookups.length || !redisStats) return done();
+    redisStats.multi(
+      lookups.map(function (l) {
+        return ["lrange", l.parent + ":auxBlocks:" + l.aux, 0, -1];
+      }),
+    ).exec(function (err, replies) {
+      if (err || !replies) return done();
+      var byPool = {};
+      lookups.forEach(function (l, i) {
+        var parentSymbol = ((poolConfigs[l.parent] && poolConfigs[l.parent].coin.symbol) || l.parent).toUpperCase();
+        var hashes = (byPool[l.aux.toLowerCase()] = byPool[l.aux.toLowerCase()] || {});
+        (replies[i] || []).forEach(function (entry) {
+          try {
+            var e = JSON.parse(entry);
+            if (e.accepted && e.hash) hashes[e.hash] = parentSymbol;
+          } catch (ex) {}
+        });
+      });
+      Object.keys(allBlocks).forEach(function (id) {
+        var block = allBlocks[id];
+        var hashes = byPool[String(block.pool).toLowerCase()];
+        if (!hashes) return;
+        var by = hashes[block.data.split(":")[0]];
+        if (by) block.mergedBy = by;
+      });
+      done();
+    });
+  }
 
   function gatherStatHistory() {
     var retentionTime = (
@@ -1376,6 +1417,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     isSolo: true,
                   };
                 }
+                // aux coins this worker merge-mines ("S256+ESF"), from the share's port
+                if (parts[3]) coinStats.soloWorkers[worker].merged = parts[3];
 
                 // Add/update combined workers
                 if (worker in coinStats.workers) {

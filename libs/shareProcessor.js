@@ -27,6 +27,23 @@ module.exports = function (logger, poolConfig) {
     return sign + n.toFixed(2) + units[unitIndex];
   }
 
+  // Merged mining: aux coin symbols per port ("S256+ESF"), for ports with an
+  // auxGroup. A solo share on such a port means the miner merge-mines those
+  // coins; the tag is appended to the solo hashrate entry for the website.
+  var auxSymbolsByPort = (function () {
+    var out = {};
+    var mm = poolConfig.mergedMining;
+    if (!mm || mm.enabled !== true || !mm.groups || !mm.auxCoins) return out;
+    Object.keys(poolConfig.ports || {}).forEach(function (port) {
+      var members = mm.groups[poolConfig.ports[port].auxGroup] || [];
+      var symbols = members.map(function (aux) {
+        return ((mm.auxCoins[aux] && mm.auxCoins[aux].symbol) || aux).toUpperCase();
+      });
+      if (symbols.length) out[port] = symbols.join("+");
+    });
+    return out;
+  })();
+
   var logSystem = "ShareProcessor";
   var logComponent = coin;
   var logSubCat = "Thread " + (parseInt(forkId) + 1);
@@ -362,8 +379,9 @@ module.exports = function (logger, poolConfig) {
           workerName,
         ]);
 
-        // Solo hashrate tracking
+        // Solo hashrate tracking (4th field: merged aux coins, if any)
         var hashrateData = [shareData.difficulty, shareData.worker, dateNow];
+        if (auxSymbolsByPort[shareData.port]) hashrateData.push(auxSymbolsByPort[shareData.port]);
         redisCommands.push([
           "zadd",
           coin + ":hashrate:solo",

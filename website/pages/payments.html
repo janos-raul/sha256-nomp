@@ -38,12 +38,6 @@
     .no-payments-title { font: 600 12px var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-hi); margin-bottom: 4px; }
     .no-payments-text { font-size: 12px; }
     .pagination-info { padding: 8px 14px; border-top: 1px solid var(--line); font: 500 11px var(--font-mono); color: var(--muted); }
-    .pay-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--line); font: 500 11px var(--font-mono); color: var(--muted); }
-    .pay-pager-btns { display: flex; gap: 4px; }
-    .pay-pager button { min-width: 28px; height: 26px; padding: 0 8px; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r); color: var(--text); font: inherit; cursor: pointer; }
-    .pay-pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-    .pay-pager button.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-    .pay-pager button:disabled { opacity: 0.4; cursor: default; }
 </style>
 
 {{ function capitalizeFirstLetter(t){return t.charAt(0).toUpperCase()+t.slice(1)} }}
@@ -300,48 +294,11 @@
     }
     
     // Paginate each pool's payments table (10 rows per page)
-    var PAYMENTS_PER_PAGE = 10;
     function paginatePayments() {
+        if (!window.paginateRows) return;
         document.querySelectorAll('.payments-table-container').forEach(function(container) {
-            var rows = Array.prototype.slice.call(container.querySelectorAll('.payments-table tbody tr'));
-            var old = container.querySelector('.pay-pager');
-            if (old) old.remove();
-            var pages = Math.ceil(rows.length / PAYMENTS_PER_PAGE);
-            if (pages <= 1) return;
-
-            var pager = document.createElement('div');
-            pager.className = 'pay-pager';
-            var info = document.createElement('span');
-            var btns = document.createElement('div');
-            btns.className = 'pay-pager-btns';
-            pager.appendChild(info);
-            pager.appendChild(btns);
-            container.querySelector('.payments-table').insertAdjacentElement('afterend', pager);
-
-            function button(label, title, page) {
-                var b = document.createElement('button');
-                b.type = 'button';
-                b.innerHTML = label;
-                b.title = title;
-                b.addEventListener('click', function() { show(page); });
-                btns.appendChild(b);
-                return b;
-            }
-            function show(page) {
-                page = Math.max(0, Math.min(pages - 1, page));
-                var from = page * PAYMENTS_PER_PAGE;
-                var to = Math.min(rows.length, from + PAYMENTS_PER_PAGE);
-                rows.forEach(function(r, i) { r.style.display = (i >= from && i < to) ? '' : 'none'; });
-                info.textContent = (from + 1) + '–' + to + ' of ' + rows.length;
-                btns.innerHTML = '';
-                button('<i class="fas fa-chevron-left"></i>', 'Newer', page - 1).disabled = page === 0;
-                for (var i = 0; i < pages; i++) {
-                    var b = button(String(i + 1), 'Page ' + (i + 1), i);
-                    if (i === page) b.classList.add('active');
-                }
-                button('<i class="fas fa-chevron-right"></i>', 'Older', page + 1).disabled = page === pages - 1;
-            }
-            show(0);
+            var table = container.querySelector('.payments-table');
+            window.paginateRows(table, table.querySelectorAll('tbody tr'), 10);
         });
     }
 

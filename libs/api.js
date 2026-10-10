@@ -94,6 +94,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 status: block.status,
                 miner: parts[3],
                 type: block.type, // 'pool' or 'solo'
+                mergedBy: block.mergedBy || null, // parent coin symbol for merge-mined aux blocks
               });
             }
 

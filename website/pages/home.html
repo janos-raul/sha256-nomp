@@ -233,7 +233,7 @@
           var status = b.status === "confirmed" ? '<span class="chip ok">paid</span>' : b.status === "pending" ? '<span class="chip amber">maturing</span>' : '<span class="chip dim">' + esc(b.status || "") + "</span>";
           return '<li><span class="t">' + ago(now - (b.time || now)) + "</span>" +
             '<span class="what">' + '<span class="' + (aux ? "cyan" : "amber") + '">' + esc(symbols[b.coin] || b.coin) + "</span> block " + esc(b.height) +
-            "<small>" + esc(b.type || "pool") + " · " + esc(shortMiner(b.miner)) + "</small></span>" + status + "</li>";
+            "<small>" + esc(b.type || "pool") + (b.mergedBy ? " · merged via " + esc(b.mergedBy) : "") + " · " + esc(shortMiner(b.miner)) + "</small></span>" + status + "</li>";
         }).join("");
         $("#home-feed").html(html || '<li class="feed-empty">No blocks found yet.</li>');
       }).fail(function () { $("#home-feed").html('<li class="feed-empty">Blocks could not be loaded.</li>'); });

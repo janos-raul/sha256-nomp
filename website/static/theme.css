@@ -1036,6 +1036,47 @@ main [class*="panel"] {
   background: none !important;
 }
 
+/* ---------- table pager (paginateRows in theme.js) ---------- */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
+  font: 500 11px var(--font-mono);
+  color: var(--muted);
+}
+.pager-btns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.pager button {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.pager button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pager button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.pager button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* ---------- footer ---------- */
 .footer {
   border-top: 1px solid var(--line);
