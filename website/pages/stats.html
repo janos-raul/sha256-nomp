@@ -17,6 +17,10 @@
     .ps-col h3 i { color: var(--accent); margin-right: 8px; }
     .ps-col .kv { font-size: 12px; }
     .ps-col .kv > div:nth-child(even) { overflow-wrap: anywhere; }
+    /* "1344 (355 pool / 989 solo)" stays on one line */
+    .ps-col .kv > div { padding-left: 12px; padding-right: 12px; }
+    .ps-col .kv > div:has(> .sub) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+    .ps-col .kv .sub { font-size: 10.5px; }
     .ps-side { display: grid; gap: 12px; align-content: start; }
     .ps-chart { height: 160px; }
     .ps-donut-wrap { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px; }
@@ -346,6 +350,7 @@
         });
         document.querySelectorAll('.ps-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pool') !== pool; });
         try { localStorage.setItem('coinTab', pool); } catch (e) {}
+        if (window.revealCoinTab) window.revealCoinTab(document.querySelector('.ps .coin-tab.active'));
         loadChart(pool);
         renderBlocks(pool);
     }

@@ -1097,9 +1097,27 @@ main [class*="panel"] {
 .coin-tabs {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  /* one row that scrolls sideways when there are many coins (revealCoinTab
+     in theme.js); padding keeps the active tab's glow inside the scroll box */
+  position: relative;
+  overflow-x: auto;
+  padding: 4px;
+  margin: -4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-hi) transparent;
+}
+.coin-tabs.fade-r {
+  mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent);
+}
+.coin-tabs.fade-l {
+  mask-image: linear-gradient(to left, #000 calc(100% - 48px), transparent);
+}
+.coin-tabs.fade-l.fade-r {
+  mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent);
 }
 .coin-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 8px;

@@ -356,6 +356,7 @@
             p.hidden = p.getAttribute('data-pool') !== pool;
         });
         try { localStorage.setItem('coinTab', pool); } catch (e) {}
+        if (window.revealCoinTab) window.revealCoinTab(document.querySelector('.coin-tab.active'));
         msLoadChart(pool);
         msLoadBlocks(pool);
     }

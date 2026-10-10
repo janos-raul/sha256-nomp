@@ -8,6 +8,7 @@
   - paginateRows(): client-side pager for long tables (payments, miners)
   - blockStatusHtml(): block status with confirmations spinner/progress bar
   - drawLineChart(): small SVG line/area chart used by the pages
+  - revealCoinTab(): coin tab row scrolls sideways (wheel, fades, active tab in view)
 */
 (function () {
   "use strict";
@@ -163,6 +164,33 @@
       } catch (e) {}
     });
   }
+
+  // ---------- coin tabs: one row, scrolls sideways ----------
+  function coinTabFades(row) {
+    var max = row.scrollWidth - row.clientWidth;
+    row.classList.toggle("fade-l", max > 1 && row.scrollLeft > 1);
+    row.classList.toggle("fade-r", max > 1 && row.scrollLeft < max - 1);
+  }
+  // pages call this after switching tabs: scrolls the tab into view, sets the
+  // edge fades, and lets the mouse wheel scroll the row (bound once per row)
+  window.revealCoinTab = function (tab) {
+    var row = tab && tab.closest(".coin-tabs");
+    if (!row) return;
+    if (!row.__coinTabs) {
+      row.__coinTabs = true;
+      row.addEventListener("scroll", function () { coinTabFades(row); }, { passive: true });
+      row.addEventListener("wheel", function (e) {
+        if (row.scrollWidth <= row.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+        e.preventDefault();
+        row.scrollLeft += e.deltaY;
+      }, { passive: false });
+      window.addEventListener("resize", function () { coinTabFades(row); });
+    }
+    var left = tab.offsetLeft, right = left + tab.offsetWidth;
+    if (left < row.scrollLeft) row.scrollLeft = left - 24;
+    else if (right > row.scrollLeft + row.clientWidth) row.scrollLeft = right - row.clientWidth + 24;
+    coinTabFades(row);
+  };
 
   // ---------- small SVG chart for the pages ----------
   // sets: [{ data: [[timeMs, value], ...], color: "var(--accent)" }]
