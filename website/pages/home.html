@@ -97,7 +97,7 @@
        var ports = Object.keys(cfg.ports || {}); }}
     <article class="panel home-pool" data-pool="{{=pool}}">
       <div class="panel-head">
-        <h2><span class="coin-mark{{? isAux }} aux{{?}}">{{=(p.symbol || pool).slice(0, 4)}}</span>{{=cap(pool)}} Pool</h2>
+        <h2><span class="coin-mark{{? isAux }} aux{{?}}">{{=(p.symbol || pool).slice(0, 4)}}</span><span class="home-pool-name">{{=cap(pool)}} Pool</span></h2>
         <span class="mono {{? isAux }}cyan{{??}}amber{{?}}" id="statsHashrate{{=pool}}">{{=(p.hashrate > 0 || !(p.mergedHashrate > 0)) ? (p.hashrateString || '0 H/s') : p.mergedHashrateString + ' merged'}}</span>
       </div>
       <div class="kv">
@@ -143,6 +143,11 @@
   .home-gstats > div { padding: 12px 14px; border-left: 1px solid var(--line); border-top: 1px solid var(--line); min-width: 0; }
   .home-gstats .v { margin-top: 6px; font: 600 17px/1.1 var(--font-mono); color: var(--text-hi); overflow-wrap: anywhere; }
   .home-gstats .s { margin-top: 5px; font: 500 10.5px var(--font-mono); color: var(--muted); }
+  /* pool card head: hashrate stays on the name's line; a long name is cut with an ellipsis */
+  .home-pool .panel-head { flex-wrap: nowrap; }
+  .home-pool .panel-head h2 { min-width: 0; }
+  .home-pool-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home-pool .panel-head > .mono { flex: none; white-space: nowrap; }
   .home-pools { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
   .home-ports { white-space: normal; }
   .feed { list-style: none; margin: 0; padding: 0; }
