@@ -171,6 +171,7 @@
     options = options || {};
     // width/height should match the svg's viewBox so labels keep their shape
     var W = options.width || 760, H = options.height || 190, L = 52, R = 10, T = 12, B = 22;
+    var CHAR_W = 6.2; // width of one 10px mono label character, in viewBox units
     var all = [];
     sets.forEach(function (s) {
       // the server's history is not always in time order
@@ -187,14 +188,20 @@
     var t1 = Math.max.apply(null, all.map(function (p) { return p[0]; }));
     var vmax = Math.max.apply(null, all.map(function (p) { return p[1]; })) || 1;
     vmax = vmax * 1.15;
+    var fmt = options.format || function (v) { return v.toFixed(1); };
+    // y labels first: the left margin grows to fit the longest ("123.45 TH")
+    var yLabels = [];
+    for (var k = 0; k <= 4; k++) yLabels.push(k === 0 ? "0" : String(fmt((vmax * k) / 4)));
+    yLabels.forEach(function (lbl) {
+      L = Math.max(L, Math.ceil(lbl.length * CHAR_W) + 10);
+    });
     var X = function (t) { return L + (W - L - R) * (t1 === t0 ? 1 : (t - t0) / (t1 - t0)); };
     var Y = function (v) { return T + (H - T - B) * (1 - v / vmax); };
-    var fmt = options.format || function (v) { return v.toFixed(1); };
     var g = "";
-    for (var k = 0; k <= 4; k++) {
-      var v = (vmax * k) / 4, y = Y(v);
+    for (k = 0; k <= 4; k++) {
+      var y = Y((vmax * k) / 4);
       g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="var(--line)" stroke-width="1"/>';
-      g += '<text x="' + (L - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + (k === 0 ? "0" : fmt(v)) + "</text>";
+      g += '<text x="' + (L - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + yLabels[k] + "</text>";
     }
     for (var i = 0; i <= 4; i++) {
       var t = t0 + ((t1 - t0) * i) / 4;
