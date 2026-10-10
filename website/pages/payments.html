@@ -104,7 +104,7 @@
             </div>
             <div>
                 <div class="pool-name">
-                    {{=capitalizeFirstLetter(poolData.name)}}
+                    {{=poolData.displayName || capitalizeFirstLetter(poolData.name)}}
                     {{ if (poolData.paymentMode === 'prop') { }}
                         <span class="payment-mode-badge prop">
                             <i class="fas fa-chart-pie"></i> PROP

@@ -74,7 +74,7 @@
     <div class="coin-tabs" role="tablist">
         {{ for (var pool in it.stats.pools) { var tp = it.stats.pools[pool]; }}
         <button type="button" class="coin-tab" role="tab" data-pool="{{=pool}}">
-            <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=cap(tp.name)}}
+            <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=tp.displayName || cap(tp.name)}}
             <span class="hr" id="psTabHr{{=pool}}">{{=tabHr(tp)}}</span>
         </button>
         {{ } }}

@@ -56,7 +56,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
   merged_with mirrors the YIIMP-style field merged-mining pools expose
   ({"merged_with": "S256,ESF"}, or "0" when none), which pool listing
   sites read; merged is the other common shape
-  ("[{algorithm:sha256,symbol:esf,name:esf1175coin}]", a string);
+  ("[{algorithm:sha256,symbol:esf,name:elevenseventyfive}]", a string);
   mergedMining is the structured form.
   */
   var mergedMiningInfo = (function () {
@@ -107,7 +107,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
       return (
         "{algorithm:" + String(auxCoin.algorithm || "sha256").toLowerCase() +
         ",symbol:" + c.symbol.toLowerCase() +
-        ",name:" + String(auxCoin.name || c.name).toLowerCase() + "}"
+        ",name:" + String(auxCoin.displayName || auxCoin.name || c.name).toLowerCase() + "}"
       );
     });
     return {
@@ -1070,6 +1070,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
               var coinStats = {
                 name: coinName,
+                // shown name, e.g. "ElevenSeventyFive" for esf1175coin;
+                // coin files without displayName show the capitalized pool name
+                displayName:
+                  poolConfigs[coinName].coin.displayName ||
+                  coinName.charAt(0).toUpperCase() + coinName.slice(1),
                 symbol: poolConfigs[coinName].coin.symbol.toUpperCase(),
                 algorithm: poolConfigs[coinName].coin.algorithm,
                 blockTime: poolConfigs[coinName].coin.blockTime,
@@ -2119,6 +2124,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           var reorganizedStats = {
             // Basic info
             name: coinStats.name,
+            displayName: coinStats.displayName,
             symbol: coinStats.symbol,
             algorithm: coinStats.algorithm,
             poolType: coinStats.poolType,

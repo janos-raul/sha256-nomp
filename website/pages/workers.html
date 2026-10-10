@@ -133,7 +133,7 @@
     <div class="coin-tabs" role="tablist">
         {{ for (var pool in it.stats.pools) { var tp = it.stats.pools[pool]; }}
         <button type="button" class="coin-tab" role="tab" data-pool="{{=pool}}">
-            <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=capitalizeFirstLetter(tp.name)}}
+            <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=tp.displayName || capitalizeFirstLetter(tp.name)}}
             <span class="hr">{{=(tp.hashrate > 0 || !(tp.mergedHashrate > 0)) ? (tp.hashrateString || '0 H/s') : tp.mergedHashrateString + ' merged'}}</span>
         </button>
         {{ } }}
@@ -158,7 +158,7 @@
     <section class="ms-pane" role="tabpanel" data-pool="{{=pool}}" hidden>
         <div class="ms-top">
             <div class="panel">
-                <div class="panel-head"><h2>{{=capitalizeFirstLetter(poolData.name)}} hashrate</h2><div class="legend"><span class="amber ms-chart-span">history</span></div></div>
+                <div class="panel-head"><h2>{{=poolData.displayName || capitalizeFirstLetter(poolData.name)}} hashrate</h2><div class="legend"><span class="amber ms-chart-span">history</span></div></div>
                 <div class="panel-body"><svg class="chart ms-chart" data-pool="{{=pool}}" viewBox="0 0 760 190" preserveAspectRatio="none" role="img" aria-label="{{=poolData.name}} pool hashrate history"></svg></div>
             </div>
 

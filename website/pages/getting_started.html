@@ -44,7 +44,7 @@
     }
     coins.push({
       key: pool,
-      name: pool.charAt(0).toUpperCase() + pool.slice(1),
+      name: (pc.coin && pc.coin.displayName) || pool.charAt(0).toUpperCase() + pool.slice(1),
       symbol: (pc.coin && pc.coin.symbol) || pool.toUpperCase(),
       algo: (pc.coin && pc.coin.algorithm) || "sha256",
       prefix: pc.coin && pc.coin.addressValidation ? pc.coin.addressValidation.addressPrefix || "" : "",

@@ -1,5 +1,6 @@
 {
   "name": "esf1175coin",
+  "displayName": "ElevenSeventyFive",
   "symbol": "ESF",
   "algorithm": "sha256",
   "reward": "POW",
