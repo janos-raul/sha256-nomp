@@ -1,0 +1,50 @@
+{
+  "name": "esf1175coin",
+  "symbol": "ESF",
+  "algorithm": "sha256",
+  "reward": "POW",
+  "asicboost": true,
+  "versionMask": "0x3fffe000",
+  "enforcePoolVersionMask": true,
+  "versionRollingMinBits": 16,
+  "asicboostMinDifficulty": 1000,
+  "asicboostMaxClients": 1000,
+  "multiVersion": {
+    "enabled": true,
+    "maxVersions": 4,
+    "generationMode": "sequential"
+  },
+  "coinbasePayouts": {
+    "enabled": false,
+    "coinbaseOnly": false,
+    "feeHandledInCoinbase": false
+  },
+  "txMessages": true,
+  "txMessageText": "https://github.com/janos-raul/sha256-nomp",
+  "segwit": true,
+  "taproot": true,
+  "coinbaseTxVersion": 2,
+  "hasBlockReward": true,
+  "blockVersion": 536870912,
+  "default_witness_commitment": true,
+  "shareDifficultyTarget": "target",
+  "rpcTimeout": 5000,
+  "blockTime": 600,
+  "minConf": 101,
+  "addressValidation": {
+    "validateWorkerUsername": true,
+    "addressPrefix": "esf1",
+    "minLength": 26,
+    "maxLength": 46
+  },
+  "explorer": {
+    "txURL": "",
+    "blockURL": ""
+  },
+  "rpc": {
+    "host": "127.0.0.1",
+    "port": 25359,
+    "user": "rpcuser",
+    "password": "YOUR_RPC_PASSWORD"
+  }
+}

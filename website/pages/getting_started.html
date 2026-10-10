@@ -1,873 +1,476 @@
+{{
+  function fmtDiff(d) {
+    d = parseFloat(d);
+    if (isNaN(d)) return "-";
+    if (d >= 1e9) return +(d / 1e9).toFixed(2) + "G";
+    if (d >= 1e6) return +(d / 1e6).toFixed(2) + "M";
+    if (d >= 1e3) return +(d / 1e3).toFixed(2) + "K";
+    return String(+d.toFixed(4));
+  }
+  /* Only fields that are safe to publish: no daemons, addresses or credentials */
+  var host = (it.portalConfig.website && it.portalConfig.website.stratumHost) || "";
+  var coins = [];
+  var anyMerged = false;
+  for (var pool in it.poolsConfigs) {
+    var pc = it.poolsConfigs[pool];
+    var mm = pc.mergedMining && pc.mergedMining.enabled === true ? pc.mergedMining : null;
+    var pp = pc.paymentProcessing || {};
+    var ports = [];
+    for (var port in pc.ports || {}) {
+      var po = pc.ports[port] || {};
+      var vd = po.varDiff || null;
+      var aux = [];
+      if (mm && po.auxGroup && mm.groups && mm.groups[po.auxGroup]) {
+        mm.groups[po.auxGroup].forEach(function (name) {
+          var ac = (mm.auxCoins || {})[name] || {};
+          var auxPool = it.poolsConfigs[name.toLowerCase()];
+          aux.push({
+            name: name,
+            symbol: ac.symbol || (auxPool && auxPool.coin && auxPool.coin.symbol) || name,
+            param: ac.addressParam || name,
+            chainId: ac.chainId,
+            prefix: auxPool && auxPool.coin && auxPool.coin.addressValidation ? auxPool.coin.addressValidation.addressPrefix || "" : ""
+          });
+        });
+      }
+      if (aux.length) anyMerged = true;
+      ports.push({
+        port: port,
+        diff: fmtDiff(po.diff),
+        vardiff: vd ? fmtDiff(vd.minDiff) + " – " + fmtDiff(vd.maxDiff) : "fixed",
+        solo: po.soloMining !== false,
+        aux: aux
+      });
+    }
+    coins.push({
+      key: pool,
+      name: pool.charAt(0).toUpperCase() + pool.slice(1),
+      symbol: (pc.coin && pc.coin.symbol) || pool.toUpperCase(),
+      algo: (pc.coin && pc.coin.algorithm) || "sha256",
+      prefix: pc.coin && pc.coin.addressValidation ? pc.coin.addressValidation.addressPrefix || "" : "",
+      poolFee: pp.poolFee !== undefined ? pp.poolFee : 0,
+      soloFee: pp.soloFee !== undefined ? pp.soloFee : 0,
+      minConf: pp.minConf || (pc.coin && pc.coin.minConf) || 101,
+      mergedBy: [],
+      ports: ports
+    });
+  }
+  /* which coins merge-mine each coin (for the coin buttons) */
+  coins.forEach(function (c) {
+    c.ports.forEach(function (p) {
+      p.aux.forEach(function (a) {
+        coins.forEach(function (t) {
+          if (t.key === String(a.name).toLowerCase() && t.mergedBy.indexOf(c.symbol) === -1) t.mergedBy.push(c.symbol);
+        });
+      });
+    });
+  });
+  /* a coin without ports of its own can only be merge-mined (e.g. VMESH: AuxPoW mandatory) */
+  coins = coins.filter(function (c) { return c.ports.length || c.mergedBy.length; });
+  var mergedOnly = coins.filter(function (c) { c.mergedOnly = !c.ports.length; return c.mergedOnly; });
+}}
+<div class="gs">
+  <!-- Hero + ways to start -->
+  <section class="panel lit gs-hero">
+    <div class="gs-hero-copy">
+      <div class="label amber">Getting started</div>
+      <h1>Start Mining in 2 Minutes</h1>
+      <p>Join the most advanced SHA256 mining pool with ASICBoost support</p>
+      <div class="gs-boost"><i class="fas fa-bolt"></i> ASICBoost enabled · up to 30% more efficient</div>
+    </div>
+    <div class="gs-paths">
+      <div>
+        <span class="gs-step">1</span>
+        <h3>Quick Mine</h3>
+        <p>Point your ASIC miner to our stratum servers and start earning immediately</p>
+        <p class="muted"><strong class="hi">Perfect for:</strong> ASIC owners with hardware ready to go</p>
+        <a class="btn primary" href="#gs-connect" id="gs-quick">Get connection details</a>
+      </div>
+      <div>
+        <span class="gs-step">2</span>
+        <h3>Rent Hashpower</h3>
+        <p>No hardware? No problem! Rent mining rigs instantly through MiningRigRentals</p>
+        <p class="muted"><strong class="hi">Perfect for:</strong> Beginners or those wanting to test mining</p>
+        <a class="btn" href="https://www.miningrigrentals.com/" target="_blank" rel="noopener">Start renting hashpower <i class="fas fa-arrow-up-right-from-square"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Coins -->
+  <section class="panel">
+    <div class="panel-head"><h2>Select Your Coin</h2><span class="label">Click any coin for connection details</span></div>
+    <div class="panel-body"><div class="gs-coins" id="gs-coins"></div></div>
+    {{? mergedOnly.length }}
+    <div class="panel-body gs-mergedonly">
+      <i class="fas fa-link"></i>
+      <p><strong>Merged-only coins: {{=mergedOnly.map(function (c) { return c.symbol; }).join(", ")}}.</strong>
+        {{=mergedOnly.length === 1 ? "This coin has" : "These coins have"}} no mining ports of {{=mergedOnly.length === 1 ? "its" : "their"}} own: every block must be merge-mined (AuxPoW).
+        To earn {{=mergedOnly.map(function (c) { return c.symbol; }).join(" or ")}}, <strong>solo-mine</strong> a parent coin on a merged-mining port and add your address to the password,
+        e.g. <code>m=solo,{{=mergedOnly.map(function (c) { var a = null; coins.forEach(function (p) { p.ports.forEach(function (pt) { pt.aux.forEach(function (x) { if (!a && x.name.toLowerCase() === c.key) a = x; }); }); }); return (a ? a.param : c.key) + "=your-" + c.symbol.toLowerCase() + "-address"; }).join(",")}}</code>.
+        Click {{=mergedOnly.length === 1 ? "the coin" : "a coin"}} above to set that up.</p>
+    </div>
+    {{?}}
+  </section>
+
+  <!-- Connection builder -->
+  <section class="grid-12" id="gs-connect">
+    <div class="panel lit span-7">
+      <div class="panel-head"><h2>Connection details</h2><span class="label">Fill in, copy, paste into your miner</span></div>
+      <div class="panel-body">
+        <form class="gs-form" id="gs-form" autocomplete="off">
+          <div class="gs-field">
+            <label class="label" for="gs-coin">Coin</label>
+            <select id="gs-coin"></select>
+          </div>
+          <div class="gs-field">
+            <label class="label" for="gs-port">Port</label>
+            <select id="gs-port"></select>
+          </div>
+          <div class="gs-field full"><div class="gs-portcard" id="gs-portcard"></div></div>
+          <div class="gs-field">
+            <span class="label" id="gs-mode-label">Payout mode</span>
+            <div class="gs-seg" role="group" aria-labelledby="gs-mode-label">
+              <button type="button" id="gs-m-pool" aria-pressed="true">Pool · PROP</button>
+              <button type="button" id="gs-m-solo" aria-pressed="false">Solo</button>
+            </div>
+          </div>
+          <div class="gs-field">
+            <label class="label" for="gs-worker">Worker name</label>
+            <input id="gs-worker" value="worker1" spellcheck="false" maxlength="32">
+          </div>
+          <div class="gs-field full">
+            <label class="label" for="gs-addr">Your <span id="gs-addr-sym">coin</span> address</label>
+            <input id="gs-addr" spellcheck="false" placeholder="your wallet address">
+            <span class="gs-hint" id="gs-addr-hint"></span>
+          </div>
+          <div class="gs-field full" id="gs-aux"></div>
+          <div class="gs-field">
+            <label class="label" for="gs-d">Start difficulty <span class="mono">d=</span></label>
+            <input id="gs-d" placeholder="optional, e.g. 25000" inputmode="numeric">
+          </div>
+          <div class="gs-field">
+            <label class="label" for="gs-md">Minimum difficulty <span class="mono">md=</span></label>
+            <input id="gs-md" placeholder="optional, e.g. 10000" inputmode="numeric">
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="span-5 stack">
+      <div class="panel">
+        <div class="panel-head"><h2>Your miner settings</h2></div>
+        <div class="panel-body gs-out">
+          <div class="gs-out-row"><span class="label">Algorithm</span><div class="gs-out-val" id="gs-o-algo">SHA256</div><span></span></div>
+          <div class="gs-out-row"><span class="label">URL</span><div class="gs-out-val" id="gs-o-url"></div><button class="btn" type="button" data-copy="gs-o-url">Copy</button></div>
+          <div class="gs-out-row"><span class="label">Username</span><div class="gs-out-val" id="gs-o-user"></div><button class="btn" type="button" data-copy="gs-o-user">Copy</button></div>
+          <div class="gs-out-row"><span class="label">Password</span><div class="gs-out-val" id="gs-o-pass"></div><button class="btn" type="button" data-copy="gs-o-pass">Copy</button></div>
+          <span class="gs-copied" id="gs-copied" hidden>Copied</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>What you will get</h2></div>
+        <div class="panel-body"><ul class="gs-notes" id="gs-notes"></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Advanced configuration -->
+  <section class="panel">
+    <div class="panel-head"><h2>Advanced Configuration</h2><span class="label">Optimize your mining with these password field parameters</span></div>
+    <div class="panel-body gs-params">
+      <article class="panel gs-param">
+        <h3><span class="gs-num">1</span>Custom Initial Difficulty</h3>
+        <p>Set your miner's starting difficulty manually - perfect for high-powered ASICs</p>
+        <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>d=25000</code></div>
+        <ul><li>Starts with difficulty of 25,000</li><li>Prevents work restart issues on ASICs</li><li>Reduces rejected shares at startup</li></ul>
+      </article>
+      <article class="panel gs-param">
+        <h3><span class="gs-num">2</span>Minimum VarDiff Setting</h3>
+        <p>Prevent difficulty from dropping too low - essential for modern ASICs</p>
+        <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>md=10000</code></div>
+        <ul><li>VarDiff won't drop below 10,000</li><li>Ideal for Antminer S19, S21, T21 series</li><li>Reduces network overhead</li></ul>
+      </article>
+      <article class="panel gs-param">
+        <h3><span class="gs-num">3</span>Advanced VarDiff Tuning</h3>
+        <p>For experienced miners who know their rig's real hashrate: fine-tune how quickly and how aggressively your difficulty adjusts. <strong class="hi">Most miners don't need this</strong> — the pool's default settings are already tuned to work well automatically.</p>
+        <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>tt=45,rt=290,vp=7</code></div>
+        <ul><li><code>tt=</code> target seconds between shares (15–120 allowed)</li><li><code>rt=</code> seconds between difficulty adjustments (60–600 allowed)</li><li><code>vp=</code> allowed variance (%) before adjusting (5–50 allowed)</li></ul>
+      </article>
+      <article class="panel gs-param">
+        <h3><span class="gs-num">4</span>Solo Mining Mode</h3>
+        <p>Mine solo and keep the entire block reward when you find a block</p>
+        <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>m=solo</code></div>
+        <ul><li>Keep 100% of block rewards</li><li>Perfect for high hashrate miners</li><li>No sharing with pool participants</li></ul>
+      </article>
+      <article class="panel gs-param">
+        <h3><span class="gs-num">5</span>PROP Pool Mining (Default)</h3>
+        <p>Mine with the pool for consistent, proportional rewards</p>
+        <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>x</code></div>
+        <ul><li>Steady, predictable earnings</li><li>Lower variance than solo mining</li><li>Rewards based on contribution</li></ul>
+      </article>
+      {{? anyMerged }}
+      <article class="panel gs-param aux">
+        <h3><span class="gs-num">6</span>Merged Mining (Solo)</h3>
+        <p>Solo miners on a merged-mining port also mine an aux coin on the same hashes. Add your address for that coin to the password.</p>
+        <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>m=solo,s256=your-s256-address</code></div>
+        <ul><li>Blocks you find on the aux coin are paid to your address there</li><li>Without an address the block still counts, but the reward stays with the pool</li><li>Each port shows which coins it merge-mines</li></ul>
+      </article>
+      {{?}}
+      <article class="panel gs-param">
+        <h3><span class="gs-num">{{? anyMerged }}7{{??}}6{{?}}</span>Combine Multiple Settings</h3>
+        <p>Mix and match parameters for the perfect setup</p>
+        <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>d=25000,md=10000,m=solo</code></div>
+        <ul><li>Initial difficulty to 25,000</li><li>Minimum VarDiff to 10,000</li><li>Solo mining mode enabled</li></ul>
+      </article>
+    </div>
+    <div class="panel-body gs-howto">
+      <h3>How the password parameters work</h3>
+      <ul class="gs-notes">
+        <li>Put the parameters in your miner's <strong class="hi">password</strong> field, separated by commas. The order doesn't matter, and anything not set uses the pool default.</li>
+        <li>They are read when your miner logs in. After changing them, restart or reconnect the miner.</li>
+        <li><code>tt=</code>, <code>rt=</code> and <code>vp=</code> are always kept within the allowed range, so they can't be misconfigured into something harmful. At worst your difficulty adjusts less smoothly.</li>
+        <li><code>d=</code> sets where your difficulty starts; <code>md=</code> is a floor that VarDiff never goes below.</li>
+      </ul>
+      {{? anyMerged }}
+      <div class="gs-warn">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p><strong>Merged mining: add an address for every aux coin.</strong> If your password has no address for a merged coin (for example <code>s256=your-s256-address</code>), the blocks you find on that coin are paid to the <strong>pool wallet</strong>, not to you.</p>
+      </div>
+      {{?}}
+    </div>
+  </section>
+</div>
+
 <style>
-    /* Getting Started Specific Styles */
-    .getting-started-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 2rem 1.5rem;
-    }
-
-    /* Hero Banner */
-    .hero-banner {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 1.5rem;
-        padding: 3rem;
-        margin-bottom: 2rem;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .hero-banner::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-        animation: float 10s ease-in-out infinite;
-    }
-
-    .hero-banner h1 {
-        font-size: 3rem;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 1rem;
-        position: relative;
-    }
-
-    .hero-banner p {
-        font-size: 1.3rem;
-        color: rgba(255, 255, 255, 0.9);
-        position: relative;
-    }
-
-    /* Quick Start Cards */
-    .quick-start {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2rem;
-        margin-bottom: 3rem;
-    }
-
-    .start-card {
-        background: var(--bg-card);
-        border-radius: 1rem;
-        padding: 2.5rem;
-        border: 1px solid var(--border);
-        position: relative;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        text-decoration: none;
-        color: var(--text-primary);
-    }
-
-    .start-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-        border-color: var(--accent);
-    }
-
-    .start-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 4px;
-        background: var(--gradient);
-    }
-
-    .card-number {
-        position: absolute;
-        top: 2rem;
-        right: 2rem;
-        font-size: 5rem;
-        font-weight: 700;
-        color: rgba(59, 130, 246, 0.1);
-    }
-
-    .card-icon {
-        width: 60px;
-        height: 60px;
-        background: rgba(59, 130, 246, 0.1);
-        border-radius: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1.5rem;
-        font-size: 1.8rem;
-        color: var(--accent);
-    }
-
-    .card-title {
-        font-size: 1.8rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: var(--text-primary);
-    }
-
-    .card-desc {
-        font-size: 1.1rem;
-        line-height: 1.6;
-        color: var(--text-secondary);
-        margin-bottom: 1.5rem;
-    }
-
-    .card-highlight {
-        background: rgba(59, 130, 246, 0.1);
-        border-left: 3px solid var(--accent);
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-top: 1rem;
-    }
-
-    /* Pool Selection */
-    .pool-selection {
-        background: var(--bg-card);
-        border-radius: 1.5rem;
-        padding: 2rem;
-        margin-bottom: 3rem;
-        border: 1px solid var(--border);
-    }
-
-    .pool-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .pool-header h2 {
-        font-size: 2rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .pools-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
-    }
-
-    .pool-item {
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: center;
-        position: relative;
-    }
-
-    .pool-item:hover {
-        background: rgba(59, 130, 246, 0.1);
-        border-color: var(--accent);
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
-    }
-
-    .pool-item.glow {
-        animation: glow-pulse 0.5s ease;
-    }
-
-    @keyframes glow-pulse {
-
-        0%,
-        100% {
-            box-shadow: 0 0 0 rgba(59, 130, 246, 0);
-        }
-
-        50% {
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
-        }
-    }
-
-    .pool-name {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        text-transform: uppercase;
-        margin-bottom: 0.5rem;
-    }
-
-    .pool-algo {
-        font-size: 0.9rem;
-        color: var(--text-muted);
-    }
-
-    /* Configuration Guide */
-    .config-guide {
-        background: var(--bg-card);
-        border-radius: 1.5rem;
-        padding: 2.5rem;
-        margin-bottom: 3rem;
-        border: 1px solid var(--border);
-    }
-
-    .config-header {
-        text-align: center;
-        margin-bottom: 3rem;
-    }
-
-    .config-header h2 {
-        font-size: 2rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 1rem;
-    }
-
-    .config-header p {
-        font-size: 1.1rem;
-        color: var(--text-secondary);
-    }
-
-    .config-item {
-        background: var(--bg-secondary);
-        border-radius: 1rem;
-        padding: 2rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid var(--border);
-        transition: all 0.3s ease;
-    }
-
-    .config-item:hover {
-        border-color: var(--accent);
-        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.1);
-    }
-
-    .config-item-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .config-emoji {
-        font-size: 2rem;
-    }
-
-    .config-number {
-        background: var(--gradient);
-        color: white;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-    }
-
-    .config-title {
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        flex: 1;
-    }
-
-    .config-desc {
-        color: var(--text-secondary);
-        margin-bottom: 1.5rem;
-        line-height: 1.6;
-    }
-
-    .config-example {
-        background: var(--bg-primary);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        font-family: 'Courier New', monospace;
-        border: 1px solid var(--border);
-    }
-
-    .config-example>div {
-        margin: 0.5rem 0;
-        line-height: 1.8;
-    }
-
-    .example-label {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        margin-bottom: 0.75rem;
-        font-family: 'Inter', sans-serif;
-    }
-
-    .code-inline {
-        background: rgba(59, 130, 246, 0.2);
-        color: var(--accent-hover);
-        padding: 0.2rem 0.5rem;
-        border-radius: 0.3rem;
-        font-family: 'Courier New', monospace;
-    }
-
-    .config-effect {
-        background: rgba(16, 185, 129, 0.1);
-        border-left: 3px solid var(--success);
-        padding: 1rem;
-        border-radius: 0.5rem;
-    }
-
-    .effect-label {
-        font-weight: 600;
-        color: var(--success);
-        margin-bottom: 0.5rem;
-    }
-
-    .config-effect ul {
-        list-style: none;
-        padding: 0;
-    }
-
-    .config-effect li {
-        padding: 0.3rem 0;
-        color: var(--text-secondary);
-        position: relative;
-        padding-left: 1.5rem;
-    }
-
-    .config-effect li::before {
-        content: '✓';
-        position: absolute;
-        left: 0;
-        color: var(--success);
-        font-weight: 700;
-    }
-
-    .config-note {
-        background: rgba(245, 158, 11, 0.1);
-        border-left: 3px solid #f59e0b;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-top: 1rem;
-        font-size: 0.95rem;
-        color: var(--text-secondary);
-    }
-
-    .config-note strong {
-        color: #f59e0b;
-    }
-
-    /* ASICBoost Badge */
-    .boost-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #f59e0b, #ef4444);
-        color: white;
-        padding: 0.5rem 1.5rem;
-        border-radius: 2rem;
-        font-weight: 600;
-        animation: pulse 2s infinite;
-        margin: 1rem 0;
-    }
-
-    /* Connection Modal */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    }
-
-    .modal-overlay.active {
-        display: flex;
-    }
-
-    .modal-content {
-        background: var(--bg-card);
-        border-radius: 1.5rem;
-        padding: 2.5rem;
-        width: 90%;
-        max-width: 800px;
-        position: relative;
-        border: 1px solid var(--border);
-    }
-
-    .modal-close {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        width: 40px;
-        height: 40px;
-        background: var(--bg-secondary);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        border: 1px solid var(--border);
-        transition: all 0.3s ease;
-        color: var(--text-primary);
-        font-size: 1.5rem;
-    }
-
-    .modal-close:hover {
-        background: var(--danger);
-        transform: rotate(90deg);
-    }
-
-    .modal-title {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 2rem;
-        text-align: center;
-    }
-
-    .connection-details {
-        background: var(--bg-secondary);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid var(--border);
-    }
-
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        font-weight: 600;
-        color: var(--text-muted);
-    }
-
-    .detail-value {
-        color: var(--text-primary);
-        font-family: 'Courier New', monospace;
-        word-break: break-all;
-        text-align: right;
-    }
-
-    /* MRR Section */
-    .mrr-section {
-        background: linear-gradient(135deg, #1a1f2e, #232938);
-        border-radius: 1rem;
-        padding: 2rem;
-        margin: 2rem 0;
-        border: 2px solid var(--accent);
-        text-align: center;
-    }
-
-    .mrr-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 1rem;
-    }
-
-    .mrr-logo {
-        margin: 1.5rem 0;
-    }
-
-    .mrr-button {
-        display: inline-block;
-        background: var(--gradient);
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: 0.75rem;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        margin-top: 1rem;
-    }
-
-    .mrr-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .hero-banner h1 {
-            font-size: 2rem;
-        }
-
-        .quick-start {
-            grid-template-columns: 1fr;
-        }
-
-        .pools-grid {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        }
-
-        .config-item-header {
-            flex-wrap: wrap;
-        }
-    }
+  .gs { display: grid; gap: 12px; }
+  .gs-hero-copy { padding: 22px; }
+  .gs-hero h1 { margin: 8px 0 6px; font: 700 clamp(20px, 3vw, 28px)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; color: var(--text-hi); }
+  .gs-hero p { margin: 0; }
+  .gs-boost { display: inline-flex; gap: 8px; align-items: center; margin-top: 14px; padding: 8px 12px; border: 1px solid color-mix(in srgb, var(--good) 50%, transparent); color: var(--good); font: 600 11px var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; }
+  .gs-paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  @media (max-width: 720px) { .gs-paths { grid-template-columns: 1fr; } }
+  .gs-paths > div { padding: 16px 22px; border-left: 1px solid var(--line); display: grid; gap: 8px; align-content: start; justify-items: start; }
+  .gs-paths > div:first-child { border-left: 0; }
+  @media (max-width: 720px) { .gs-paths > div { border-left: 0; border-top: 1px solid var(--line); } .gs-paths > div:first-child { border-top: 0; } }
+  .gs-step, .gs-num { font: 700 20px/1 var(--font-mono); color: var(--accent); }
+  .gs h3 { margin: 0; font: 600 13px var(--font-display); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-hi); }
+  .gs p { margin: 0; }
+  .gs-coins { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+  .gs-coins button { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); cursor: pointer; border-radius: var(--r); text-align: left; font: inherit; }
+  .gs-coins button:hover { border-color: var(--line-hi); }
+  .gs-coins button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .gs-mergedonly { display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid var(--line); font-size: 13px; }
+  .gs-mergedonly i { color: var(--aux); margin-top: 3px; }
+  .gs-mergedonly p { margin: 0; }
+  .gs-mergedonly code { font: 600 11.5px var(--font-mono); color: var(--aux); }
+  .gs-coins b { display: block; color: var(--text-hi); font: 600 12px var(--font-ui); }
+  .gs-coins small { font: 500 10px var(--font-mono); color: var(--muted); }
+  .gs-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+  @media (max-width: 640px) { .gs-form { grid-template-columns: 1fr; } }
+  .gs-field { display: grid; gap: 6px; min-width: 0; align-content: start; }
+  .gs-field.full { grid-column: 1 / -1; }
+  .gs-field input, .gs-field select { width: 100%; }
+  .gs-hint { font-size: 11px; color: var(--muted); }
+  .gs-seg { display: flex; border: 1px solid var(--line-hi); border-radius: var(--r); overflow: hidden; }
+  .gs-seg button { flex: 1; padding: 8px 10px; border: 0; background: var(--panel-2); color: var(--text); font: 600 10.5px var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; cursor: pointer; border-radius: 0 !important; }
+  .gs-seg button + button { border-left: 1px solid var(--line-hi); }
+  .gs-seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .gs-seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .gs-portcard { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); }
+  .gs-portcard > div { padding: 10px 12px; border-left: 1px solid var(--line); min-width: 0; }
+  .gs-portcard > div:first-child { border-left: 0; }
+  .gs-portcard .v { margin-top: 4px; font: 600 13px var(--font-mono); color: var(--text-hi); }
+  .gs-aux { border: 1px dashed color-mix(in srgb, var(--aux) 50%, transparent); background: var(--aux-soft); padding: 12px; display: grid; gap: 10px; }
+  .gs-aux > .label { color: var(--aux); }
+  .gs-out { display: grid; gap: 10px; }
+  .gs-out-row { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+  @media (max-width: 520px) { .gs-out-row { grid-template-columns: minmax(0, 1fr) auto; } .gs-out-row .label { grid-column: 1 / -1; } }
+  .gs-out-val { font: 500 12px var(--font-mono); color: var(--text-hi); background: var(--panel-2); border: 1px solid var(--line); padding: 9px 10px; overflow-x: auto; white-space: nowrap; min-width: 0; }
+  .gs-out-val .k { color: var(--accent); }
+  .gs-out-val .a { color: var(--aux); }
+  .gs-copied { font: 600 11px var(--font-mono); color: var(--good); }
+  .gs-notes { list-style: none; display: grid; gap: 6px; font-size: 12px; }
+  .gs-notes li, .gs-param ul li { padding-left: 14px; position: relative; }
+  .gs-notes li::before, .gs-param ul li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 6px; height: 1px; background: var(--accent); }
+  .gs-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  /* subgrid: title, text, example and list line up across a row */
+  .gs-param { padding: 14px; display: grid; gap: 10px; align-content: start; grid-row: span 4; grid-template-rows: subgrid; }
+  .gs-param h3 { display: flex; align-items: baseline; gap: 10px; }
+  .gs-param ul { list-style: none; display: grid; gap: 4px; align-content: start; font-size: 12px; }
+  .gs-param.aux ul li::before { background: var(--aux); }
+  .gs-param.aux .gs-num { color: var(--aux); }
+  .gs-param code, .gs-howto code { font: 600 11.5px var(--font-mono); color: var(--accent); }
+  .gs-howto { display: grid; gap: 12px; border-top: 1px solid var(--line); }
+  .gs-warn { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--warn); border-left-width: 3px; background: color-mix(in srgb, var(--warn) 10%, transparent); color: var(--text-hi); font-size: 13px; }
+  .gs-warn i { color: var(--warn); margin-top: 2px; }
+  .gs-warn p { margin: 0; }
+  .gs-warn code { color: var(--aux); }
+  .gs-param.aux code { color: var(--aux); }
+  .gs-example { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: center; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line); }
+  .gs-example span { font: 600 9.5px var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+  .gs-example code { overflow-x: auto; white-space: nowrap; }
+  .gs .muted { font-size: 11.5px; color: var(--muted); }
 </style>
 
-<div class="getting-started-container">
-    <!-- Hero Banner -->
-    <div class="hero-banner">
-        <h1>🚀 Start Mining in 2 Minutes</h1>
-        <p>Join the most advanced SHA256 mining pool with ASICBoost support</p>
-        <span class="boost-badge">🔥 ASICBoost ENABLED - Up to 30% More Efficient!</span>
-    </div>
-
-    <!-- Quick Start Cards -->
-    <div class="quick-start">
-        <div class="start-card" id="quickMine">
-            <span class="card-number">1</span>
-            <div class="card-icon">
-                <i class="fas fa-server"></i>
-            </div>
-            <div class="card-title">Quick Mine</div>
-            <div class="card-desc">
-                Point your ASIC miner to our stratum servers and start earning immediately
-            </div>
-            <div class="card-highlight">
-                <strong>Perfect for:</strong> ASIC owners with hardware ready to go
-            </div>
-        </div>
-
-        <div class="start-card" id="rentMiner">
-            <span class="card-number">2</span>
-            <div class="card-icon">
-                <i class="fas fa-cloud"></i>
-            </div>
-            <div class="card-title">Rent Hashpower</div>
-            <div class="card-desc">
-                No hardware? No problem! Rent mining rigs instantly through MiningRigRentals
-            </div>
-            <div class="card-highlight">
-                <strong>Perfect for:</strong> Beginners or those wanting to test mining
-            </div>
-        </div>
-    </div>
-
-    <!-- MRR Section -->
-    <div class="mrr-section">
-        <div class="mrr-title">⚡ No Mining Hardware? Start Mining Today!</div>
-        <img src="/static/mrr-logo2.png" alt="MiningRigRentals" class="mrr-logo" width="300" height="150">
-        <p style="color: var(--text-secondary); margin: 1rem 0;">
-            Rent SHA256 mining power instantly - No equipment needed!
-        </p>
-        <a href="https://www.miningrigrentals.com/" target="_blank" class="mrr-button">
-            Start Renting Hashpower →
-        </a>
-    </div>
-
-    <!-- Pool Selection -->
-    <div class="pool-selection">
-        <div class="pool-header">
-            <h2>📊 Select Your Coin</h2>
-            <span style="color: var(--text-secondary);">Click any coin for connection details</span>
-        </div>
-
-        <div class="pools-grid">
-            {{? (function(){
-            if (!it.portalConfig.switching) return false;
-            for (var p in it.portalConfig.switching){
-            if (it.portalConfig.switching[p].enabled)
-            return true;
-            }
-            return false;
-            })()
-            }}
-            {{?}}
-
-            <div style="grid-column: 1 / -1; padding: 1rem 0;">
-                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">💰 Available Coins</h3>
-            </div>
-            {{ for(var pool in it.poolsConfigs) {
-            var info = JSON.stringify({
-            coin: it.poolsConfigs[pool].coin,
-            algo: it.poolsConfigs[pool].coin.algorithm,
-            ports: it.poolsConfigs[pool].ports,
-            host: it.portalConfig.website.stratumHost
-            }).replace(/"/g, '&quot;');
-            }}
-            <div class="pool-item poolOption" data-info="{{=info}}">
-                <div class="pool-name">{{=pool}}</div>
-                <div class="pool-algo">{{=it.poolsConfigs[pool].coin.algorithm}}</div>
-            </div>
-            {{ } }}
-        </div>
-    </div>
-
-    <!-- Configuration Guide -->
-    <div class="config-guide">
-        <div class="config-header">
-            <h2>⚙️ Advanced Configuration</h2>
-            <p>Optimize your mining with these password field parameters</p>
-        </div>
-
-        <!-- Config Option 1 -->
-        <div class="config-item">
-            <div class="config-item-header">
-                <span class="config-emoji">🎯</span>
-                <span class="config-number">1</span>
-                <div class="config-title">Custom Initial Difficulty</div>
-            </div>
-            <div class="config-desc">
-                Set your miner's starting difficulty manually - perfect for high-powered ASICs
-            </div>
-            <div class="config-example">
-                <div class="example-label">Example Configuration:</div>
-                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
-                <div>Password: <span class="code-inline">d=25000</span></div>
-            </div>
-            <div class="config-effect">
-                <div class="effect-label">Benefits:</div>
-                <ul>
-                    <li>Starts with difficulty of 25,000</li>
-                    <li>Prevents work restart issues on ASICs</li>
-                    <li>Reduces rejected shares at startup</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Config Option 2 -->
-        <div class="config-item">
-            <div class="config-item-header">
-                <span class="config-emoji">📉</span>
-                <span class="config-number">2</span>
-                <div class="config-title">Minimum VarDiff Setting</div>
-            </div>
-            <div class="config-desc">
-                Prevent difficulty from dropping too low - essential for modern ASICs
-            </div>
-            <div class="config-example">
-                <div class="example-label">Example Configuration:</div>
-                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
-                <div>Password: <span class="code-inline">md=10000</span></div>
-            </div>
-            <div class="config-effect">
-                <div class="effect-label">Benefits:</div>
-                <ul>
-                    <li>VarDiff won't drop below 10,000</li>
-                    <li>Ideal for Antminer S19, S21, T21 series</li>
-                    <li>Reduces network overhead</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Config Option 3 -->
-        <!-- Allowed Ranges:
-                     targetTime (tt): min 15, max 120
-                     retargetTime (rt): min 60, max 600
-                     variancePercent (vp): min 5, max 50
-                -->
-        <div class="config-item">
-            <div class="config-item-header">
-                <span class="config-emoji">🎛️</span>
-                <span class="config-number">3</span>
-                <div class="config-title">Advanced VarDiff Tuning</div>
-            </div>
-
-            <div class="config-desc">
-                For experienced miners who know their rig's real hashrate: fine‑tune how quickly and how
-                aggressively your difficulty adjusts. <strong>Most miners don't need this</strong> — the
-                pool's default settings are already tuned to work well automatically.
-            </div>
-
-            <div class="config-example">
-                <div class="example-label">Example Configuration:</div>
-                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
-                <div>Password: <span class="code-inline">tt=45,rt=290,vp=7</span></div>
-            </div>
-
-            <div class="config-effect">
-                <div class="effect-label">What each parameter does:</div>
-                <ul>
-                    <li><span class="code-inline">tt=</span> target seconds between shares (15–120 allowed)</li>
-                    <li><span class="code-inline">rt=</span> seconds between difficulty adjustments (60–600 allowed)
-                    </li>
-                    <li><span class="code-inline">vp=</span> allowed variance (%) before adjusting (5–50 allowed)</li>
-                </ul>
-            </div>
-
-            <div class="config-note">
-                <strong>Good to know:</strong> Any value you will use for these parameters is automatically
-                kept within the allowed range, so there's no way to misconfigure this into
-                something harmful; worst case, your difficulty just adjusts less smoothly than it could.
-            </div>
-        </div>
-
-
-        <!-- Config Option 4 -->
-        <div class="config-item">
-            <div class="config-item-header">
-                <span class="config-emoji">🎲</span>
-                <span class="config-number">4</span>
-                <div class="config-title">Solo Mining Mode</div>
-            </div>
-            <div class="config-desc">
-                Mine solo and keep the entire block reward when you find a block
-            </div>
-            <div class="config-example">
-                <div class="example-label">Example Configuration:</div>
-                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
-                <div>Password: <span class="code-inline">m=solo</span></div>
-            </div>
-            <div class="config-effect">
-                <div class="effect-label">Benefits:</div>
-                <ul>
-                    <li>Keep 100% of block rewards</li>
-                    <li>Perfect for high hashrate miners</li>
-                    <li>No sharing with pool participants</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Config Option 5 -->
-        <div class="config-item">
-            <div class="config-item-header">
-                <span class="config-emoji">👥</span>
-                <span class="config-number">5</span>
-                <div class="config-title">PROP Pool Mining (Default)</div>
-            </div>
-            <div class="config-desc">
-                Mine with the pool for consistent, proportional rewards
-            </div>
-            <div class="config-example">
-                <div class="example-label">Example Configuration:</div>
-                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
-                <div>Password: <span class="code-inline">x</span> or leave blank</div>
-            </div>
-            <div class="config-effect">
-                <div class="effect-label">Benefits:</div>
-                <ul>
-                    <li>Steady, predictable earnings</li>
-                    <li>Lower variance than solo mining</li>
-                    <li>Rewards based on contribution</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Config Option 6 -->
-        <div class="config-item">
-            <div class="config-item-header">
-                <span class="config-emoji">🔧</span>
-                <span class="config-number">6</span>
-                <div class="config-title">Combine Multiple Settings</div>
-            </div>
-            <div class="config-desc">
-                Mix and match parameters for the perfect setup
-            </div>
-            <div class="config-example">
-                <div class="example-label">Example Configuration:</div>
-                <div>Username: <span class="code-inline">your-wallet.worker1</span></div>
-                <div>Password: <span class="code-inline">d=25000,md=10000,m=solo</span></div>
-            </div>
-            <div class="config-effect">
-                <div class="effect-label">This Configuration Sets:</div>
-                <ul>
-                    <li>Initial difficulty to 25,000</li>
-                    <li>Minimum VarDiff to 10,000</li>
-                    <li>Solo mining mode enabled</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Connection Modal -->
-<div class="modal-overlay" id="connectionModal">
-    <div class="modal-content">
-        <div class="modal-close" id="modalClose">×</div>
-        <div class="modal-title">
-            <span id="coinName"></span> Connection Details
-        </div>
-        <div class="connection-details">
-            <div class="detail-row">
-                <span class="detail-label">Algorithm:</span>
-                <span class="detail-value" id="coinAlgo"></span>
-            </div>
-            <div id="stratumPorts"></div>
-            <div class="detail-row">
-                <span class="detail-label">Username:</span>
-                <span class="detail-value" id="coinUsername"></span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Password:</span>
-                <span class="detail-value">x (or use parameters above)</span>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-    // Show connection details modal
-    function showCoinConfig(info) {
-        var modal = document.getElementById('connectionModal');
-        var portsHtml = '';
+  (function () {
+    var COINS = {{=JSON.stringify(coins).replace(/</g, "\\u003c")}};
+    var HOST = {{=JSON.stringify(host).replace(/</g, "\\u003c")}} || location.hostname;
+    var state = { coin: 0, port: 0, solo: false };
+    var $id = function (id) { return document.getElementById(id); };
+    var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+    if (!COINS.length || !$id("gs-form")) return;
 
-        // Set coin name and algorithm
-        if (info.coin) {
-            document.getElementById('coinName').textContent = info.coin.name;
-            document.getElementById('coinUsername').textContent = '[your-' + info.coin.name + '-address].[worker]';
-        } else {
-            document.getElementById('coinName').textContent = info.algo.toUpperCase();
-            document.getElementById('coinUsername').textContent = '[your-wallet-address].[worker]';
+    // coin buttons + select
+    $id("gs-coins").innerHTML = COINS.map(function (c, i) {
+      var merged = [];
+      c.ports.forEach(function (p) { p.aux.forEach(function (a) { if (merged.indexOf(a.symbol) === -1) merged.push(a.symbol); }); });
+      var isAux = c.mergedBy.length > 0;
+      var sub = c.mergedOnly
+        ? c.symbol + " · merged only · via " + c.mergedBy.join(", ")
+        : c.symbol + " · " + c.ports.length + " port" + (c.ports.length === 1 ? "" : "s") + (merged.length ? " · + " + merged.join(", ") : isAux ? " · merged by " + c.mergedBy.join(", ") : "");
+      return '<button type="button" data-i="' + i + '"><span class="coin-mark' + (isAux ? " aux" : "") + '">' + esc(c.symbol.slice(0, 4)) + "</span><span><b>" + esc(c.name) + "</b><small>" + esc(sub) + "</small></span></button>";
+    }).join("");
+    // merged-only coins have no ports: they are not in the dropdown
+    $id("gs-coin").innerHTML = COINS.map(function (c, i) { return c.mergedOnly ? "" : '<option value="' + i + '">' + esc(c.symbol + " · " + c.name) + "</option>"; }).join("");
+    state.coin = Math.max(0, COINS.findIndex(function (c) { return !c.mergedOnly; }));
+
+    // A merged-only coin: open a parent coin's merged port in solo mode and
+    // focus the address field for that coin
+    function selectMergedOnly(c) {
+      for (var i = 0; i < COINS.length; i++) {
+        for (var j = 0; j < COINS[i].ports.length; j++) {
+          var hit = COINS[i].ports[j].aux.filter(function (a) { return a.name.toLowerCase() === c.key; })[0];
+          if (!hit) continue;
+          selectCoin(i);
+          state.port = j; $id("gs-port").value = String(j);
+          renderPortCard(); setMode(true);
+          var input = document.querySelector('#gs-aux input[data-param="' + hit.param + '"]');
+          if (input) input.focus({ preventScroll: true });
+          return;
         }
-
-        document.getElementById('coinAlgo').textContent = info.algo.toUpperCase();
-
-        // Generate stratum URLs
-        for (var port in info.ports) {
-            portsHtml += '<div class="detail-row">';
-            portsHtml += '<span class="detail-label">Stratum URL (diff ' + info.ports[port].diff + '):</span>';
-            portsHtml += '<span class="detail-value">stratum+tcp://' + info.host + ':' + port + '</span>';
-            portsHtml += '</div>';
-        }
-
-        document.getElementById('stratumPorts').innerHTML = portsHtml;
-        modal.classList.add('active');
+      }
     }
 
-    // Pool selection with glow effect
-    document.querySelectorAll('.poolOption').forEach(function (element) {
-        element.addEventListener('click', function (e) {
-            e.preventDefault();
-            var info = JSON.parse(this.getAttribute('data-info'));
-            showCoinConfig(info);
+    function coin() { return COINS[state.coin]; }
+    function port() { return coin().ports[state.port] || coin().ports[0]; }
+
+    function renderPorts() {
+      $id("gs-port").innerHTML = coin().ports.map(function (p, i) {
+        var aux = p.aux.map(function (a) { return a.symbol; });
+        return '<option value="' + i + '">' + esc(p.port + " · diff " + p.diff + (aux.length ? " · + " + aux.join(", ") : "")) + "</option>";
+      }).join("");
+      $id("gs-port").value = String(state.port);
+      document.querySelectorAll("#gs-coins button").forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.i === state.coin)); });
+    }
+
+    function renderPortCard() {
+      var p = port();
+      var aux = p.aux.map(function (a) { return a.symbol; });
+      $id("gs-portcard").innerHTML =
+        '<div><div class="label">Start diff</div><div class="v">' + esc(p.diff) + "</div></div>" +
+        '<div><div class="label">Vardiff range</div><div class="v">' + esc(p.vardiff) + "</div></div>" +
+        '<div><div class="label">Merged (solo)</div><div class="v' + (aux.length ? " cyan" : "") + '">' + esc(aux.length ? aux.join(" · ") : "none") + "</div></div>";
+      $id("gs-m-solo").disabled = !p.solo;
+      if (!p.solo && state.solo) setMode(false);
+    }
+
+    function renderAux() {
+      var p = port(), wrap = $id("gs-aux");
+      if (!p.aux.length) { wrap.innerHTML = ""; wrap.className = "gs-field full"; return; }
+      wrap.className = "gs-field full gs-aux";
+      if (!state.solo) {
+        wrap.innerHTML = '<span class="label">Merged mining: ' + esc(p.aux.map(function (a) { return a.symbol; }).join(", ")) + '</span><span class="gs-hint">Switch to Solo to also earn ' + esc(p.aux.map(function (a) { return a.symbol; }).join(" and ")) + " on this port. Pool-mode miners get plain " + esc(coin().symbol) + " jobs.</span>";
+        return;
+      }
+      wrap.innerHTML = '<span class="label">Merged mining on this port</span>' + p.aux.map(function (a) {
+        return '<div class="gs-field"><label class="label" for="gs-aux-' + esc(a.param) + '">Your ' + esc(a.symbol) + ' address <span class="mono">' + esc(a.param) + "=</span>" + (a.chainId !== undefined ? " · chain ID " + esc(a.chainId) : "") + "</label>" +
+          '<input id="gs-aux-' + esc(a.param) + '" data-param="' + esc(a.param) + '" spellcheck="false" placeholder="' + esc(a.prefix ? "starts with " + a.prefix : "your " + a.symbol + " address") + '">' +
+          '<span class="gs-hint">Optional. Without it your ' + esc(a.symbol) + " blocks still count, but the reward stays in the pool wallet.</span></div>";
+      }).join("");
+      wrap.querySelectorAll("input").forEach(function (i) { i.addEventListener("input", renderOut); });
+    }
+
+    function renderOut() {
+      var c = coin(), p = port();
+      $id("gs-addr-sym").textContent = c.symbol;
+      $id("gs-addr-hint").textContent = c.prefix ? c.symbol + " addresses start with " + c.prefix : "";
+      $id("gs-o-algo").textContent = String(c.algo).toUpperCase();
+      $id("gs-o-url").textContent = "stratum+tcp://" + HOST + ":" + p.port;
+      var addr = $id("gs-addr").value.trim() || "your-wallet";
+      var worker = $id("gs-worker").value.trim();
+      $id("gs-o-user").textContent = addr + (worker ? "." + worker : "");
+      var parts = [], html = [];
+      if (state.solo) { parts.push("m=solo"); html.push('<span class="k">m=solo</span>'); }
+      document.querySelectorAll("#gs-aux input[data-param]").forEach(function (i) {
+        var v = i.value.trim();
+        if (v) { parts.push(i.dataset.param + "=" + v); html.push('<span class="a">' + esc(i.dataset.param + "=" + v) + "</span>"); }
+      });
+      var d = $id("gs-d").value.trim(), md = $id("gs-md").value.trim();
+      if (/^\d+(\.\d+)?$/.test(d)) { parts.push("d=" + d); html.push("d=" + esc(d)); }
+      if (/^\d+(\.\d+)?$/.test(md)) { parts.push("md=" + md); html.push("md=" + esc(md)); }
+      if (!parts.length) { parts.push("x"); html.push("x"); }
+      $id("gs-o-pass").innerHTML = html.join(",");
+      $id("gs-o-pass").setAttribute("data-plain", parts.join(","));
+
+      var notes = [];
+      if (state.solo) notes.push("Solo: a " + c.symbol + " block you find pays you the full reward minus the " + c.soloFee + "% solo fee, after " + c.minConf + " confirmations.");
+      else notes.push("Pool · PROP: every " + c.symbol + " block is shared by all pool miners in proportion to their shares, minus the " + c.poolFee + "% pool fee.");
+      if (p.aux.length && state.solo) {
+        p.aux.forEach(function (a) {
+          var input = document.querySelector('#gs-aux input[data-param="' + a.param + '"]');
+          notes.push(input && input.value.trim()
+            ? "Merged " + a.symbol + ": the same shares are checked against the " + a.symbol + " target. " + a.symbol + " blocks you find are paid to your " + a.symbol + " address, minus its solo fee."
+            : "Merged " + a.symbol + ": your " + a.symbol + " blocks are still submitted, but without an address the reward stays in the pool wallet.");
         });
+      } else if (p.aux.length) {
+        notes.push("This port merge-mines " + p.aux.map(function (a) { return a.symbol; }).join(" and ") + " for solo miners only.");
+      }
+      notes.push("ASICBoost version rolling is negotiated automatically.");
+      $id("gs-notes").innerHTML = notes.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("");
+    }
+
+    function setMode(solo) {
+      state.solo = solo;
+      $id("gs-m-solo").setAttribute("aria-pressed", String(solo));
+      $id("gs-m-pool").setAttribute("aria-pressed", String(!solo));
+      renderAux();
+      renderOut();
+    }
+    function selectCoin(i) {
+      state.coin = i; state.port = 0;
+      $id("gs-coin").value = String(i);
+      $id("gs-addr").value = "";
+      $id("gs-addr").placeholder = coin().prefix ? "starts with " + coin().prefix : "your " + coin().symbol + " address";
+      renderPorts(); renderPortCard(); renderAux(); renderOut();
+    }
+
+    $id("gs-coins").addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      if (COINS[+b.dataset.i].mergedOnly) selectMergedOnly(COINS[+b.dataset.i]);
+      else selectCoin(+b.dataset.i);
+      $id("gs-connect").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    $id("gs-coin").addEventListener("change", function () { selectCoin(+this.value); });
+    $id("gs-port").addEventListener("change", function () { state.port = +this.value; renderPortCard(); renderAux(); renderOut(); });
+    $id("gs-m-pool").addEventListener("click", function () { setMode(false); });
+    $id("gs-m-solo").addEventListener("click", function () { setMode(true); });
+    ["gs-addr", "gs-worker", "gs-d", "gs-md"].forEach(function (id) { $id(id).addEventListener("input", renderOut); });
+    $id("gs-form").addEventListener("submit", function (e) { e.preventDefault(); });
+    $id("gs-quick").addEventListener("click", function (e) { e.preventDefault(); $id("gs-connect").scrollIntoView({ behavior: "smooth", block: "start" }); });
+
+    document.querySelectorAll(".gs [data-copy]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var el = $id(b.getAttribute("data-copy"));
+        var text = el.getAttribute("data-plain") || el.textContent;
+        var done = function () { var t = $id("gs-copied"); t.hidden = false; clearTimeout(t._t); t._t = setTimeout(function () { t.hidden = true; }, 1400); };
+        var select = function () { var r = document.createRange(); r.selectNodeContents(el); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, select);
+        else select();
+      });
     });
 
-    // Quick mine button - highlight pools
-    document.getElementById('quickMine').addEventListener('click', function (e) {
-        e.preventDefault();
-        document.querySelectorAll('.pool-item').forEach(function (el) {
-            el.classList.add('glow');
-            setTimeout(function () {
-                el.classList.remove('glow');
-            }, 500);
-        });
-        // Scroll to pool selection
-        document.querySelector('.pool-selection').scrollIntoView({ behavior: 'smooth' });
-    });
-
-    // Rent miner button
-    document.getElementById('rentMiner').addEventListener('click', function (e) {
-        e.preventDefault();
-        window.open('https://www.miningrigrentals.com/', '_blank');
-    });
-
-    // Modal close
-    document.getElementById('modalClose').addEventListener('click', function () {
-        document.getElementById('connectionModal').classList.remove('active');
-    });
-
-    document.getElementById('connectionModal').addEventListener('click', function (e) {
-        if (e.target === this) {
-            this.classList.remove('active');
-        }
-    });
+    selectCoin(state.coin);
+  })();
 </script>

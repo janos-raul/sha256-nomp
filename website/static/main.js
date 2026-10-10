@@ -62,8 +62,6 @@ $(function () {
         $("body").removeClass("menu-open");
 
         // Reset page-specific initialization flags
-        window.statsPageFullyInitialized = false;
-        window.poolStatsInitialized = false;
         window.minerStatsScriptLoaded = false;
 
         // Page-specific initializations
@@ -118,9 +116,10 @@ $(function () {
           '<i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--warning); margin-bottom: 1rem; display: block;"></i>' +
           '<h2 style="color: var(--text-primary); margin-bottom: 1rem;">Error Loading Page</h2>' +
           "<p>The page could not be loaded. Please try again.</p>" +
-          '<button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--accent); color: white; border: none; border-radius: 0.5rem; cursor: pointer;">Reload Page</button>' +
+          '<button type="button" class="page-reload-btn" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--accent); color: white; border: none; border-radius: 0.5rem; cursor: pointer;">Reload Page</button>' +
           "</div>"
       );
+      $("main .page-reload-btn").on("click", function () { location.reload(); });
     });
   };
 
@@ -485,6 +484,10 @@ function lookupWorker(address) {
       textElement.classList.add("scrolling");
     }, 100);
   }
+
+  $(document).on("click", "#poolMessageClose", function () {
+    window.closePoolMessage();
+  });
 
   window.closePoolMessage = function () {
     const banner = document.getElementById("poolMessageBanner");

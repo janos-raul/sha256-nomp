@@ -5,7 +5,7 @@ var crypto = require("crypto");
 
 var async = require("async");
 var watch = require("node-watch");
-var redis = require("redis");
+var redis = require("./redisCompat.js"); // node-redis 6 with the v3 callback API
 var bcrypt = require("bcryptjs");
 
 var dot = require("dot");
@@ -14,8 +14,6 @@ var compress = require("compression");
 var helmet = require("helmet");
 var rateLimit = require("express-rate-limit");
 
-var Stratum = require("stratum-pool");
-var util = require("stratum-pool/lib/util.js");
 
 var api = require("./api.js");
 
@@ -50,7 +48,6 @@ module.exports = function (logger) {
     "workers.html": "workers",
     "api.html": "api",
     "admin.html": "admin",
-    "mining_key.html": "mining_key",
     "miner_stats.html": "miner_stats",
     "payments.html": "payments",
   };
@@ -59,9 +56,6 @@ module.exports = function (logger) {
 
   var pageProcessed = {};
   var indexesProcessed = {};
-
-  var keyScriptTemplate = "";
-  var keyScriptProcessed = "";
 
   function getReadableDifficultyString(difficulty) {
     difficulty = parseFloat(difficulty);
@@ -81,7 +75,8 @@ module.exports = function (logger) {
 
   var processTemplates = function () {
     // Check if we have stats available
-    if (!portalStats.stats) {
+    // stats.global arrives with the first full stats run; pages read it
+    if (!portalStats.stats || !portalStats.stats.global) {
       logger.warning(
         logSystem,
         "Templates",
@@ -284,125 +279,6 @@ module.exports = function (logger) {
 
   setInterval(buildUpdatedWebsite, websiteConfig.stats.updateInterval * 1000);
 
-  var buildKeyScriptPage = function () {
-    async.waterfall(
-      [
-        function (callback) {
-          var client = redis.createClient({
-            host: portalConfig.redis.host,
-            port: portalConfig.redis.port,
-            password: portalConfig.redis.password,
-          });
-          client.hgetall("coinVersionBytes", function (err, coinBytes) {
-            if (err) {
-              client.quit();
-              return callback(
-                "Failed grabbing coin version bytes from redis " +
-                  JSON.stringify(err),
-              );
-            }
-            callback(null, client, coinBytes || {});
-          });
-        },
-        function (client, coinBytes, callback) {
-          var enabledCoins = Object.keys(poolConfigs).map(function (c) {
-            return c.toLowerCase();
-          });
-          var missingCoins = [];
-          enabledCoins.forEach(function (c) {
-            if (!(c in coinBytes)) missingCoins.push(c);
-          });
-          callback(null, client, coinBytes, missingCoins);
-        },
-        function (client, coinBytes, missingCoins, callback) {
-          var coinsForRedis = {};
-          async.each(
-            missingCoins,
-            function (c, cback) {
-              var coinInfo = (function () {
-                for (var pName in poolConfigs) {
-                  if (pName.toLowerCase() === c)
-                    return {
-                      daemon: poolConfigs[pName].paymentProcessing.daemon,
-                      address: poolConfigs[pName].address,
-                    };
-                }
-              })();
-              var daemon = new Stratum.daemon.interface(
-                [coinInfo.daemon],
-                function (severity, message) {
-                  logger[severity](logSystem, c, message);
-                },
-              );
-              daemon.cmd("dumpprivkey", [coinInfo.address], function (result) {
-                if (result[0].error) {
-                  logger.error(
-                    logSystem,
-                    "KeyScript",
-                    "Failed to get private key for " +
-                      c +
-                      " address " +
-                      coinInfo.address +
-                      " - " +
-                      JSON.stringify(result[0].error),
-                  );
-                  cback();
-                  return;
-                }
-                logger.debug(
-                  logSystem,
-                  "KeyScript",
-                  "Retrieved key for coin: " + c,
-                );
-
-                var vBytePub = util.getVersionByte(coinInfo.address)[0];
-                var vBytePriv = util.getVersionByte(result[0].response)[0];
-
-                coinBytes[c] = vBytePub.toString() + "," + vBytePriv.toString();
-                coinsForRedis[c] = coinBytes[c];
-                cback();
-              });
-            },
-            function (err) {
-              callback(null, client, coinBytes, coinsForRedis);
-            },
-          );
-        },
-        function (client, coinBytes, coinsForRedis, callback) {
-          if (Object.keys(coinsForRedis).length > 0) {
-            client.hmset("coinVersionBytes", coinsForRedis, function (err) {
-              if (err)
-                logger.error(
-                  logSystem,
-                  "Init",
-                  "Failed inserting coin byte version into redis " +
-                    JSON.stringify(err),
-                );
-              client.quit();
-            });
-          } else {
-            client.quit();
-          }
-          callback(null, coinBytes);
-        },
-      ],
-      function (err, coinBytes) {
-        if (err) {
-          logger.error(logSystem, "Init", err);
-          return;
-        }
-        try {
-          keyScriptTemplate = dot.template(
-            fs.readFileSync("website/key.html", { encoding: "utf8" }),
-          );
-          keyScriptProcessed = keyScriptTemplate({ coins: coinBytes });
-        } catch (e) {
-          logger.error(logSystem, "Init", "Failed to read key.html file");
-        }
-      },
-    );
-  };
-
   var getPage = function (pageId) {
     if (pageId in pageProcessed) {
       var requestedPage = pageProcessed[pageId];
@@ -438,30 +314,13 @@ module.exports = function (logger) {
     return coinRegex.test(coin);
   };
 
-  // Get real client IP address (handles proxies, WSL, etc.)
+  // Client IP. Express is set to trust proxy headers only from loopback
+  // (app.set("trust proxy", "loopback") below), so req.ip is the visitor's
+  // address when nginx on this machine forwards the request, and the real
+  // peer address otherwise. Headers sent by anyone else are ignored, so a
+  // client cannot fake its IP to dodge rate limits, bans or the admin lockout.
   var getRealIP = function (req) {
-    // Check various headers in order of reliability
-    var cfIP = req.headers["cf-connecting-ip"]; // Cloudflare
-    var realIP = req.headers["x-real-ip"]; // Nginx/Apache
-    var forwardedFor = req.headers["x-forwarded-for"]; // Standard proxy
-
-    // X-Forwarded-For can be a comma-separated list, take the first (original client)
-    if (forwardedFor) {
-      return forwardedFor.split(",")[0].trim();
-    }
-
-    // Use Cloudflare IP if available
-    if (cfIP) {
-      return cfIP;
-    }
-
-    // Use X-Real-IP if available
-    if (realIP) {
-      return realIP;
-    }
-
-    // Fallback to Express default
-    return req.ip || req.connection.remoteAddress || "unknown";
+    return req.ip || (req.socket && req.socket.remoteAddress) || "unknown";
   };
 
   // Admin password verification with bcrypt support
@@ -831,6 +690,10 @@ module.exports = function (logger) {
   };
 
   var app = express();
+  // Behind a reverse proxy on the same machine (nginx), take the client IP
+  // from X-Forwarded-For; never from other hosts. Also gives the rate
+  // limiters (keyed on req.ip) the real visitor address.
+  app.set("trust proxy", "loopback");
 
   // Security middleware configuration
   // Helmet helps protect from common web vulnerabilities
@@ -845,6 +708,8 @@ module.exports = function (logger) {
             "https://cdnjs.cloudflare.com",
             "https://cdn.jsdelivr.net",
           ],
+          // no inline event handlers (onclick=...): pages bind with addEventListener
+          scriptSrcAttr: ["'none'"],
           styleSrc: [
             "'self'",
             "'unsafe-inline'",
@@ -857,7 +722,11 @@ module.exports = function (logger) {
             "https://cdnjs.cloudflare.com",
           ],
           imgSrc: ["'self'", "data:", "https:"],
-          connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
+          connectSrc: [
+            "'self'",
+            "https://cdn.jsdelivr.net",
+            "https://api.coingecko.com", // price bar (theme.js)
+          ],
           frameAncestors: ["'none'"],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
@@ -1039,7 +908,7 @@ module.exports = function (logger) {
       return res.status(403).json({ error: "Admin center not enabled" });
     }
 
-    verifyAdminPassword(req.body.password, function (isValid) {
+    verifyAdminPassword((req.body || {}).password, function (isValid) {
       if (isValid) {
         var session = createSession(ip);
         logger.info(
@@ -1063,7 +932,7 @@ module.exports = function (logger) {
   // Admin logout endpoint
   app.post("/api/admin/logout", adminLimiter, function (req, res) {
     var ip = getRealIP(req);
-    var sessionId = req.body.sessionId;
+    var sessionId = (req.body || {}).sessionId;
 
     if (sessionId) {
       destroySession(sessionId);
@@ -1098,8 +967,8 @@ module.exports = function (logger) {
     }
 
     // Validate session token instead of password
-    var sessionId = req.body.sessionId;
-    var token = req.body.token;
+    var sessionId = (req.body || {}).sessionId;
+    var token = (req.body || {}).token;
 
     if (!sessionId || !token) {
       logger.warning(

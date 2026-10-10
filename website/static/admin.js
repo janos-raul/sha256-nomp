@@ -575,7 +575,7 @@
               "EH/s",
             ];
             let unitIndex = 0;
-            let rate = hr;
+            let rate = Number(hr) || 0;
             while (rate >= 1000 && unitIndex < units.length - 1) {
               rate /= 1000;
               unitIndex++;
@@ -588,7 +588,8 @@
             if (!diff || diff === 0) return "0";
             const units = ["", "K", "M", "G", "T", "P", "E"];
             let unitIndex = 0;
-            let value = diff;
+            let value = Number(diff) || 0;
+            if (value > 0 && value < 0.01) return value.toExponential(2);
             while (value >= 1000 && unitIndex < units.length - 1) {
               value /= 1000;
               unitIndex++;
@@ -733,7 +734,7 @@
         if (!hr || hr === 0) return "0 H/s";
         const units = ["H/s", "KH/s", "MH/s", "GH/s", "TH/s", "PH/s", "EH/s"];
         let unitIndex = 0;
-        let rate = hr;
+        let rate = Number(hr) || 0;
         while (rate >= 1000 && unitIndex < units.length - 1) {
           rate /= 1000;
           unitIndex++;
@@ -745,7 +746,8 @@
         if (!diff || diff === 0) return "0";
         const units = ["", "K", "M", "G", "T", "P", "E"];
         let unitIndex = 0;
-        let value = diff;
+        let value = Number(diff) || 0;
+        if (value > 0 && value < 0.01) return value.toExponential(2);
         while (value >= 1000 && unitIndex < units.length - 1) {
           value /= 1000;
           unitIndex++;
@@ -783,7 +785,7 @@
                             <h2><i class="fas fa-cube"></i> ${this.escapeHtml(
                               poolName
                             )}</h2>
-                            <button class="modal-close" onclick="document.getElementById('poolModal').remove()">
+                            <button class="modal-close" type="button">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -933,11 +935,11 @@
 
       document.body.insertAdjacentHTML("beforeend", modalHtml);
 
-      // Click outside to close
+      // Click outside or on the close button to close
       document
         .getElementById("poolModal")
         .addEventListener("click", function (e) {
-          if (e.target === this) {
+          if (e.target === this || e.target.closest(".modal-close")) {
             this.remove();
           }
         });
@@ -951,7 +953,7 @@
         if (!hr || hr === 0) return "0 H/s";
         const units = ["H/s", "KH/s", "MH/s", "GH/s", "TH/s", "PH/s", "EH/s"];
         let unitIndex = 0;
-        let rate = hr;
+        let rate = Number(hr) || 0;
         while (rate >= 1000 && unitIndex < units.length - 1) {
           rate /= 1000;
           unitIndex++;
@@ -2173,8 +2175,26 @@
     },
 
     attachEventListeners: function () {
-      // Event handlers are now inline in HTML for better reliability
-      // Just initialize the preview
+      // Delegated listeners, bound once (inline handlers are blocked by the CSP)
+      if (!window.__poolMessageEventsBound) {
+        window.__poolMessageEventsBound = true;
+        const self = this;
+        document.addEventListener("input", function (e) {
+          if (e.target.matches("#section-pool-message #poolMessageText")) self.updatePreview();
+        });
+        document.addEventListener("change", function (e) {
+          if (e.target.matches('#section-pool-message input[name="messageColor"]')) self.updatePreview();
+        });
+        document.addEventListener("click", function (e) {
+          if (e.target.closest("#section-pool-message #btnSavePoolMessage")) {
+            e.preventDefault();
+            self.saveMessage();
+          } else if (e.target.closest("#section-pool-message #btnClearPoolMessage")) {
+            e.preventDefault();
+            self.confirmClearMessage();
+          }
+        });
+      }
       setTimeout(() => this.updatePreview(), 100);
     },
 

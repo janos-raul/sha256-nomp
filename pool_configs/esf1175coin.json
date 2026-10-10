@@ -1,0 +1,169 @@
+{
+  "enabled": true,
+  "coin": "esf1175coin.json",
+  "asicboost": true,
+  "blockIdentifier": "sha256-mining.go.ro",
+  "_comment_mergedMining": "ESF (ElevenSeventyFive, chain ID 1175) is an aux coin other pools merge-mine for their solo miners (see the esf group in bitcoinsilver.json). This pool's payment processor pays those ESF solo blocks to the miners' esf= addresses, so keep paymentProcessing.enabled and paymentProcessing.soloMining on, and use the same daemon/wallet and pool address as auxCoins.esf1175coin there. ESF merged mining starts at ESF block 31733.",
+  "security": {
+    "enabled": true,
+    "rateLimit": {
+      "enabled": true,
+      "window": 60000,
+      "maxConnections": 10,
+      "maxMalformed": 3,
+      "maxFloods": 2
+    },
+    "ban": {
+      "enabled": true,
+      "duration": 600000,
+      "maxStrikes": 3,
+      "permanentDuration": 86400000
+    }
+  },
+  "address": "YOUR_POOL_WALLET_ADDRESS",
+  "rewardRecipients": {
+    "YOUR_FEE_ADDRESS": 0
+  },
+  "paymentProcessing": {
+    "txfee": 0.0004,
+    "minConf": 101,
+    "enabled": true,
+    "soloMining": true,
+    "paymentMode": "prop",
+    "poolFee": 1,
+    "soloFee": 1,
+    "_comment_paymentMode": "prop, pplnt",
+    "paymentInterval": 3600,
+    "minimumPayment": 1,
+    "minimumPayment_solo": 1,
+    "maxBlocksPerPayment": 50,
+    "daemon": {
+      "host": "127.0.0.1",
+      "port": 25359,
+      "user": "rpcuser",
+      "password": "YOUR_RPC_PASSWORD"
+    }
+  },
+  "tlsOptions": {
+    "enabled": false,
+    "serverKey": "",
+    "serverCert": "",
+    "ca": ""
+  },
+  "ports": {
+    "50282": {
+      "diff": 15000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 1500,
+        "maxDiff": 9000000000,
+        "targetTime": 30,
+        "retargetTime": 200,
+        "variancePercent": 5,
+        "minerConfigurable": {
+          "targetTime": {
+            "min": 15,
+            "max": 120
+          },
+          "retargetTime": {
+            "min": 60,
+            "max": 600
+          },
+          "variancePercent": {
+            "min": 5,
+            "max": 50
+          }
+        }
+      }
+    },
+    "50283": {
+      "diff": 50000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 5000,
+        "maxDiff": 9000000000,
+        "targetTime": 35,
+        "retargetTime": 240,
+        "variancePercent": 5,
+        "minerConfigurable": {
+          "targetTime": {
+            "min": 15,
+            "max": 120
+          },
+          "retargetTime": {
+            "min": 60,
+            "max": 600
+          },
+          "variancePercent": {
+            "min": 5,
+            "max": 50
+          }
+        }
+      }
+    },
+    "50284": {
+      "diff": 250000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 25000,
+        "maxDiff": 9000000000,
+        "targetTime": 40,
+        "retargetTime": 260,
+        "variancePercent": 7,
+        "minerConfigurable": {
+          "targetTime": {
+            "min": 15,
+            "max": 120
+          },
+          "retargetTime": {
+            "min": 60,
+            "max": 600
+          },
+          "variancePercent": {
+            "min": 5,
+            "max": 50
+          }
+        }
+      }
+    },
+    "50286": {
+      "diff": 1000000,
+      "tls": false,
+      "soloMining": true,
+      "varDiff": {
+        "minDiff": 100000,
+        "maxDiff": 9000000000,
+        "targetTime": 45,
+        "retargetTime": 290,
+        "variancePercent": 7,
+        "minerConfigurable": {
+          "targetTime": {
+            "min": 15,
+            "max": 120
+          },
+          "retargetTime": {
+            "min": 60,
+            "max": 600
+          },
+          "variancePercent": {
+            "min": 5,
+            "max": 50
+          }
+        }
+      }
+    }
+  },
+  "poolId": "main",
+  "_comment_poolId": "use it for region identification: eu, us, asia or keep default if you have one stratum instance for one coin",
+  "daemons": [
+    {
+      "host": "127.0.0.1",
+      "port": 25359,
+      "user": "rpcuser",
+      "password": "YOUR_RPC_PASSWORD"
+    }
+  ]
+}

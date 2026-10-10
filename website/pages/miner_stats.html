@@ -1,348 +1,50 @@
 <style>
-    /* Miner Stats Page Specific Styles */
-    .miner-stats-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 2rem 1.5rem;
+    /* Miner Stats (one miner) — console theme; markup and logic unchanged */
+    .miner-stats-container { display: grid; gap: 12px; }
+    .chart-wrapper, .balance-section, .workers-section {
+        position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); min-width: 0;
     }
-
-    /* Chart Section */
-    .chart-wrapper {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
+    .chart-wrapper::before, .chart-wrapper::after {
+        content: ""; position: absolute; width: 8px; height: 8px; border-color: var(--accent); border-style: solid; pointer-events: none;
     }
-
-    .chart-wrapper::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: var(--gradient);
-    }
-
-    .chart-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .miner-address {
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        word-break: break-all;
-    }
-
-    .chart-stats {
-        display: flex;
-        gap: 2rem;
-        flex-wrap: wrap;
-    }
-
-    .chart-stat {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: var(--bg-secondary);
-        border-radius: 0.5rem;
-        font-size: 0.9rem;
-    }
-
-    .chart-stat i {
-        color: var(--accent);
-    }
-
-    .chart-stat span {
-        color: var(--text-secondary);
-    }
-
-    .chart-stat strong {
-        color: var(--text-primary);
-        margin-left: 0.25rem;
-        font-family: 'Courier New', monospace;
-    }
-
-    .chart-holder {
-        position: relative;
-        height: 300px;
-        margin: 1.5rem 0;
-    }
-
-    /* Balance Section */
-    .balance-section {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .balance-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 1rem;
-        background: var(--bg-secondary);
-        border-radius: 0.75rem;
-        transition: all 0.3s ease;
-    }
-
-    .balance-item:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
-    }
-
-    .balance-icon {
-        width: 40px;
-        height: 40px;
-        background: rgba(59, 130, 246, 0.1);
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 0.5rem;
-        color: var(--accent);
-        font-size: 1.2rem;
-    }
-
-    .balance-label {
-        font-size: 0.9rem;
-        color: var(--text-muted);
-        margin-bottom: 0.25rem;
-    }
-
-    .balance-value {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        font-family: 'Courier New', monospace;
-    }
-
-    /* Workers Grid */
-    .workers-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .worker-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        position: relative;
-        overflow: hidden;
-        transition: all 0.3s ease;
-    }
-
-    .worker-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
-        border-color: var(--accent);
-    }
-
-    .worker-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-    }
-
-    .worker-card.pool::before {
-        background: var(--success);
-    }
-
-    .worker-card.solo::before {
-        background: var(--warning);
-    }
-
-    .worker-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .worker-name {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .worker-badge {
-        display: inline-block;
-        padding: 0.25rem 0.6rem;
-        border-radius: 0.4rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .badge-pool {
-        background: rgba(16, 185, 129, 0.2);
-        color: var(--success);
-    }
-
-    .badge-solo {
-        background: rgba(245, 158, 11, 0.2);
-        color: var(--warning);
-    }
-
-    .worker-stats {
-        display: grid;
-        gap: 0.75rem;
-    }
-
-    .worker-stat {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.9rem;
-    }
-
-    .worker-stat-label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--text-secondary);
-    }
-
-    .worker-stat-label i {
-        width: 20px;
-        text-align: center;
-        color: var(--text-muted);
-    }
-
-    .worker-stat-value {
-        color: var(--text-primary);
-        font-weight: 500;
-        font-family: 'Courier New', monospace;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 150px;
-    }
-
-    .last-share-diff {
-        font-size: 0.85rem;
-        font-weight: 800;
-        color: var(--success);
-        text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-        /* Soft neon-like glow */
-        margin-left: 0.25rem;
-    }
-
-    .last-share-time {
-        font-size: 0.75rem;
-        font-weight: 800;
-        padding: 0.15rem 0.35rem;
-        border-radius: 0.25rem;
-        display: inline-block;
-        /* Default green box for seconds */
-        color: var(--text-muted);
-        background-color: rgba(16, 185, 129, 0.12);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-
-    .last-share-time.stale {
-        /* Red box when it reaches minutes or longer */
-        color: #ef4444 !important;
-        background-color: rgba(239, 68, 68, 0.12);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-
-    /* Section Headers */
-    .section-divider {
-        display: flex;
-        align-items: center;
-        margin: 2rem 0;
-    }
-
-    .section-title {
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        background: var(--bg-primary);
-        padding-right: 1rem;
-    }
-
-    .section-line {
-        flex: 1;
-        height: 2px;
-        background: var(--border);
-    }
-
-    /* Empty State */
-    .no-workers {
-        text-align: center;
-        padding: 3rem;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 1rem;
-        color: var(--text-secondary);
-    }
-
-    .no-workers i {
-        font-size: 3rem;
-        color: var(--text-muted);
-        margin-bottom: 1rem;
-        display: block;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .chart-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .miner-address {
-            font-size: 1.2rem;
-        }
-
-        .chart-stats {
-            flex-direction: column;
-            gap: 0.5rem;
-            width: 100%;
-        }
-
-        .chart-stat {
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        .balance-section {
-            grid-template-columns: 1fr;
-        }
-
-        .workers-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+    .chart-wrapper::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+    .chart-wrapper::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    .miner-address { font: 600 13px var(--font-mono); color: var(--text-hi); overflow-wrap: anywhere; min-width: 0; }
+    .miner-address i { color: var(--accent); margin-right: 8px; }
+    .chart-stats { display: flex; border: 1px solid var(--line); flex-wrap: wrap; }
+    .chart-stat { display: flex; align-items: baseline; gap: 6px; padding: 7px 12px; border-left: 1px solid var(--line); font: 500 11px var(--font-mono); color: var(--muted); }
+    .chart-stat:first-child { border-left: 0; }
+    .chart-stat i { display: none; }
+    .chart-stat span { font: 600 10px var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; }
+    .chart-stat strong { color: var(--text-hi); font-weight: 600; }
+    .chart-holder { position: relative; height: 260px; padding: 12px 14px; }
+    .chart-holder canvas { width: 100% !important; height: 100% !important; }
+    .balance-section { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    @media (max-width: 760px) { .balance-section { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .balance-item { padding: 14px; border-left: 1px solid var(--line); display: grid; gap: 6px; min-width: 0; }
+    .balance-item:first-child { border-left: 0; }
+    @media (max-width: 760px) { .balance-item:nth-child(3) { border-left: 0; } .balance-item:nth-child(n+3) { border-top: 1px solid var(--line); } }
+    .balance-icon { display: none; }
+    .balance-label { font: 600 10.5px var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); }
+    .balance-value { font: 600 17px/1.2 var(--font-mono); color: var(--text-hi); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .section-divider { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+    .section-line { display: none; }
+    .section-title { margin: 0; font: 600 11.5px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi); }
+    .section-title i { color: var(--accent); margin-right: 8px; }
+    .table-wrap { overflow-x: auto; }
+    .mw-table { width: 100%; border-collapse: collapse; }
+    .mw-table td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .mw-name { display: flex; align-items: center; gap: 6px; }
+    .mw-name strong { font: 600 12px var(--font-mono); color: var(--text-hi); margin-right: 4px; }
+    .worker-badge { flex: none; padding: 2px 6px; font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line-hi); border-radius: var(--r); white-space: nowrap; }
+    .worker-badge.badge-pool { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+    .worker-badge.badge-solo { color: var(--aux); border-color: color-mix(in srgb, var(--aux) 55%, transparent); background: var(--aux-soft); }
+    .worker-badge.badge-merged { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
+    .last-share-time.stale { color: var(--warn); }
+    .last-share-diff { color: var(--muted); margin-left: 6px; }
+    .mw-empty { padding: 22px 14px; text-align: center; color: var(--muted); font: 500 12px var(--font-mono); }
+    .mw-muted { color: var(--muted); }
 </style>
 
 <div class="miner-stats-container">
@@ -407,26 +109,44 @@
         </div>
     </div>
 
-    <!-- Pool Workers Section -->
-    <div id="poolWorkersSection" class="workers-section" style="display:none;">
+    <!-- Workers: one row each -->
+    <div id="workersSection" class="workers-section">
         <div class="section-divider">
-            <h3 class="section-title">
-                <i class="fas fa-server"></i> Pool Workers
-            </h3>
-            <div class="section-line"></div>
+            <h3 class="section-title"><i class="fas fa-server"></i> Workers</h3>
+            <span class="label" id="workersCount"></span>
         </div>
-        <div id="boxesPoolWorkers" class="workers-grid"></div>
+        <div class="table-wrap">
+            <table class="mw-table">
+                <thead>
+                    <tr><th>Worker</th><th>Hashrate</th><th>Average</th><th>Difficulty</th><th>Round shares</th><th>Best share</th><th>Last share</th><th>Luck</th></tr>
+                </thead>
+                <tbody id="workersRows"><tr><td colspan="8"><div class="mw-empty">Loading workers…</div></td></tr></tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Solo Workers Section -->
-    <div id="soloWorkersSection" class="workers-section" style="display:none;">
+    <!-- Blocks this miner found (incl. merge-mined aux blocks) -->
+    {{
+        var mwCoins = {};
+        for (var mwPool in it.stats.pools) {
+            var mwCfg = (it.poolsConfigs && it.poolsConfigs[mwPool] && it.poolsConfigs[mwPool].coin) || {};
+            var mwPP = (it.poolsConfigs && it.poolsConfigs[mwPool] && it.poolsConfigs[mwPool].paymentProcessing) || {};
+            mwCoins[mwPool] = { symbol: it.stats.pools[mwPool].symbol || mwPool, blockURL: (mwCfg.explorer && mwCfg.explorer.blockURL) || '', minConf: parseInt(mwPP.minConf, 10) || 0 };
+        }
+    }}
+    <div id="foundBlocksSection" class="workers-section" data-coins='{{=JSON.stringify(mwCoins).replace(/'/g, "&#39;")}}'>
         <div class="section-divider">
-            <h3 class="section-title">
-                <i class="fas fa-user"></i> Solo Workers
-            </h3>
-            <div class="section-line"></div>
+            <h3 class="section-title"><i class="fas fa-cube"></i> Found blocks</h3>
+            <span class="label" id="foundBlocksCount"></span>
         </div>
-        <div id="boxesSoloWorkers" class="workers-grid"></div>
+        <div class="table-wrap">
+            <table class="mw-table" id="foundBlocksTable">
+                <thead>
+                    <tr><th>Coin</th><th>Height</th><th>Found</th><th>Worker</th><th>Type</th><th>Status</th></tr>
+                </thead>
+                <tbody><tr><td colspan="6"><div class="mw-empty">Loading blocks…</div></td></tr></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -453,110 +173,102 @@
         return worker;
     };
 
-    // Modern worker display function
+    function mwEsc(t) {
+        return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    // One table row per worker; the cell ids are filled by updateWorkerStats()
+    // in modern-miner-stats.js
     function addWorkerToDisplay(name, htmlSafeName, workerObj, isSolo) {
-        var htmlToAdd = '';
-        var cardClass = isSolo ? 'solo' : 'pool';
-        var badgeClass = isSolo ? 'badge-solo' : 'badge-pool';
-        var badgeText = isSolo ? 'SOLO' : 'POOL';
-
-        // Ensure we display "noname" if no worker name is provided
-        var displayName = name;
-        if (!displayName || displayName.trim().length === 0) {
-            displayName = "no-name";
+        var displayName = (name && name.trim()) ? name : 'no-name';
+        var badges = isSolo
+            ? '<span class="worker-badge badge-solo">Solo</span>'
+            : '<span class="worker-badge badge-pool">Pool</span>';
+        if (workerObj && workerObj.merged) {
+            badges += '<span class="worker-badge badge-merged" title="Merge-mining ' + mwEsc(String(workerObj.merged).split('+').join(', ')) + '">+ ' + mwEsc(String(workerObj.merged).split('+').join(' + ')) + '</span>';
         }
-
-        htmlToAdd = '<div class="worker-card ' + cardClass + '" id="worker_' + htmlSafeName + '">';
-        htmlToAdd += '<div class="worker-header">';
-        htmlToAdd += '<div class="worker-name">' + displayName.replace(/[^\w\s\-]/gi, '') + '</div>';
-        htmlToAdd += '<span class="worker-badge ' + badgeClass + '">' + badgeText + '</span>';
-        htmlToAdd += '</div>';
-        htmlToAdd += '<div class="worker-stats">';
-
-        // Hashrate Now
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-tachometer-alt"></i> Hashrate</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsHashrate' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Hashrate Avg
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-gauge"></i> Average</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsHashrateAvg' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Difficulty
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-unlock-alt"></i> Difficulty</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsDiff' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Shares
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-cog"></i> Shares</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsShares' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Best Share
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-trophy"></i> Best Share</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsBestShare' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Last Share
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-bolt"></i> Last Share</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsLastShare' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Luck
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-clock"></i> Luck</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsLuckDays' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Immature
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-hourglass-half"></i> Immature</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsImmature' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Balance
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-wallet"></i> Balance</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsBalance' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        // Paid
-        htmlToAdd += '<div class="worker-stat">';
-        htmlToAdd += '<span class="worker-stat-label"><i class="fas fa-money-bill"></i> Paid</span>';
-        htmlToAdd += '<span class="worker-stat-value" id="statsPaid' + htmlSafeName + '">...</span>';
-        htmlToAdd += '</div>';
-
-        htmlToAdd += '</div></div>';
-
-        var targetContainer = isSolo ? "#boxesSoloWorkers" : "#boxesPoolWorkers";
-        var targetSection = isSolo ? "#soloWorkersSection" : "#poolWorkersSection";
-
-        $(targetSection).show();
-        $(targetContainer).append(htmlToAdd);
+        var cell = function (id) { return '<td id="' + id + htmlSafeName + '">…</td>'; };
+        $('#workersRows').append(
+            '<tr id="worker_' + htmlSafeName + '">' +
+            '<td><div class="mw-name"><strong>' + mwEsc(displayName) + '</strong>' + badges + '</div></td>' +
+            cell('statsHashrate') + cell('statsHashrateAvg') + cell('statsDiff') + cell('statsShares') +
+            cell('statsBestShare') + cell('statsLastShare') + cell('statsLuckDays') +
+            '</tr>');
     }
 
     function rebuildWorkerDisplay() {
-        $("#boxesPoolWorkers").html("");
-        $("#boxesSoloWorkers").html("");
-        $("#poolWorkersSection").hide();
-        $("#soloWorkersSection").hide();
-
-        if (window.statData && window.statData.workers) {
-            for (var w in window.statData.workers) {
-                var worker = window.statData.workers[w];
-                var isSolo = worker.isSolo === true;
-                var htmlSafeWorkerName = (isSolo ? 'solo_' : '') + w.split('.').join('_').replace(/[^\w\s\-]/gi, '');
-                var saneWorkerName = getWorkerNameFromAddress(w);
-                addWorkerToDisplay(saneWorkerName, htmlSafeWorkerName, worker, isSolo);
-            }
+        $('#workersRows').html('');
+        var names = window.statData && window.statData.workers ? Object.keys(window.statData.workers).sort() : [];
+        names.forEach(function (w) {
+            var worker = window.statData.workers[w];
+            var isSolo = worker.isSolo === true;
+            var htmlSafeWorkerName = (isSolo ? 'solo_' : '') + w.split('.').join('_').replace(/[^\w\s\-]/gi, '');
+            addWorkerToDisplay(getWorkerNameFromAddress(w), htmlSafeWorkerName, worker, isSolo);
+        });
+        $('#workersCount').text(names.length ? names.length + (names.length === 1 ? ' worker' : ' workers') : '');
+        if (!names.length) {
+            $('#workersRows').html('<tr><td colspan="8"><div class="mw-empty">No active workers</div></td></tr>');
         }
+    }
+
+    // Blocks found by this address, on every coin. Merge-mined aux blocks are
+    // paid to the miner's aux address, so they are matched on parentWorker.
+    function mwAgo(sec) {
+        var d = Math.max(0, Math.floor(Date.now() / 1000 - sec));
+        if (d < 60) return d + 's ago';
+        if (d < 3600) return Math.floor(d / 60) + 'm ago';
+        if (d < 86400) return Math.floor(d / 3600) + 'h ago';
+        return Math.floor(d / 86400) + 'd ago';
+    }
+    var mwBlocksLoaded = 0;
+    function loadFoundBlocks() {
+        var section = document.getElementById('foundBlocksSection');
+        if (!section || !_miner) return;
+        mwBlocksLoaded = Date.now();
+        var coins = {};
+        try { coins = JSON.parse(section.getAttribute('data-coins')) || {}; } catch (e) {}
+        $.getJSON('/api/blocks', function (data) {
+            var mine = [];
+            Object.keys(data || {}).forEach(function (pool) {
+                (data[pool] || []).forEach(function (b) {
+                    var own = String(b.miner || '').split('.')[0] === _miner;
+                    var merged = String(b.parentWorker || '').split('.')[0] === _miner;
+                    if (own || merged) mine.push({ pool: pool, b: b, worker: merged ? b.parentWorker : b.miner });
+                });
+            });
+            mine.sort(function (x, y) { return (y.b.time || 0) - (x.b.time || 0); });
+            var table = document.getElementById('foundBlocksTable');
+            var tbody = table.querySelector('tbody');
+            $('#foundBlocksCount').text(mine.length ? mine.length + (mine.length === 1 ? ' block' : ' blocks') : '');
+            if (!mine.length) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="mw-empty"><i class="fas fa-cube"></i> No blocks found yet</div></td></tr>';
+                if (window.paginateRows) window.paginateRows(table, [], 10);
+                return;
+            }
+            tbody.innerHTML = mine.map(function (m) {
+                var b = m.b, coin = coins[m.pool] || { symbol: m.pool, blockURL: '' };
+                var height = mwEsc(b.height);
+                var heightCell = coin.blockURL && b.hash
+                    ? '<a href="' + mwEsc(coin.blockURL + b.hash) + '" target="_blank" rel="noopener">#' + height + '</a>'
+                    : '#' + height;
+                var type = (b.type === 'solo'
+                    ? '<span class="worker-badge badge-solo">Solo</span>'
+                    : '<span class="worker-badge badge-pool">Pool</span>')
+                    + (b.mergedBy ? ' <span class="worker-badge badge-merged" title="Merge-mined via ' + mwEsc(b.mergedBy) + '">via ' + mwEsc(b.mergedBy) + '</span>' : '');
+                var status = window.blockStatusHtml ? window.blockStatusHtml(b, coin.minConf) : mwEsc(b.status || 'pending');
+                return '<tr>' +
+                    '<td><span class="coin-mark">' + mwEsc(String(coin.symbol).slice(0, 4)) + '</span></td>' +
+                    '<td>' + heightCell + '</td>' +
+                    '<td class="mw-muted" title="' + mwEsc(new Date(b.time * 1000).toLocaleString()) + '">' + mwAgo(b.time) + '</td>' +
+                    '<td>' + mwEsc(getWorkerNameFromAddress(m.worker || '')) + '</td>' +
+                    '<td>' + type + '</td>' +
+                    '<td>' + status + '</td>' +
+                    '</tr>';
+            }).join('');
+            if (window.paginateRows) window.paginateRows(table, tbody.querySelectorAll('tr'), 10);
+        });
     }
 
     // Make functions globally available
@@ -565,6 +277,11 @@
 
     // Initialize - prevent double loading
     $(document).ready(function () {
+        loadFoundBlocks();
+        $(document).off('statsUpdate.foundBlocks').on('statsUpdate.foundBlocks', function () {
+            if (!document.getElementById('foundBlocksSection')) { $(document).off('statsUpdate.foundBlocks'); return; }
+            if (!document.hidden && Date.now() - mwBlocksLoaded > 60000) loadFoundBlocks();
+        });
         console.log('Initializing miner stats for:', _miner);
 
         // Check if script is already loaded to prevent double loading

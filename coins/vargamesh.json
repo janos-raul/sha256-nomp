@@ -1,0 +1,51 @@
+{
+  "name": "vargamesh",
+  "symbol": "VMESH",
+  "algorithm": "sha256",
+  "reward": "POW",
+  "asicboost": true,
+  "versionMask": "0x3fffe000",
+  "enforcePoolVersionMask": true,
+  "versionRollingMinBits": 16,
+  "asicboostMinDifficulty": 1000,
+  "asicboostMaxClients": 1000,
+  "multiVersion": {
+    "enabled": true,
+    "maxVersions": 4,
+    "generationMode": "sequential"
+  },
+  "coinbasePayouts": {
+    "enabled": false,
+    "coinbaseOnly": false,
+    "feeHandledInCoinbase": false
+  },
+  "txMessages": true,
+  "txMessageText": "https://vargamesh.com",
+  "segwit": true,
+  "taproot": true,
+  "coinbaseTxVersion": 2,
+  "hasBlockReward": true,
+  "blockVersion": 536870912,
+  "default_witness_commitment": true,
+  "shareDifficultyTarget": "target",
+  "rpcTimeout": 5000,
+  "blockTime": 120,
+  "minConf": 101,
+  "addressValidation": {
+    "validateWorkerUsername": true,
+    "addressPrefix": "vm1",
+    "minLength": 26,
+    "maxLength": 64
+  },
+  "explorer": {
+    "txURL": "https://vargamesh.com/explorer.html?q=",
+    "blockURL": "https://vargamesh.com/explorer.html?q="
+  },
+  "rpc": {
+    "host": "127.0.0.1",
+    "port": 29667,
+    "user": "rpcuser",
+    "password": "YOUR_RPC_PASSWORD"
+  },
+  "_comment_vargamesh": "VargaMesh (VMESH): AuxPoW is mandatory from block 1, so VMESH can only be merge-mined. Use it as an aux coin (mergedMining.auxCoins, mode getblocktemplate, chainId 22093 = 0x564D) under a SHA-256 parent such as BTCS, and give its own pool config no ports: it only tracks and pays the blocks."
+}

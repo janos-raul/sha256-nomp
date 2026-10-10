@@ -1,5 +1,5 @@
 var Stratum = require("stratum-pool");
-var redis = require("redis");
+var redis = require("./redisCompat.js"); // node-redis 6 with the v3 callback API
 
 var ShareProcessor = require("./shareProcessor.js");
 
@@ -32,6 +32,15 @@ module.exports = function (logger) {
 
   // Store worker passwords for solo detection
   var workerPasswords = {};
+
+  function isSoloWorker(workerName) {
+    var passwordLower = (workerPasswords[workerName] || "").toLowerCase();
+    return (
+      passwordLower === "solo" ||
+      passwordLower.includes("m=solo") ||
+      passwordLower.includes("solo=true")
+    );
+  }
 
   // Performance tracking
   var performanceStats = {
@@ -214,9 +223,25 @@ module.exports = function (logger) {
     );
     var shareProcessor = new ShareProcessor(logger, poolOptions);
 
+    // Usernames are "address.worker". Addresses are plain alphanumerics; worker
+    // names are limited to letters, digits, "_", "-" and "." so a username can
+    // never carry markup into the website, logs or API (it shows up in all three).
+    var VALID_USERNAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
     handlers.auth = function (port, workerName, password, authCallback) {
       var authStart = Date.now();
-      const [wallet, worker] = (workerName || "").split(".", 2);
+      if (typeof workerName !== "string" || !VALID_USERNAME.test(workerName)) {
+        logger.warning(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "[Auth] Rejected username with invalid characters: " +
+            JSON.stringify(String(workerName).slice(0, 64)) +
+            " (allowed: letters, digits, . _ -)",
+        );
+        return authCallback(false);
+      }
+      const [wallet, worker] = workerName.split(".", 2);
 
       // If validation is disabled, accept all
       if (poolOptions.validateWorkerUsername !== true) {
@@ -418,6 +443,10 @@ module.exports = function (logger) {
       shareProcessor.handleShare(isValidShare, isValidBlock, data);
     };
 
+    handlers.auxBlock = function (accepted, data) {
+      shareProcessor.handleAuxBlock(accepted, data);
+    };
+
     var authorizeFN = function (ip, port, workerName, password, callback) {
       var authStart = Date.now();
 
@@ -554,19 +583,7 @@ module.exports = function (logger) {
         data.worker = data.worker.replace(/:/g, "-");
 
       // DETECT SOLO MINING FROM STORED PASSWORD
-      var isSoloMining = false;
-      var password = workerPasswords[data.worker] || "";
-
-      if (password) {
-        var passwordLower = password.toLowerCase();
-        if (
-          passwordLower === "solo" ||
-          passwordLower.includes("m=solo") ||
-          passwordLower.includes("solo=true")
-        ) {
-          isSoloMining = true;
-        }
-      }
+      var isSoloMining = isSoloWorker(data.worker);
 
       // ADD SOLO FLAG TO DATA BEFORE PASSING TO HANDLER
       data.isSoloMining = isSoloMining;
@@ -734,6 +751,51 @@ module.exports = function (logger) {
         isSoloMining: isSoloMining,
         data: data,
       });
+    });
+
+    // Merged mining (solo miners only): an aux block pays the pool's aux
+    // address; the aux coin's own payment processor then pays the finder's
+    // address from the password (e.g. s256=...), minus the solo fee. With
+    // no address for that coin the reward stays in the pool wallet.
+    pool.on("auxBlock", function (accepted, data) {
+      if (data.worker != undefined)
+        data.worker = data.worker.replace(/:/g, "-");
+
+      var summary =
+        data.symbol +
+        " Height: " +
+        data.auxHeight +
+        ", Hash: " +
+        data.auxHash +
+        ", Worker: " +
+        data.worker +
+        (data.auxAddress
+          ? " [SOLO, paid to " + data.auxAddress + "]"
+          : " [SOLO, no address given: kept in pool wallet]") +
+        ", Parent: " +
+        data.parentHash;
+
+      if (accepted) {
+        logger.special(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "[AUX BLOCK FOUND!] " +
+            summary +
+            ", Reward: " +
+            (data.auxCoinbaseValue / 100000000) +
+            " coins",
+        );
+      } else {
+        logger.error(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "[INVALID AUX BLOCK] Rejected (" + data.error + ") - " + summary,
+        );
+      }
+
+      handlers.auxBlock(accepted, data);
     });
 
     pool.on("difficultyUpdate", function (workerName, diff) {

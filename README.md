@@ -21,6 +21,38 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
 - ✅ **Dual Mining** - Support pool and solo mining simultaneously
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
+- ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
+
+### Recent Updates (v1.5.0)
+
+- **NEW**: Merged mining (Namecoin-style AuxPoW) for solo miners — aux coins are defined once in `mergedMining.auxCoins`, grouped in `mergedMining.groups`, and enabled per port with `auxGroup`. Solo miners add one payout address per aux coin to the password (`m=solo,s256=<address>`), checked with that coin's daemon at login. Each aux coin's own pool config pays the finder, minus its solo fee. Pool-mode miners keep plain jobs. See [Merged Mining](#merged-mining-solo-miners)
+- **NEW**: Several Namecoin-standard aux coins in one merged-mining tree; ESF-style coins (reversed byte order, modulo slot, `getauxblock`) in their own group
+- **FIXED**: A TLS (`stratum+ssl`) or HTTP connection to a plain stratum port no longer gets the IP banned — rental services such as MiningRigRentals try TLS first and were locked out for 10 minutes
+- **FIXED**: Fee recipients (`rewardRecipients`) now take their output script from the daemon: bech32 fee addresses were skipped and P2SH fee addresses got a wrong (unspendable) script
+- **FIXED**: Coinbase timestamps from 2038-01-19 would have crashed job creation; non-ASCII `blockIdentifier`s got a wrong length; mining-key payout addresses had a double checksum
+- **FIXED**: A bare `solo` or `solo=true` password now selects solo mining in the stratum layer too, matching the payout side
+- **FIXED**: The connection count in the 5-minute stats never went down; regtest was reported as "Mainnet" at startup
+- **NEW**: Redesigned website — dark by default with a light mode toggle, a scrolling network bar with height/difficulty/hashrate/last block per coin, and a live status indicator. The home page adds global stats, per-coin pool cards (fees, ports, merged coins), a hashrate chart and a latest-blocks feed; Getting Started builds the miner settings (URL, username, password with merged-mining addresses) for the chosen coin and port. Pool name, tagline, logos and price-ticker coins come from `website.branding` in `config.json`. Pool Stats and Miner Stats show one tab per coin, with paginated blocks and miners, confirmation progress, and badges for merged mining. Each miner page lists the miner's workers and the blocks they found.
+- **NEW**: The price bar reads the CoinGecko API directly (no third-party script on the site); the CDN libraries load with subresource integrity, and the Content Security Policy blocks inline event handlers
+- **CHANGED**: Stratum usernames may only contain letters, digits, `.`, `_` and `-` (`address.worker`); others are refused at login, so a worker name can never carry markup into the website, API or logs
+- **FIXED**: Finding a solo block reset the round shares and best share of every solo miner, not only the finder; solo hashrate samples were never trimmed from Redis
+- **CHANGED**: `website.adminCenter.enabled` is `false` in the shipped configs; enable it after setting `passwordHash`
+- **NEW**: VargaMesh (VMESH) as a merged-mined aux coin, through the new `getblocktemplate` aux mode for nodes without aux-block RPCs
+- **NEW**: Merge-mined coins show the hashrate merging them ("merged hashrate", miners listed "via BTCS") on Pool Stats, Miner Stats and the home page; it is kept apart from their own hashrate so global totals do not count the same hashes twice
+- **NEW**: Pool Stats and Miner Stats have one tab per coin; the miner page lists workers as rows and the miner's found blocks on every coin (merge-mined ones included), with confirmation progress; long lists are paginated
+- **NEW**: `/api/stats` also carries `merged` in the shape other pools publish for listing sites (`"[{algorithm:sha256,symbol:vmesh,name:vargamesh}]"`), next to `merged_with`
+- **IMPROVED**: A payment cycle starts within about a minute of a found block, so immature balances show it at once (before: up to `paymentInterval`); the regular schedule continues
+- **IMPROVED**: When an aux chain finds a block, merged jobs go out with `clean_jobs=true` so miners drop work that can no longer win it; stale aux work is no longer submitted; ESF work is refreshed on a new tip or once a minute instead of on every poll
+- **NEW**: Getting Started explains merged-only coins (no ports of their own, e.g. VMESH) and sets up a parent port for them
+- **NEW**: `website.branding.ogImageAlt`, plus `og:site_name` and image alt tags for link previews
+- **FIXED**: The client IP could be faked with an `X-Forwarded-For` header to get around the API rate limit, bans and the admin login lockout; proxy headers are now trusted only from the same machine (a reverse proxy such as nginx)
+- **REMOVED**: The old client-side mining key page (`/key.html`, `mining_key`), which was never served, and unused files (`libs/workerapi.js`, old stats scripts and stylesheets)
+- **NEW**: Daemon entries accept `"wallet": "<name>"` (RPCs go to `/wallet/<name>`), for daemons with several wallets loaded
+- **FIXED**: A failing `getbalance` at startup (e.g. error -19, several wallets loaded) silently left a coin's payment processing off; it is now logged
+- **FIXED**: Admin Center pool management failed to load ("value.toFixed is not a function") when a coin reported its difficulty as text
+- **NEW**: `/api/stats` shows merged mining per coin (`merged_with`, `merge_mined_by`, `mergedMining`)
+- **IMPROVED**: Block confirmation counts are updated by each coin's payment processor every `confirmationsInterval` seconds (default 120) for every coin, including aux coins; the standalone `libs/blockConfirmations.js` (hard-coded daemons, S256/BTGS missing) is removed
+- **UPDATED**: Dependencies (no known vulnerabilities); Node.js 24 required — redis 3 → 6 (through `libs/redisCompat.js`, which keeps the v3 callback API and replies), express 4 → 5, archiver 7 → 8, dateformat 4 → 5; unused axios and nonce removed
 
 ### Recent Updates (v1.4.7)
 
@@ -72,11 +104,13 @@ SHA256-NOMP comes pre-configured with the following coins:
 | Coin           | Symbol | Algorithm | Ports       | Min Confirmations | Block Time |
 | -------------- | ------ | --------- | ----------- | ----------------- | ---------- |
 | Bitcoin        | BTC    | SHA256    | 50212-50216 | 101               | 10 min     |
-| Bitcoin Silver | BTCS   | SHA256    | 50222-50226 | 201               | 5 min      |
+| Bitcoin Silver | BTCS   | SHA256    | 50222-50227 | 201               | 5 min      |
 | Bitcoin Gold   | BTGS   | SHA256    | 50292-50296 | 101               | 10 min     |
 | Mytherra       | MYT    | SHA256    | 50232-50236 | 101               | 5 min      |
 | Bitcoin II     | BC2    | SHA256    | 50242-50246 | 101               | 10 min     |
 | SHA256COIN     | S256   | SHA256    | 50272-50276 | 201               | 20 min     |
+| ElevenSeventyFive | ESF | SHA256    | 50282-50286 | 101               | 10 min     |
+| VargaMesh      | VMESH  | SHA256    | merged only | 101               | 2 min      |
 
 All coins support:
 
@@ -85,6 +119,7 @@ All coins support:
 - ✅ Solo and pool mining modes
 - ✅ Variable difficulty per port
 - ✅ Multiple mining ports for different hashrates
+- ✅ Merged mining for solo miners: S256 on every coin except S256 and ESF themselves; Bitcoin Silver ports 50222–50226 also merge-mine VMESH, and port 50227 merge-mines ESF (see [Merged Mining](#merged-mining-solo-miners))
 
 ### Community
 
@@ -105,8 +140,8 @@ _Building high-performance SHA256 mining infrastructure_
 #### Requirements
 
 - Coin daemon(s) (find the coin's repo and build latest version from source or use the already built ones)
-- [Node.js](http://nodejs.org/) v16+ ([follow these installation instructions](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager))
-- [Redis](http://redis.io/) key-value store v2.6+ ([follow these instructions](http://redis.io/topics/quickstart))
+- [Node.js](http://nodejs.org/) v24+ (see `.nvmrc`; [installation instructions](https://nodejs.org/en/download))
+- [Redis](http://redis.io/) key-value store v6.2+ ([follow these instructions](http://redis.io/topics/quickstart))
 
 ##### Seriously
 
@@ -235,7 +270,10 @@ Explanation for each field:
     "website": {
         "enabled": true,
         /* If you are using a reverse-proxy like nginx to display the website then set this to
-           127.0.0.1 to not expose the port. */
+           127.0.0.1 to not expose the port, and let the proxy do TLS (tlsOptions.enabled false).
+           The portal trusts X-Forwarded-For only from the same machine, so the proxy should set
+           it to the client address ("proxy_set_header X-Forwarded-For $remote_addr;"), and
+           /api/live_stats needs "proxy_buffering off" (server-sent events). */
         "host": "0.0.0.0",
         "port": 80,
         /* Used for displaying stratum connection data on the Getting Started page. */
@@ -248,6 +286,19 @@ Explanation for each field:
             "historicalRetention": 43200,
             /* How many seconds worth of shares should be gathered to generate hashrate. */
             "hashrateWindow": 300
+        },
+        /* Optional: pool name and images shown by the website. Every field can be left out. */
+        "branding": {
+            "poolName": "SHA256 Mining Pool",   // header, page title, share previews
+            "tagline": "Modern, Fast, Reliable",
+            "logo": "/static/logo.png",         // header logo (default: built-in hexagon)
+            "heroLogo": "/static/hero.png",     // large image on the home page (default: logo)
+            "heroText": "Professional mining pool with low fees, reliable payouts, and 24/7 uptime",
+            "ogImage": "https://yourpool.com/static/og.png", // Discord/Twitter preview image
+            "ogImageAlt": "Your pool - solo and merged mining", // alt text for the preview image (default: name - tagline)
+            "url": "https://yourpool.com",
+            /* CoinGecko coin ids for the price ticker, comma separated */
+            "priceCoins": "bitcoin,ethereum,ripple,binancecoin,solana,cardano,tron,litecoin,dogecoin"
         },
         /* Admin Center - Web-based pool administration panel */
         "adminCenter": {
@@ -330,7 +381,7 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
         "blockURL": "https://blockstream.info/block/"   // Block explorer URL
     },
 
-    // RPC daemon connection (used by blockConfirmations.js and other utilities)
+    // RPC daemon connection (reference only: the portal uses the daemons in the pool config)
     "rpc": {
         "host": "127.0.0.1",              // Daemon host
         "port": 8332,                     // Daemon RPC port
@@ -345,7 +396,7 @@ Inside the `coins` directory, ensure a json file exists for your coin. The coin 
 - The value that actually gates payouts is `pool_configs/<coin>.json` -> `paymentProcessing.minConf` — the coin config's own `minConf` is a reference/documentation copy only and isn't read by the payment processor
 - Bitcoin typically uses 101 confirmations, Bitcoin Silver uses 201
 - ASICBoost is enabled by default for optimal performance with modern ASIC miners
-- The `rpc` section is used by maintenance scripts like `blockConfirmations.js`
+- The `rpc` section is for reference only; the portal connects to the daemons listed in `pool_configs/<coin>.json`
 
 ##### Pool config
 
@@ -663,10 +714,61 @@ Username: YOUR_BITCOIN_ADDRESS
 Password: m=solo
 ```
 
+A worker name can follow the address (`YOUR_BITCOIN_ADDRESS.rig1`). Usernames may only use letters, digits, `.`, `_` and `-`; the pool refuses others at login.
+
 Example connections:
 
 - **CGMiner**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo`
 - **With custom difficulty**: `cgminer -o stratum+tcp://yourpool.com:3032 -u YOUR_ADDRESS -p m=solo,d=65536`
+
+#### Merged Mining (Solo Miners)
+
+Solo miners can merge-mine aux coins on the same work as the parent coin (Namecoin-style AuxPoW). Pool-mode miners are not affected: they always get plain parent jobs.
+
+**For miners** — mine solo on a merged-mining port and add an address for each aux coin you want paid:
+
+```
+Username: YOUR_PARENT_COIN_ADDRESS.worker
+Password: m=solo,s256=YOUR_S256_ADDRESS
+```
+
+If you leave out an aux coin's address, its blocks are still found and submitted, but the reward stays in the pool wallet.
+
+**For operators** — in the parent coin's pool config (all pool configs except `sha256coin.json` ship with S256 merged mining enabled):
+
+```json
+"mergedMining": {
+  "enabled": true,
+  "auxPollInterval": 5000,
+  "auxCoins": {
+    "sha256coin": {
+      "symbol": "S256",
+      "chainId": 598,
+      "byteOrder": "namecoin",
+      "slotRule": "namecoin",
+      "addressParam": "s256",
+      "address": "YOUR_S256_POOL_ADDRESS",
+      "daemon": { "host": "127.0.0.1", "port": 25332, "user": "rpcuser", "password": "YOUR_RPC_PASSWORD" }
+    }
+  },
+  "groups": {
+    "standard": ["sha256coin"]
+  }
+},
+"ports": {
+  "50222": { "diff": 15000, "soloMining": true, "auxGroup": "standard", "varDiff": { "...": "..." } }
+}
+```
+
+- `enabled: false` turns merged mining off on every port; a port without `auxGroup` mines the parent coin only.
+- **Each aux coin needs its own pool config** (e.g. `pool_configs/sha256coin.json`) with `paymentProcessing.enabled` and `paymentProcessing.soloMining` on, using the same daemon/wallet and pool address as in `auxCoins`. Merged-mined blocks are recorded there as solo blocks of the miner's aux address, and that pool's payment processor pays the finder (minus its `soloFee`) once the block matures. The portal refuses to start if this config is missing.
+- Namecoin-standard coins (S256, Namecoin, …) can share a group: add the coin to `auxCoins` and its name to the group. A coin with `byteOrder: "reversed"` or `slotRule: "modulo"` must be alone in its own group, on its own port(s).
+- **ESF example** (`pool_configs/bitcoinsilver.json`): `auxCoins.esf1175coin` (ElevenSeventyFive, chain ID 1175, `byteOrder: "reversed"`, `slotRule: "modulo"`, `addressParam: "esf"`) in group `esf`, used by port **50227** — solo miners there mine BTCS + ESF with `m=solo,esf=<ESF address>`, while ports 50222–50226 mine BTCS + S256. ESF's own pool config is `pool_configs/esf1175coin.json` (coin file `coins/esf1175coin.json`), which pays the ESF solo blocks. ESF has no `createauxblock`; the pool uses `getauxblock` automatically. ESF accepts merge-mined blocks from its block 31733.
+- **VargaMesh example** (`pool_configs/bitcoinsilver.json`): `auxCoins.vargamesh` (VMESH, chain ID 22093 = `0x564D`, `addressParam: "vmesh"`, `mode: "getblocktemplate"`) shares the `standard` group with S256, so solo miners on ports 50222–50226 mine BTCS + S256 + VMESH with `m=solo,s256=<S256 address>,vmesh=<VMESH address>`. VargaMesh requires AuxPoW from block 1, so it can only be merge-mined: its own pool config `pool_configs/vargamesh.json` has no ports and only records and pays the blocks.
+- `mode` selects how the pool gets aux work: `auxblock` (default) uses the node's `createauxblock`/`getauxblock` and `submitauxblock`; `getblocktemplate` is for nodes without those RPCs (VargaMesh) — the pool builds the aux block from `getblocktemplate` (coinbase paying `address`, witness commitment, the node's `auxpow_childnonce`) and submits header + auxpow + transactions with `submitblock`. The node must report `auxpow: true` and the configured chain ID.
+- With merged mining on, `blockIdentifier` is capped at 30 bytes to keep the coinbase scriptSig within 100 bytes.
+- Every aux block is logged (`[AUX BLOCK FOUND!]`) and listed in Redis under `<coin>:auxBlocks:<auxcoin>`.
+- `/api/stats` shows merged mining per coin: `merged_with` in the YIIMP-style shape pool listing sites read (`{"merged_with": "S256,ESF"}`, or `"0"`), `merge_mined_by` on aux coins (e.g. `["BTCS"]`), and `mergedMining` with each aux coin's symbol, chain ID, ports and password example.
 
 #### Password Parameters
 
@@ -674,12 +776,14 @@ Miners can pass one or more of the following via the stratum password field, com
 
 | Parameter    | Description                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `m=solo`     | Mine solo instead of pool mode                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `m=solo`     | Mine solo instead of pool mode (a bare `solo` or `solo=true` works too)                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `d=<value>`  | Set the miner's _starting_ difficulty immediately on connect, overriding the port's configured default                                                                                                                                                                                                                                                                                                                                  |
 | `md=<value>` | Set a _minimum_ difficulty floor — variable difficulty will retarget freely above this value but will never drop the miner below it, even if their share timing suggests it should. Useful for large ASICs (S19/S21/T21-class) to reduce unnecessary share traffic. The floor is clamped between the port's own `minDiff` and `maxDiff`, so it can raise the effective floor but can never push it above the port's configured ceiling. |
 | `tt=<value>` | Requested varDiff target time (seconds between shares). Only takes effect on ports with `minerConfigurable.targetTime` set; clamped to that range. Ignored (falls back to the port default) otherwise. |
 | `rt=<value>` | Requested varDiff retarget time (seconds between adjustments). Only takes effect on ports with `minerConfigurable.retargetTime` set; clamped to that range. Ignored otherwise. |
 | `vp=<value>` | Requested varDiff variance percent. Only takes effect on ports with `minerConfigurable.variancePercent` set; clamped to that range. Ignored otherwise. |
+
+| `s256=<address>`, `esf=<address>`, … | Merged mining payout address for an aux coin; the key is that coin's `addressParam`. Only used by solo miners on ports with an `auxGroup`. Checked with the coin's daemon at login; an invalid address refuses the login. See [Merged Mining](#merged-mining-solo-miners). |
 
 Example: `-p m=solo,d=1000000,md=500000` starts the miner at difficulty 1,000,000 and guarantees it never retargets below 500,000.
 
@@ -870,156 +974,17 @@ are commented in [scripts/blocknotify.c](scripts/blocknotify.c).
 
 #### 3) Block Confirmation Monitoring
 
-SHA256-NOMP includes a utility script for monitoring block confirmations: `libs/blockConfirmations.js`
+Confirmation counts of found blocks (shown on the website while a block matures) are kept up to date by each coin's payment processor. Besides its payment run (`paymentInterval`), it reads `getblock` confirmations for every pending pool and solo block every `confirmationsInterval` seconds (default 120, minimum 30) and stores them in Redis (`<coin>:blocksPendingConfirms`). This covers every coin with payment processing enabled — including merged-mining aux coins — with nothing extra to configure:
 
-##### What is blockConfirmations.js?
-
-This script checks the confirmation status of pending blocks (both pool and solo) and updates their status in Redis. It's useful for:
-
-- Monitoring block maturity before payouts
-- Detecting orphaned blocks
-- Tracking confirmation progress
-- Debugging payment issues
-
-##### How blockConfirmations.js Works
-
-The script performs the following steps:
-
-1. **Connects to Redis** - Reads pending blocks from the pool's Redis database
-2. **Queries Coin Daemons** - Checks each pending block against the blockchain via RPC
-3. **Updates Confirmations** - Records the current confirmation count for each block
-4. **Detects Orphans** - Identifies blocks that are no longer in the main chain
-5. **Generates Report** - Provides detailed statistics about block status
-
-##### Using blockConfirmations.js - Step by Step
-
-**Step 1: Configure the Script**
-
-Edit `libs/blockConfirmations.js` and update the `poolConfigs` object with your coin configurations:
-
-```javascript
-const poolConfigs = {
-  bitcoin: {
-    daemon: {
-      host: "127.0.0.1",
-      port: 8332,
-      user: "rpcuser",
-      password: "rpcpassword",
-    },
-    minConfirmations: 101, // Must match your pool config minConf
-  },
-  bitcoinsilver: {
-    daemon: {
-      host: "127.0.0.1",
-      port: 10013,
-      user: "rpcuser",
-      password: "rpcpassword",
-    },
-    minConfirmations: 201,
-  },
-  // Add more coins as needed
-};
+```json
+"paymentProcessing": {
+  "enabled": true,
+  "paymentInterval": 3600,
+  "confirmationsInterval": 120
+}
 ```
 
-**Step 2: Ensure Redis is Running**
-
-The script requires Redis to be running and accessible:
-
-```bash
-redis-cli ping
-# Should return: PONG
-```
-
-**Step 3: Run the Script**
-
-Execute the script from the pool's root directory:
-
-```bash
-node libs/blockConfirmations.js
-```
-
-**Step 4: Interpret the Output**
-
-The script provides detailed output:
-
-```
-[SPECIAL] [BlockConfirm] [Init] === Block Confirmation Tracker Started ===
-[INFO] [BlockConfirm] [Init] Checking confirmations for: bitcoin, bitcoinsilver, mytherra
-[INFO] [BlockConfirm] [bitcoin] Starting block confirmation check...
-[INFO] [BlockConfirm] [bitcoin] Found 3 pending pool blocks
-[INFO] [BlockConfirm] [bitcoin] POOL block 850123: 45/101 confirmations
-[INFO] [BlockConfirm] [bitcoin] POOL block 850124: 23/101 confirmations
-[SPECIAL] [BlockConfirm] [bitcoin] POOL block 850100 CONFIRMED! 101/101 confirmations
-[INFO] [BlockConfirm] [bitcoin] Found 1 pending SOLO blocks
-[SPECIAL] [BlockConfirm] [bitcoin] ★ SOLO block 850095 by bc1q...xyz CONFIRMED! 120/101 confirmations
-[WARNING] [BlockConfirm] [bitcoin] POOL block 850050 ORPHANED!
-[SPECIAL] [BlockConfirm] [Summary] === Confirmation Check Complete ===
-[INFO] [BlockConfirm] [Summary] Runtime: 1247ms
-[INFO] [BlockConfirm] [Summary] Pool blocks: 3 (Confirmed: 1)
-[INFO] [BlockConfirm] [Summary] Solo blocks: 1 (Confirmed: 1)
-[WARNING] [BlockConfirm] [Summary] Orphaned blocks detected: 1
-```
-
-**Step 5: Automate with Cron (Optional)**
-
-For regular monitoring, add to your crontab:
-
-```bash
-# Check block confirmations every 10 minutes
-*/10 * * * * cd /path/to/sha256-nomp && /usr/bin/node libs/blockConfirmations.js >> logs/block-confirmations.log 2>&1
-```
-
-##### Understanding Block Confirmations
-
-**What are confirmations?**
-
-- Each new block added to the blockchain after your block counts as one confirmation
-- Confirmations make blocks more secure and less likely to be orphaned
-- Most pools require 101-201 confirmations before paying out miners
-
-**Block States:**
-
-- **Pending**: Block found but not yet confirmed (0 - minConf confirmations)
-- **Confirmed**: Block has reached required confirmations (≥ minConf)
-- **Orphaned**: Block no longer in the main chain (confirmations = -1)
-
-**Why blocks get orphaned:**
-
-- Another miner found a competing block at the same height
-- Network propagation delays
-- Chain reorganizations
-
-**Confirmation Requirements by Coin:**
-
-- Bitcoin (BTC): 101 confirmations (~16.8 hours)
-- Bitcoin Silver (BTCS): 201 confirmations (~16.8 hours, 5 min blocks)
-- Mytherra (MYT): 101 confirmations (~8.4 hours, 5 min blocks)
-- Bitcoin II (BC2): 101 confirmations (~16.8 hours)
-
-##### Troubleshooting
-
-**Script can't connect to Redis:**
-
-```bash
-# Check if Redis is running
-sudo systemctl status redis
-
-# Start Redis if needed
-sudo systemctl start redis
-```
-
-**RPC connection errors:**
-
-- Verify daemon is running and synced
-- Check RPC credentials in blockConfirmations.js
-- Ensure firewall allows RPC connections
-- Verify RPC port is correct for each coin
-
-**No pending blocks found:**
-
-- Normal if no recent blocks were found
-- Check that pool has been running and miners are connected
-- Verify Redis contains block data: `redis-cli keys "*blocksPending*"`
+A block that leaves the main chain shows `-1` confirmations until the next payment run moves it to the orphaned (kicked) blocks. The old standalone `libs/blockConfirmations.js` script (hard-coded daemons, run by `stats.js`) has been removed in v1.5.0.
 
 #### 4) Start the portal
 
@@ -1040,7 +1005,9 @@ npm start
 #### Upgrading SHA256-NOMP
 
 When updating SHA256-NOMP to the latest code its important to not only `git pull` the latest from this repo, but to also update
-the `node-stratum-pool` and `node-multi-hashing` modules, and any config files that may have been changed.
+the `node-stratum-pool` module, and any config files that may have been changed.
+
+Upgrading from 1.4.x to 1.5.0: Node.js 24+ and Redis 6.2+ are required; usernames with characters other than letters, digits, `.`, `_` and `-` are refused; the admin center ships disabled; merged mining is configured per parent pool (`mergedMining`, see above) and every aux coin needs its own pool config. Redis data from 1.4.x is kept.
 
 - Inside your SHA256-NOMP directory (where the init.js script is) do `git pull` to get the latest SHA256-NOMP code.
 - Remove the dependencies by deleting the `node_modules` directory with `rm -r node_modules`.

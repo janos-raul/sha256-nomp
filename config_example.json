@@ -40,7 +40,7 @@
       "hashrateWindow": 600
     },
     "adminCenter": {
-      "enabled": true,
+      "enabled": false,
       "passwordHash": "generate_your_password_hash"
     },
     "tlsOptions": {

@@ -14,11 +14,8 @@ var totalShares;
 var _workerCount = 0;
 var _miner = window.location.pathname.split("/").pop() || "";
 
-// Chart.js default configuration
-Chart.defaults.color = "#94a3b8";
-Chart.defaults.borderColor = "rgba(255, 255, 255, 0.1)";
-Chart.defaults.font.family =
-  "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+// Chart.js styling comes from the site theme (static/theme.js)
+if (typeof window.applyChartTheme === "function") window.applyChartTheme();
 
 // =====================
 // Helper Functions
@@ -136,9 +133,6 @@ function initChart() {
           },
         },
         tooltip: {
-          backgroundColor: "rgba(26, 31, 46, 0.95)",
-          padding: 12,
-          cornerRadius: 8,
           callbacks: {
             label: function (context) {
               return (
@@ -168,9 +162,7 @@ function initChart() {
         },
         y: {
           beginAtZero: true,
-          grid: {
-            color: "rgba(255, 255, 255, 0.05)",
-          },
+          grid: {},
           ticks: {
             callback: function (value) {
               return getReadableHashRateString(value);
@@ -186,16 +178,10 @@ function buildChartData() {
   if (!statData || !statData.history) return;
 
   var datasets = [];
-  var colors = [
-    "rgb(59, 130, 246)", // Blue
-    "rgb(168, 85, 247)", // Purple
-    "rgb(16, 185, 129)", // Green
-    "rgb(245, 158, 11)", // Orange
-    "rgb(239, 68, 68)", // Red
-    "rgb(236, 72, 153)", // Pink
-    "rgb(34, 211, 238)", // Cyan
-    "rgb(251, 191, 36)", // Yellow
-  ];
+  var colors =
+    typeof window.themeChartColors === "function"
+      ? window.themeChartColors()
+      : ["#f2b33d", "#3fd3ff", "#36d399", "#a78bfa", "#ff9f43", "#f472b6", "#60a5fa", "#ff5c7a"];
 
   var colorIndex = 0;
 
@@ -228,9 +214,9 @@ function buildChartData() {
       data: data,
       borderColor: color,
       backgroundColor: color + "20",
-      borderWidth: 2,
+      borderWidth: 1.5,
       fill: false,
-      tension: 0.2,
+      tension: 0.15,
       pointRadius: 0,
       pointHoverRadius: 5,
       hidden: colorIndex > Math.min(_workerCount - 1, 3),
@@ -538,8 +524,16 @@ $(document).ready(function () {
     // Load initial data
     loadWorkerStats();
 
-    // Listen to the global statsUpdate event instead of creating another EventSource
-    $(document).on("statsUpdate", function (event, globalStats) {
+    // Listen to the global statsUpdate event instead of creating another EventSource.
+    // Hot-swap loads this script again on every visit to a miner page, so the
+    // handler is namespaced (replaced, not stacked) and unbinds itself once the
+    // miner page is gone; stacked handlers each polled worker_stats and hit
+    // the API rate limit.
+    $(document).off("statsUpdate.minerStats").on("statsUpdate.minerStats", function (event, globalStats) {
+      if (!document.getElementById("workerHashrateChart")) {
+        $(document).off("statsUpdate.minerStats");
+        return;
+      }
       if (document.hidden) return;
 
       // Only reload worker stats data when global stats update

@@ -4,7 +4,7 @@ var os = require("os");
 var cluster = require("cluster");
 
 var extend = require("extend");
-var redis = require("redis");
+var redis = require("./libs/redisCompat.js"); // node-redis 6 with the v3 callback API
 
 var PoolLogger = require("./libs/logUtil.js");
 var CliListener = require("./libs/cliListener.js");
@@ -920,12 +920,57 @@ var startWebsite = function () {
   });
 };
 
+/*
+Merged mining pays each solo miner's aux block through that aux coin's own
+payment processor, so every aux coin a port merge-mines needs its own pool
+config with payment processing and solo mining enabled. Without it the
+blocks would sit unpaid in the pool wallet, so refuse to start instead.
+*/
+var checkMergedMiningPayouts = function (configs) {
+  var problems = [];
+  Object.keys(configs).forEach(function (coin) {
+    var mm = configs[coin].mergedMining;
+    if (!mm || mm.enabled !== true || !mm.auxCoins || !mm.groups) return;
+
+    var used = {};
+    Object.keys(configs[coin].ports || {}).forEach(function (port) {
+      var group = configs[coin].ports[port].auxGroup;
+      (mm.groups[group] || []).forEach(function (auxCoin) {
+        used[auxCoin] = true;
+      });
+    });
+
+    Object.keys(used).forEach(function (auxCoin) {
+      var aux = configs[auxCoin.toLowerCase()];
+      var pp = aux && aux.paymentProcessing;
+      if (!aux) {
+        problems.push(coin + ": aux coin " + auxCoin + " has no enabled pool config");
+      } else if (!pp || pp.enabled !== true || pp.soloMining !== true) {
+        problems.push(
+          coin + ": pool config for aux coin " + auxCoin +
+            " needs paymentProcessing.enabled and paymentProcessing.soloMining",
+        );
+      }
+    });
+  });
+  return problems;
+};
+
 // Main initialization
 (function init() {
   logger.special("Master", "Init", "=== SHA256-NOMP Pool Initialization ===");
 
   // Build pool configurations
   poolConfigs = buildPoolConfigs();
+
+  var mergedMiningProblems = checkMergedMiningPayouts(poolConfigs);
+  if (mergedMiningProblems.length) {
+    mergedMiningProblems.forEach(function (p) {
+      logger.error("Master", "MergedMining", p);
+    });
+    logger.error("Master", "MergedMining", "Merged mining payouts cannot run, pool not started");
+    process.exit(1);
+  }
 
   // Start all components
   spawnPoolWorkers();

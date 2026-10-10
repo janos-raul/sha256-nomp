@@ -1,8 +1,19 @@
-var dateFormat = require("dateformat");
+// dateformat 5 and archiver 8 are ES modules; Node 24 loads them with
+// require(). dateformat's function is the default export; archiver 8
+// exports archive classes instead of the archiver(format, options) factory.
+var dateFormatLib = require("dateformat");
+var dateFormat = dateFormatLib.default || dateFormatLib;
 var colors = require("colors");
 var fs = require("fs");
 var path = require("path");
-var archiver = require("archiver");
+var archiverLib = require("archiver");
+var archiver =
+  typeof archiverLib === "function"
+    ? archiverLib
+    : function (format, options) {
+        if (format !== "zip") throw new Error("Unsupported archive format: " + format);
+        return new archiverLib.ZipArchive(options);
+      };
 var cluster = require("cluster");
 
 var severityToColor = function (severity, text) {

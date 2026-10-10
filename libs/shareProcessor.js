@@ -1,4 +1,4 @@
-var redis = require("redis");
+var redis = require("./redisCompat.js"); // node-redis 6 with the v3 callback API
 
 /*
 Enhanced share processor with comprehensive logging for SHA256-NOMP
@@ -26,6 +26,23 @@ module.exports = function (logger, poolConfig) {
 
     return sign + n.toFixed(2) + units[unitIndex];
   }
+
+  // Merged mining: aux coin symbols per port ("S256+ESF"), for ports with an
+  // auxGroup. A solo share on such a port means the miner merge-mines those
+  // coins; the tag is appended to the solo hashrate entry for the website.
+  var auxSymbolsByPort = (function () {
+    var out = {};
+    var mm = poolConfig.mergedMining;
+    if (!mm || mm.enabled !== true || !mm.groups || !mm.auxCoins) return out;
+    Object.keys(poolConfig.ports || {}).forEach(function (port) {
+      var members = mm.groups[poolConfig.ports[port].auxGroup] || [];
+      var symbols = members.map(function (aux) {
+        return ((mm.auxCoins[aux] && mm.auxCoins[aux].symbol) || aux).toUpperCase();
+      });
+      if (symbols.length) out[port] = symbols.join("+");
+    });
+    return out;
+  })();
 
   var logSystem = "ShareProcessor";
   var logComponent = coin;
@@ -203,6 +220,85 @@ module.exports = function (logger, poolConfig) {
       });
   }
 
+  // Merged mining (solo miners only). Every aux block is logged in
+  // <coin>:auxBlocks:<auxcoin>. An accepted block whose finder gave an
+  // address for that coin is also recorded as a solo block in the aux
+  // coin's own keys, exactly as its own pool records one, so the aux coin's
+  // payment processor pays the finder (minus its solo fee). Without an
+  // address the reward stays in the pool wallet.
+  this.handleAuxBlock = function (accepted, auxData) {
+    var auxCoin = auxData.coin;
+    var logKey = coin + ":auxBlocks:" + auxCoin;
+    var dateNow = Date.now();
+    var workerName = (auxData.worker || "").split(".")[1] || "default";
+    var paid = accepted && auxData.auxAddress && auxData.txHash;
+    var auxWorker = paid ? auxData.auxAddress + "." + workerName : null;
+
+    var redisCommands = [
+      [
+        "lpush",
+        logKey,
+        JSON.stringify({
+          time: dateNow,
+          accepted: accepted,
+          error: auxData.error || null,
+          height: auxData.auxHeight,
+          hash: auxData.auxHash,
+          txHash: auxData.txHash || null,
+          reward: auxData.auxCoinbaseValue,
+          parentHash: auxData.parentHash,
+          parentHeight: auxData.parentHeight,
+          worker: auxData.worker,
+          auxAddress: auxData.auxAddress || null,
+          paidToFinder: !!paid,
+          shareDiff: auxData.shareDiff,
+        }),
+      ],
+      ["ltrim", logKey, 0, 999],
+    ];
+
+    if (paid) {
+      redisCommands.push(
+        [
+          "sadd",
+          auxCoin + ":blocksPending:solo",
+          [auxData.auxHash, auxData.txHash, auxData.auxHeight, auxWorker, dateNow].join(":"),
+        ],
+        ["hset", auxCoin + ":shares:round" + auxData.auxHeight + ":solo", auxWorker, "1"],
+        ["hset", auxCoin + ":shares:times" + auxData.auxHeight, auxData.auxAddress, "1"],
+        ["hincrby", auxCoin + ":stats:solo", "validBlocks", 1],
+        ["hincrby", auxCoin + ":stats", "validBlocks", 1],
+        ["hincrby", auxCoin + ":workers:solo:" + auxWorker, "blocks", 1],
+        ["hset", auxCoin + ":lastBlock:solo", "height", auxData.auxHeight],
+        ["hset", auxCoin + ":lastBlock:solo", "worker", auxWorker],
+        ["hset", auxCoin + ":lastBlock:solo", "time", dateNow],
+      );
+    }
+
+    connection.multi(redisCommands).exec(function (err) {
+      if (err) {
+        perfStats.redisErrors++;
+        logger.error(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "Error recording aux block " + auxData.auxHash + ": " + JSON.stringify(err),
+        );
+        return;
+      }
+      perfStats.redisWrites++;
+      if (paid) {
+        logger.info(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "Aux block " + auxData.auxHash + " queued for " + auxCoin +
+            " solo payout to " + auxData.auxAddress,
+        );
+      }
+    });
+  };
+
   this.handleShare = function (isValidShare, isValidBlock, shareData) {
     var processStart = Date.now();
     var redisCommands = [];
@@ -283,8 +379,9 @@ module.exports = function (logger, poolConfig) {
           workerName,
         ]);
 
-        // Solo hashrate tracking
+        // Solo hashrate tracking (4th field: merged aux coins, if any)
         var hashrateData = [shareData.difficulty, shareData.worker, dateNow];
+        if (auxSymbolsByPort[shareData.port]) hashrateData.push(auxSymbolsByPort[shareData.port]);
         redisCommands.push([
           "zadd",
           coin + ":hashrate:solo",
@@ -587,17 +684,13 @@ module.exports = function (logger, poolConfig) {
           "1",
         ]);
 
-        // Clear solo round shares for new round
-        redisCommands.push(["del", coin + ":shares:roundCurrent:solo"]);
-
-        // Clear solo round times
-        redisCommands.push(["del", coin + ":shares:timesCurrent:solo"]);
-
-        // Clear solo round diffs
-        redisCommands.push(["del", coin + ":shares:diffCurrent:solo"]);
-
-        // Clear solo best-share diffs
-        redisCommands.push(["del", coin + ":shares:bestDiff:solo"]);
+        // Each solo miner has their own round: start a new one for the finder
+        // only. (Deleting these keys reset every solo miner's round shares and
+        // best share whenever anyone found a block.) The last-share time in
+        // :shares:timesCurrent:solo is kept; the finder just submitted a share.
+        redisCommands.push(["hdel", coin + ":shares:roundCurrent:solo", shareData.worker]);
+        redisCommands.push(["hdel", coin + ":shares:diffCurrent:solo", shareData.worker]);
+        redisCommands.push(["zrem", coin + ":shares:bestDiff:solo", shareData.worker]);
 
         // Update solo block stats
         redisCommands.push(["hincrby", coin + ":stats:solo", "validBlocks", 1]);

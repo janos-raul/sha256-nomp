@@ -1,378 +1,39 @@
 <style>
-    /* Tab Stats Specific Styles */
-    .stats-header {
-        background: var(--bg-card);
-        border-radius: 1rem;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        border: 1px solid var(--border);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stats-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 4px;
-        background: var(--gradient);
-    }
-
-    .stats-title {
-        font-size: 2rem;
-        font-weight: 700;
-        background: var(--gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .stats-subtitle {
-        color: var(--text-secondary);
-        font-size: 1.1rem;
-    }
-
-    /* Table Container */
-    .table-container {
-        background: var(--bg-card);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        border: 1px solid var(--border);
-        box-shadow: var(--card-shadow);
-        overflow: hidden;
-        margin-bottom: 2rem;
-    }
-
-    .table-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .table-title {
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .table-title i {
-        color: var(--accent);
-    }
-
-    /* Search/Filter Bar */
-    .table-controls {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .search-box {
-        position: relative;
-    }
-
-    .search-box input {
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        color: var(--text-primary);
-        padding: 0.5rem 2.5rem 0.5rem 1rem;
-        border-radius: 0.5rem;
-        min-width: 250px;
-        transition: all 0.3s ease;
-    }
-
-    .search-box input:focus {
-        outline: none;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .search-box i {
-        position: absolute;
-        right: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-muted);
-    }
-
-    /* Modern Table Styles */
-    .modern-table-wrapper {
-        overflow-x: auto;
-        border-radius: 0.75rem;
-        border: 1px solid var(--border);
-        background: var(--bg-secondary);
-    }
-
-    .modern-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .modern-table thead {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
-        border-bottom: 2px solid var(--border);
-    }
-
-    .modern-table th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: var(--text-primary);
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: nowrap;
-        position: sticky;
-        top: 0;
-        background: inherit;
-        z-index: 10;
-    }
-
-    .modern-table td {
-        padding: 1rem;
-        color: var(--text-secondary);
-        font-size: 0.95rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        transition: all 0.2s ease;
-    }
-
-    .modern-table tbody tr {
-        transition: all 0.2s ease;
-    }
-
-    .modern-table tbody tr:hover {
-        background: rgba(59, 130, 246, 0.05);
-    }
-
-    .modern-table tbody tr:hover td {
-        color: var(--text-primary);
-    }
-
-    /* Pool Name Badge */
-    .pool-badge {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
-        padding: 0.25rem 0.75rem;
-        border-radius: 1rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        border: 1px solid rgba(59, 130, 246, 0.3);
-    }
-
-    .pool-badge i {
-        font-size: 0.8rem;
-        color: var(--accent);
-    }
-
-    /* Algo Badge */
-    .algo-badge {
-        background: rgba(16, 185, 129, 0.1);
-        color: var(--success);
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.375rem;
-        font-size: 0.85rem;
-        font-weight: 500;
-        display: inline-block;
-    }
-
-    /* Number Badges */
-    .number-badge {
-        font-weight: 600;
-        font-family: 'Monaco', 'Courier New', monospace;
-    }
-
-    .number-badge.miners {
-        color: var(--accent);
-    }
-
-    .number-badge.shares-valid {
-        color: var(--success);
-    }
-
-    .number-badge.shares-invalid {
-        color: var(--danger);
-    }
-
-    .number-badge.blocks-total {
-        color: var(--text-primary);
-    }
-
-    .number-badge.blocks-pending {
-        color: var(--warning);
-    }
-
-    .number-badge.blocks-confirmed {
-        color: var(--success);
-    }
-
-    .number-badge.blocks-orphaned {
-        color: var(--text-muted);
-    }
-
-    .number-badge.hashrate {
-        color: var(--accent);
-        font-size: 1rem;
-        font-weight: 700;
-    }
-
-    /* Summary Cards */
-    .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .summary-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 0.75rem;
-        padding: 1.25rem;
-        transition: all 0.3s ease;
-    }
-
-    .summary-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
-        border-color: var(--accent);
-    }
-
-    .summary-label {
-        color: var(--text-muted);
-        font-size: 0.85rem;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .summary-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--text-primary);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .stats-title {
-            font-size: 1.5rem;
-        }
-        
-        .table-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        
-        .search-box input {
-            min-width: 100%;
-        }
-        
-        .modern-table {
-            font-size: 0.85rem;
-        }
-        
-        .modern-table th,
-        .modern-table td {
-            padding: 0.75rem 0.5rem;
-        }
-        
-        /* Hide less important columns on mobile */
-        .modern-table th:nth-child(4),
-        .modern-table td:nth-child(4),
-        .modern-table th:nth-child(5),
-        .modern-table td:nth-child(5) {
-            display: none;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .summary-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        /* Further hide columns on very small screens */
-        .modern-table th:nth-child(6),
-        .modern-table td:nth-child(6),
-        .modern-table th:nth-child(7),
-        .modern-table td:nth-child(7),
-        .modern-table th:nth-child(8),
-        .modern-table td:nth-child(8) {
-            display: none;
-        }
-    }
-
-    /* Loading Animation */
-    .loading-pulse {
-        animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-
-    /* Tooltip */
-    .tooltip-wrapper {
-        position: relative;
-        display: inline-block;
-    }
-
-    .tooltip-wrapper .tooltip-content {
-        visibility: hidden;
-        background: var(--bg-secondary);
-        color: var(--text-primary);
-        text-align: center;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
-        border: 1px solid var(--border);
-        position: absolute;
-        z-index: 1;
-        bottom: 125%;
-        left: 50%;
-        transform: translateX(-50%);
-        white-space: nowrap;
-        font-size: 0.85rem;
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-
-    .tooltip-wrapper:hover .tooltip-content {
-        visibility: visible;
-        opacity: 1;
-    }
-
-    /* Export Button */
+    /* Tab Stats — console theme (header and summary tiles from theme.css); markup and logic unchanged */
+    .stats-subtitle { margin: 0; font-size: 13px; color: var(--text); }
+    .table-container { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 0; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--line); margin: 0; }
+    .table-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 600 11.5px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi); }
+    .table-title i { color: var(--accent); }
+    .table-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .search-box { position: relative; }
+    .search-box input { width: 220px; max-width: 100%; padding-right: 28px; }
+    .search-box i { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 11px; pointer-events: none; }
     .export-btn {
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        color: var(--text-secondary);
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; cursor: pointer;
+        font: 600 10.5px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.14em;
+        color: var(--text-hi); background: var(--panel); border: 1px solid var(--line-hi); border-radius: var(--r);
     }
-
-    .export-btn:hover {
-        background: var(--accent);
-        color: var(--text-primary);
-        border-color: var(--accent);
-        transform: translateY(-2px);
-    }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .modern-table-wrapper { overflow-x: auto; }
+    .modern-table { width: 100%; border-collapse: collapse; }
+    .modern-table thead { background: none; }
+    .modern-table th { cursor: pointer; user-select: none; }
+    .modern-table th:hover { color: var(--text-hi); }
+    .modern-table td { white-space: nowrap; }
+    .pool-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; font: 600 12px var(--font-ui); color: var(--text-hi); border: 1px solid var(--line-hi); border-radius: var(--r); background: var(--panel-2); }
+    .pool-badge i { color: var(--accent); font-size: 10px; }
+    .algo-badge { padding: 2px 6px; font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); border: 1px solid var(--line-hi); border-radius: var(--r); }
+    .number-badge { font: 600 12px var(--font-mono); color: var(--text-hi); background: none; padding: 0; }
+    .number-badge.shares-valid, .number-badge.blocks-confirmed { color: var(--good); }
+    .number-badge.shares-invalid { color: var(--bad); }
+    .number-badge.blocks-pending { color: var(--warn); }
+    .number-badge.blocks-orphaned { color: var(--muted); }
+    .number-badge.hashrate { color: var(--accent); }
+    .loading-pulse { opacity: 0.6; }
+    .tooltip-wrapper { position: relative; display: inline-block; }
+    .tooltip-wrapper .tooltip-content { visibility: hidden; opacity: 0; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 6px 8px; white-space: nowrap; background: var(--panel); border: 1px solid var(--line-hi); color: var(--text-hi); font: 500 11px var(--font-mono); z-index: 10; }
+    .tooltip-wrapper:hover .tooltip-content { visibility: visible; opacity: 1; }
 </style>
 
 <!-- Stats Header -->
@@ -433,10 +94,10 @@
         </h2>
         <div class="table-controls">
             <div class="search-box">
-                <input type="text" id="poolSearch" placeholder="Search pools..." onkeyup="filterTable()">
+                <input type="text" id="poolSearch" placeholder="Search pools...">
                 <i class="fas fa-search"></i>
             </div>
-            <button class="export-btn" onclick="exportTableToCSV()">
+            <button class="export-btn" type="button" id="tbsExport">
                 <i class="fas fa-download"></i>
                 Export CSV
             </button>
@@ -447,34 +108,34 @@
         <table class="modern-table" id="poolStatsTable">
             <thead>
                 <tr>
-                    <th onclick="sortTable(0)">
+                    <th data-sort="0">
                         Pool <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(1)">
+                    <th data-sort="1">
                         Algorithm <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(2)">
+                    <th data-sort="2">
                         Miners <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(3)">
+                    <th data-sort="3">
                         Valid Shares <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(4)">
+                    <th data-sort="4">
                         Invalid Shares <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(5)">
+                    <th data-sort="5">
                         Total Blocks <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(6)">
+                    <th data-sort="6">
                         Pending <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(7)">
+                    <th data-sort="7">
                         Confirmed <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(8)">
+                    <th data-sort="8">
                         Orphaned <i class="fas fa-sort"></i>
                     </th>
-                    <th onclick="sortTable(9)">
+                    <th data-sort="9">
                         Hashrate <i class="fas fa-sort"></i>
                     </th>
                 </tr>
@@ -656,6 +317,13 @@
     }
 
     // Table filtering
+    // event bindings (no inline handlers: the CSP blocks them); namespaced so
+    // a hot-swap visit replaces them instead of stacking
+    $(document).off('.tbs')
+        .on('keyup.tbs', '#poolSearch', function () { filterTable(); })
+        .on('click.tbs', '#tbsExport', function () { exportTableToCSV(); })
+        .on('click.tbs', 'th[data-sort]', function () { sortTable(parseInt(this.getAttribute('data-sort'), 10)); });
+
     function filterTable() {
         const input = document.getElementById('poolSearch');
         const filter = input.value.toLowerCase();
@@ -676,7 +344,7 @@
     }
 
     // Table sorting
-    let sortDirection = {};
+    var sortDirection = {};
     
     function sortTable(columnIndex) {
         const table = document.getElementById('poolStatsTable');
@@ -688,24 +356,21 @@
         const ascending = sortDirection[columnIndex];
         
         rows.sort((a, b) => {
-            let aValue = a.getElementsByTagName('td')[columnIndex].textContent.trim();
-            let bValue = b.getElementsByTagName('td')[columnIndex].textContent.trim();
-            
-            // Remove commas and non-numeric characters for number comparison
-            aValue = aValue.replace(/[^0-9.-]/g, '');
-            bValue = bValue.replace(/[^0-9.-]/g, '');
-            
-            // Check if values are numbers
-            if (!isNaN(aValue) && !isNaN(bValue)) {
-                return ascending ? 
-                    parseFloat(aValue) - parseFloat(bValue) : 
-                    parseFloat(bValue) - parseFloat(aValue);
+            const aText = a.getElementsByTagName('td')[columnIndex].textContent.trim();
+            const bText = b.getElementsByTagName('td')[columnIndex].textContent.trim();
+
+            // Numbers: strip units/commas. Text columns (pool name) strip to ""
+            // and must use the text comparison, or nothing sorts.
+            const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+            const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return ascending ? aNum - bNum : bNum - aNum;
             }
-            
+
             // Text comparison
-            return ascending ? 
-                aValue.localeCompare(bValue) : 
-                bValue.localeCompare(aValue);
+            return ascending ?
+                aText.localeCompare(bText) :
+                bText.localeCompare(aText);
         });
         
         // Clear tbody and re-append sorted rows
@@ -716,7 +381,7 @@
         const headers = table.getElementsByTagName('th');
         for (let i = 0; i < headers.length; i++) {
             const icon = headers[i].querySelector('i');
-            if (icon && icon.classList.contains('fa-sort') || icon.classList.contains('fa-sort-up') || icon.classList.contains('fa-sort-down')) {
+            if (icon && (icon.classList.contains('fa-sort') || icon.classList.contains('fa-sort-up') || icon.classList.contains('fa-sort-down'))) {
                 if (i === columnIndex) {
                     icon.className = ascending ? 'fas fa-sort-up' : 'fas fa-sort-down';
                 } else {

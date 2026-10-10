@@ -87,6 +87,10 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               var parts = block.data.split(":");
               var timeInMs = parseInt(parts[4]);
               var timeInSec = Math.floor(timeInMs / 1000);
+              // confirmations of pending blocks, as the payment processor last saw them
+              var poolStat = portalStats.stats.pools[poolName] || {};
+              var pendingSet = block.type === "solo" ? poolStat.soloPending : poolStat.poolPending;
+              var confirms = pendingSet && pendingSet.confirms ? pendingSet.confirms[parts[0]] : undefined;
               poolBlocks[poolName].push({
                 height: parseInt(parts[2]),
                 hash: parts[0],
@@ -94,6 +98,9 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 status: block.status,
                 miner: parts[3],
                 type: block.type, // 'pool' or 'solo'
+                mergedBy: block.mergedBy || null, // parent coin symbol for merge-mined aux blocks
+                parentWorker: block.mergedFinder || null, // parent-chain worker that merge-mined it
+                confirmations: confirms !== undefined ? parseInt(confirms, 10) : null,
               });
             }
 

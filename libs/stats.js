@@ -1,4 +1,4 @@
-var redis = require("redis");
+var redis = require("./redisCompat.js"); // node-redis 6 with the v3 callback API
 var async = require("async");
 
 var algos = require("stratum-pool/lib/algoProperties.js");
@@ -48,6 +48,84 @@ function sortProperties(obj, sortedBy, isNumericSort, reverse) {
 }
 
 module.exports = function (logger, portalConfig, poolConfigs) {
+  /*
+  Merged mining as the API shows it, from the pool configs:
+  - a parent coin lists the aux coins its ports actually merge-mine
+    (merged mining enabled, coin in a group used by an auxGroup port);
+  - an aux coin lists the parent coins merge-mining it.
+  merged_with mirrors the YIIMP-style field merged-mining pools expose
+  ({"merged_with": "S256,ESF"}, or "0" when none), which pool listing
+  sites read; merged is the other common shape
+  ("[{algorithm:sha256,symbol:esf,name:esf1175coin}]", a string);
+  mergedMining is the structured form.
+  */
+  var mergedMiningInfo = (function () {
+    var info = {};
+    var symbolOf = function (name, auxCfg) {
+      var c = poolConfigs[name] && poolConfigs[name].coin;
+      return ((auxCfg && auxCfg.symbol) || (c && c.symbol) || name).toUpperCase();
+    };
+    Object.keys(poolConfigs).forEach(function (name) {
+      info[name] = { auxCoins: [], parents: [] };
+    });
+    Object.keys(poolConfigs).forEach(function (parent) {
+      var mm = poolConfigs[parent].mergedMining;
+      if (!mm || mm.enabled !== true || !mm.auxCoins || !mm.groups) return;
+      var portsByCoin = {};
+      Object.keys(poolConfigs[parent].ports || {}).forEach(function (port) {
+        var members = mm.groups[poolConfigs[parent].ports[port].auxGroup] || [];
+        members.forEach(function (aux) {
+          (portsByCoin[aux] = portsByCoin[aux] || []).push(Number(port));
+        });
+      });
+      Object.keys(portsByCoin).forEach(function (aux) {
+        var cfg = mm.auxCoins[aux] || {};
+        info[parent].auxCoins.push({
+          name: aux,
+          symbol: symbolOf(aux, cfg),
+          chainId: cfg.chainId,
+          addressParam: cfg.addressParam,
+          ports: portsByCoin[aux],
+        });
+        var key = aux.toLowerCase();
+        if (info[key]) info[key].parents.push(symbolOf(parent));
+      });
+    });
+    return info;
+  })();
+
+  function mergedMiningStats(coinName) {
+    var mi = mergedMiningInfo[coinName] || { auxCoins: [], parents: [] };
+    var symbols = mi.auxCoins.map(function (c) {
+      return c.symbol;
+    });
+    // "merged" in the shape other pools publish for listing sites, e.g.
+    // "[{algorithm:scrypt,symbol:doge,name:dogecoin}]" - a string, not JSON.
+    // Only on coins that merge-mine something.
+    var merged = mi.auxCoins.map(function (c) {
+      var auxCoin = (poolConfigs[c.name] && poolConfigs[c.name].coin) || {};
+      return (
+        "{algorithm:" + String(auxCoin.algorithm || "sha256").toLowerCase() +
+        ",symbol:" + c.symbol.toLowerCase() +
+        ",name:" + String(auxCoin.name || c.name).toLowerCase() + "}"
+      );
+    });
+    return {
+      merged: merged.length ? "[" + merged.join(",") + "]" : undefined,
+      merged_with: { merged_with: symbols.length ? symbols.join(",") : "0" },
+      merge_mined_by: mi.parents,
+      mergedMining: {
+        enabled: mi.auxCoins.length > 0,
+        soloOnly: true,
+        coins: mi.auxCoins.map(function (c) {
+          return Object.assign({}, c, {
+            password: "m=solo," + c.addressParam + "=<" + c.symbol + " address>",
+          });
+        }),
+      },
+    };
+  }
+
   var _this = this;
 
   var logSystem = "Stats";
@@ -211,10 +289,64 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         pcb();
       },
       function (err) {
-        cback(allBlocks);
+        markMergedBlocks(allBlocks, function () {
+          cback(allBlocks);
+        });
       },
     );
   };
+
+  // Flags aux coin blocks that were merge-mined: their hashes are in the
+  // parent's <parent>:auxBlocks:<aux> log (last 1000, see shareProcessor).
+  // Sets block.mergedBy to the parent coin's symbol and block.mergedFinder
+  // to the parent-chain worker that found it.
+  var mergedHashCache = { at: 0, byPool: null };
+  function markMergedBlocks(allBlocks, done) {
+    var apply = function (byPool) {
+      Object.keys(allBlocks).forEach(function (id) {
+        var block = allBlocks[id];
+        var hashes = byPool[String(block.pool).toLowerCase()];
+        if (!hashes) return;
+        var hit = hashes[block.data.split(":")[0]];
+        if (hit) {
+          block.mergedBy = hit.by;
+          block.mergedFinder = hit.worker;
+        }
+      });
+      done();
+    };
+    // the aux logs hold up to 1000 entries per coin; parse them at most every 15s
+    if (mergedHashCache.byPool && Date.now() - mergedHashCache.at < 15000) {
+      return apply(mergedHashCache.byPool);
+    }
+    var lookups = [];
+    Object.keys(mergedMiningInfo).forEach(function (parent) {
+      mergedMiningInfo[parent].auxCoins.forEach(function (aux) {
+        lookups.push({ parent: parent, aux: aux.name });
+      });
+    });
+    if (!lookups.length || !redisStats) return done();
+    redisStats.multi(
+      lookups.map(function (l) {
+        return ["lrange", l.parent + ":auxBlocks:" + l.aux, 0, -1];
+      }),
+    ).exec(function (err, replies) {
+      if (err || !replies) return done();
+      var byPool = {};
+      lookups.forEach(function (l, i) {
+        var parentSymbol = ((poolConfigs[l.parent] && poolConfigs[l.parent].coin.symbol) || l.parent).toUpperCase();
+        var hashes = (byPool[l.aux.toLowerCase()] = byPool[l.aux.toLowerCase()] || {});
+        (replies[i] || []).forEach(function (entry) {
+          try {
+            var e = JSON.parse(entry);
+            if (e.accepted && e.hash) hashes[e.hash] = { by: parentSymbol, worker: e.worker || null };
+          } catch (ex) {}
+        });
+      });
+      mergedHashCache = { at: Date.now(), byPool: byPool };
+      apply(byPool);
+    });
+  }
 
   function gatherStatHistory() {
     var retentionTime = (
@@ -238,6 +370,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         _this.statHistory = _this.statHistory.sort(function (a, b) {
           return a.time - b.time;
         });
+        // Rebuild from the sorted history: a live sample may already have
+        // been added while redis was answering, and appending the loaded
+        // entries after it put the pool history (used by the charts) out
+        // of time order
+        _this.statPoolHistory = [];
         _this.statHistory.forEach(function (stats) {
           addStatPoolHistory(stats);
         });
@@ -295,6 +432,61 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     return null;
   }
 
+  /*
+  Merged (aux) coins: their shares are mined, and recorded, on the parent
+  coin, so the aux coin's own pool shows no workers or hashrate. Solo
+  workers that merge-mine a coin carry `merged` ("VMESH+ESF", from their
+  share's port). Each aux coin gets the hashrate merge-mining it:
+  mergedWorkers (worker -> { hashrate, hashrateString, parent }),
+  mergedHashrate(String), mergedMinerCount, mergedWorkerCount. Kept apart
+  from hashrate/workers so global totals do not count the same hashes twice.
+  */
+  function addMergedHashrate(pools) {
+    var auxBySymbol = {};
+    Object.keys(mergedMiningInfo).forEach(function (parent) {
+      mergedMiningInfo[parent].auxCoins.forEach(function (aux) {
+        auxBySymbol[aux.symbol] = aux.name.toLowerCase();
+      });
+    });
+    Object.keys(pools).forEach(function (name) {
+      var mi = mergedMiningInfo[name];
+      if (!mi || !mi.parents.length) return;
+      pools[name].mergedWorkers = {};
+      pools[name].mergedHashrate = 0;
+    });
+    Object.keys(pools).forEach(function (parentName) {
+      var parent = pools[parentName];
+      var parentSymbol = (parent.symbol || parentName).toUpperCase();
+      Object.keys(parent.soloWorkers || {}).forEach(function (worker) {
+        var w = parent.soloWorkers[worker];
+        if (!w.merged || !(w.hashrate > 0)) return;
+        String(w.merged).split("+").forEach(function (symbol) {
+          var aux = pools[auxBySymbol[symbol]];
+          if (!aux || !aux.mergedWorkers) return;
+          aux.mergedWorkers[worker] = {
+            name: worker,
+            hashrate: w.hashrate,
+            hashrateString: w.hashrateString,
+            parent: parentSymbol,
+            isSolo: true,
+          };
+          aux.mergedHashrate += w.hashrate;
+        });
+      });
+    });
+    Object.keys(pools).forEach(function (name) {
+      var aux = pools[name];
+      if (!aux.mergedWorkers) return;
+      var miners = {};
+      Object.keys(aux.mergedWorkers).forEach(function (w) {
+        miners[w.split(".")[0]] = true;
+      });
+      aux.mergedWorkerCount = Object.keys(aux.mergedWorkers).length;
+      aux.mergedMinerCount = Object.keys(miners).length;
+      aux.mergedHashrateString = _this.getReadableHashRateString(aux.mergedHashrate);
+    });
+  }
+
   function addStatPoolHistory(stats) {
     var data = {
       time: stats.time,
@@ -303,6 +495,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     for (var pool in stats.pools) {
       data.pools[pool] = {
         hashrate: stats.pools[pool].hashrate,
+        mergedHashrate: stats.pools[pool].mergedHashrate || 0,
         workerCount: stats.pools[pool].workerCount,
         blocks: stats.pools[pool].blocks,
         soloBlocks: stats.pools[pool].soloBlocks || {
@@ -718,10 +911,13 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           ["hgetall", ":shares:diffCurrent:solo"], // index 21
           ["zrange", ":shares:bestDiff", "0", "-1", "WITHSCORES"], // index 22
           ["zrange", ":shares:bestDiff:solo", "0", "-1", "WITHSCORES"], // index 23
+          // drop solo hashrate samples older than the window, like :hashrate above
+          // (appended last so the reply indexes above stay the same)
+          ["zremrangebyscore", ":hashrate:solo", "-inf", "(" + windowTime], // index 24
         ];
 
         //var commandsPerCoin = redisCommandTemplates.length;
-        var commandsPerCoin = 24; // Hardcode this to be sure
+        var commandsPerCoin = 25; // Hardcode this to be sure
 
         // ENHANCED: Solo mining data indices
         var soloSharesIndex = 9; // :shares:roundCurrent:solo position
@@ -891,6 +1087,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                   poolConfigs[coinName]?.paymentProcessing?.minimumPayment || 0,
                 poolFee: poolConfigs[coinName]?.paymentProcessing?.poolFee || 0,
                 soloFee: poolConfigs[coinName]?.paymentProcessing?.soloFee || 0,
+                ...mergedMiningStats(coinName),
                 hashrates: replies[i + 1],
                 poolStats: {
                   blockheight: replies[i + 2]
@@ -1306,6 +1503,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     isSolo: true,
                   };
                 }
+                // aux coins this worker merge-mines ("S256+ESF"), from the share's port
+                if (parts[3]) coinStats.soloWorkers[worker].merged = parts[3];
 
                 // Add/update combined workers
                 if (worker in coinStats.workers) {
@@ -1951,6 +2150,12 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             payout_system: coinStats.payout_system,
             payout_systems: coinStats.payout_systems,
 
+            // Merged mining (solo miners only)
+            merged: coinStats.merged,
+            merged_with: coinStats.merged_with,
+            merge_mined_by: coinStats.merge_mined_by,
+            mergedMining: coinStats.mergedMining,
+
             // Hashrates grouped together
             hashrate: coinStats.hashrate,
             hashrateString: coinStats.hashrateString,
@@ -2059,6 +2264,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             algoStats.soloHashrate || 0,
           );
         });
+
+        addMergedHashrate(allCoinStats);
 
         _this.stats = portalStats;
 
@@ -2260,15 +2467,3 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     return hashrate.toFixed(2) + byteUnits[i];
   }
 };
-
-const { exec } = require("child_process");
-
-if (!global.blockConfirmationsIntervalStarted) {
-  global.blockConfirmationsIntervalStarted = true;
-
-  setInterval(() => {
-    exec("node ./libs/blockConfirmations.js", () => {
-      // Silent execution: no logs, no error handling
-    });
-  }, 120000);
-}

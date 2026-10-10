@@ -62,6 +62,7 @@
       "diff": 15000,
       "tls": false,
       "soloMining": true,
+      "auxGroup": "standard",
       "varDiff": {
         "minDiff": 1500,
         "maxDiff": 9000000000,
@@ -79,6 +80,7 @@
       "diff": 50000,
       "tls": false,
       "soloMining": true,
+      "auxGroup": "standard",
       "varDiff": {
         "minDiff": 5000,
         "maxDiff": 9000000000,
@@ -96,6 +98,7 @@
       "diff": 250000,
       "tls": false,
       "soloMining": true,
+      "auxGroup": "standard",
       "varDiff": {
         "minDiff": 25000,
         "maxDiff": 9000000000,
@@ -113,6 +116,7 @@
       "diff": 1000000,
       "tls": false,
       "soloMining": true,
+      "auxGroup": "standard",
       "varDiff": {
         "minDiff": 100000,
         "maxDiff": 9000000000,
@@ -125,7 +129,84 @@
           "variancePercent": { "min": 5, "max": 50 }
         }
       }
+    },
+    "50227": {
+      "diff": 250000,
+      "tls": false,
+      "soloMining": true,
+      "auxGroup": "esf",
+      "_comment_auxGroup": "BTCS + ESF for solo miners (password m=solo,esf=<ESF address>); the other ports are BTCS + S256 + VMESH",
+      "varDiff": {
+        "minDiff": 25000,
+        "maxDiff": 9000000000,
+        "targetTime": 40,
+        "retargetTime": 260,
+        "variancePercent": 7,
+        "minerConfigurable": {
+          "targetTime": { "min": 15, "max": 120 },
+          "retargetTime": { "min": 60, "max": 600 },
+          "variancePercent": { "min": 5, "max": 50 }
+        }
+      }
     }
+  },
+
+  "mergedMining": {
+    "enabled": true,
+    "_comment_mergedMining": "Namecoin-style merged mining for SOLO miners only (password m=solo). Pool-mode miners always get plain BTCS jobs. A port opts in with auxGroup. Solo miners add one payout address per aux coin to the password, e.g. m=solo,s256=<address>; each aux coin's own pool config (payments + soloMining on) pays the finder minus its solo fee. A coin with no address given stays in the pool wallet. With merged mining on, blockIdentifier is capped at 30 bytes.",
+    "auxPollInterval": 5000,
+    "auxCoins": {
+      "sha256coin": {
+        "symbol": "S256",
+        "chainId": 598,
+        "byteOrder": "namecoin",
+        "slotRule": "namecoin",
+        "addressParam": "s256",
+        "address": "YOUR_S256_POOL_ADDRESS",
+        "daemon": {
+          "host": "127.0.0.1",
+          "port": 25332,
+          "user": "rpcuser",
+          "password": "YOUR_RPC_PASSWORD"
+        }
+      },
+      "esf1175coin": {
+        "symbol": "ESF",
+        "chainId": 1175,
+        "byteOrder": "reversed",
+        "slotRule": "modulo",
+        "addressParam": "esf",
+        "address": "YOUR_ESF_POOL_ADDRESS",
+        "_comment_esf": "ElevenSeventyFive: tree root written byte-reversed, slot = nonce % size, work via getauxblock (no createauxblock). Merged mining from ESF block 31733.",
+        "daemon": {
+          "host": "127.0.0.1",
+          "port": 25359,
+          "user": "rpcuser",
+          "password": "YOUR_RPC_PASSWORD"
+        }
+      },
+      "vargamesh": {
+        "symbol": "VMESH",
+        "chainId": 22093,
+        "byteOrder": "namecoin",
+        "slotRule": "namecoin",
+        "mode": "getblocktemplate",
+        "addressParam": "vmesh",
+        "address": "YOUR_VMESH_POOL_ADDRESS",
+        "_comment_vmesh": "VargaMesh: chain ID 0x564D, merge-mined only (AuxPoW mandatory). No createauxblock/getauxblock: mode getblocktemplate makes the pool build the VMESH block and submit it with submitblock.",
+        "daemon": {
+          "host": "127.0.0.1",
+          "port": 29667,
+          "user": "rpcuser",
+          "password": "YOUR_RPC_PASSWORD"
+        }
+      }
+    },
+    "groups": {
+      "standard": ["sha256coin", "vargamesh"],
+      "esf": ["esf1175coin"]
+    },
+    "_comment_groups": "Namecoin-standard coins can share a group. A coin with byteOrder reversed or slotRule modulo (e.g. ESF) must be alone in its own group, on its own port."
   },
 
   "poolId": "main",
