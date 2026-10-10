@@ -166,50 +166,64 @@
     <div class="panel-head"><h2>Advanced Configuration</h2><span class="label">Optimize your mining with these password field parameters</span></div>
     <div class="panel-body gs-params">
       <article class="panel gs-param">
-        <span class="gs-num">1</span><h3>Custom Initial Difficulty</h3>
+        <h3><span class="gs-num">1</span>Custom Initial Difficulty</h3>
         <p>Set your miner's starting difficulty manually - perfect for high-powered ASICs</p>
         <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>d=25000</code></div>
         <ul><li>Starts with difficulty of 25,000</li><li>Prevents work restart issues on ASICs</li><li>Reduces rejected shares at startup</li></ul>
       </article>
       <article class="panel gs-param">
-        <span class="gs-num">2</span><h3>Minimum VarDiff Setting</h3>
+        <h3><span class="gs-num">2</span>Minimum VarDiff Setting</h3>
         <p>Prevent difficulty from dropping too low - essential for modern ASICs</p>
         <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>md=10000</code></div>
         <ul><li>VarDiff won't drop below 10,000</li><li>Ideal for Antminer S19, S21, T21 series</li><li>Reduces network overhead</li></ul>
       </article>
       <article class="panel gs-param">
-        <span class="gs-num">3</span><h3>Advanced VarDiff Tuning</h3>
+        <h3><span class="gs-num">3</span>Advanced VarDiff Tuning</h3>
         <p>For experienced miners who know their rig's real hashrate: fine-tune how quickly and how aggressively your difficulty adjusts. <strong class="hi">Most miners don't need this</strong> — the pool's default settings are already tuned to work well automatically.</p>
         <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>tt=45,rt=290,vp=7</code></div>
         <ul><li><code>tt=</code> target seconds between shares (15–120 allowed)</li><li><code>rt=</code> seconds between difficulty adjustments (60–600 allowed)</li><li><code>vp=</code> allowed variance (%) before adjusting (5–50 allowed)</li></ul>
-        <p class="muted"><strong class="hi">Good to know:</strong> any value you use is automatically kept within the allowed range, so there's no way to misconfigure this into something harmful; worst case, your difficulty just adjusts less smoothly than it could.</p>
       </article>
       <article class="panel gs-param">
-        <span class="gs-num">4</span><h3>Solo Mining Mode</h3>
+        <h3><span class="gs-num">4</span>Solo Mining Mode</h3>
         <p>Mine solo and keep the entire block reward when you find a block</p>
         <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>m=solo</code></div>
         <ul><li>Keep 100% of block rewards</li><li>Perfect for high hashrate miners</li><li>No sharing with pool participants</li></ul>
       </article>
       <article class="panel gs-param">
-        <span class="gs-num">5</span><h3>PROP Pool Mining (Default)</h3>
+        <h3><span class="gs-num">5</span>PROP Pool Mining (Default)</h3>
         <p>Mine with the pool for consistent, proportional rewards</p>
         <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>x</code></div>
         <ul><li>Steady, predictable earnings</li><li>Lower variance than solo mining</li><li>Rewards based on contribution</li></ul>
       </article>
       {{? anyMerged }}
       <article class="panel gs-param aux">
-        <span class="gs-num">6</span><h3>Merged Mining (Solo)</h3>
+        <h3><span class="gs-num">6</span>Merged Mining (Solo)</h3>
         <p>Solo miners on a merged-mining port also mine an aux coin on the same hashes. Add your address for that coin to the password.</p>
         <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>m=solo,s256=your-s256-address</code></div>
         <ul><li>Blocks you find on the aux coin are paid to your address there</li><li>Without an address the block still counts, but the reward stays with the pool</li><li>Each port shows which coins it merge-mines</li></ul>
       </article>
       {{?}}
       <article class="panel gs-param">
-        <span class="gs-num">{{? anyMerged }}7{{??}}6{{?}}</span><h3>Combine Multiple Settings</h3>
+        <h3><span class="gs-num">{{? anyMerged }}7{{??}}6{{?}}</span>Combine Multiple Settings</h3>
         <p>Mix and match parameters for the perfect setup</p>
         <div class="gs-example"><span>Username</span><code>your-wallet.worker1</code><span>Password</span><code>d=25000,md=10000,m=solo</code></div>
         <ul><li>Initial difficulty to 25,000</li><li>Minimum VarDiff to 10,000</li><li>Solo mining mode enabled</li></ul>
       </article>
+    </div>
+    <div class="panel-body gs-howto">
+      <h3>How the password parameters work</h3>
+      <ul class="gs-notes">
+        <li>Put the parameters in your miner's <strong class="hi">password</strong> field, separated by commas. The order doesn't matter, and anything not set uses the pool default.</li>
+        <li>They are read when your miner logs in. After changing them, restart or reconnect the miner.</li>
+        <li><code>tt=</code>, <code>rt=</code> and <code>vp=</code> are always kept within the allowed range, so they can't be misconfigured into something harmful. At worst your difficulty adjusts less smoothly.</li>
+        <li><code>d=</code> sets where your difficulty starts; <code>md=</code> is a floor that VarDiff never goes below.</li>
+      </ul>
+      {{? anyMerged }}
+      <div class="gs-warn">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p><strong>Merged mining: add an address for every aux coin.</strong> If your password has no address for a merged coin (for example <code>s256=your-s256-address</code>), the blocks you find on that coin are paid to the <strong>pool wallet</strong>, not to you.</p>
+      </div>
+      {{?}}
     </div>
   </section>
 </div>
@@ -261,12 +275,19 @@
   .gs-notes { list-style: none; display: grid; gap: 6px; font-size: 12px; }
   .gs-notes li, .gs-param ul li { padding-left: 14px; position: relative; }
   .gs-notes li::before, .gs-param ul li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 6px; height: 1px; background: var(--accent); }
-  .gs-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; align-items: start; }
-  .gs-param { padding: 14px; display: grid; gap: 10px; align-content: start; }
-  .gs-param ul { list-style: none; display: grid; gap: 4px; font-size: 12px; }
+  .gs-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  /* subgrid: title, text, example and list line up across a row */
+  .gs-param { padding: 14px; display: grid; gap: 10px; align-content: start; grid-row: span 4; grid-template-rows: subgrid; }
+  .gs-param h3 { display: flex; align-items: baseline; gap: 10px; }
+  .gs-param ul { list-style: none; display: grid; gap: 4px; align-content: start; font-size: 12px; }
   .gs-param.aux ul li::before { background: var(--aux); }
   .gs-param.aux .gs-num { color: var(--aux); }
-  .gs-param code { font: 600 11.5px var(--font-mono); color: var(--accent); }
+  .gs-param code, .gs-howto code { font: 600 11.5px var(--font-mono); color: var(--accent); }
+  .gs-howto { display: grid; gap: 12px; border-top: 1px solid var(--line); }
+  .gs-warn { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--warn); border-left-width: 3px; background: color-mix(in srgb, var(--warn) 10%, transparent); color: var(--text-hi); font-size: 13px; }
+  .gs-warn i { color: var(--warn); margin-top: 2px; }
+  .gs-warn p { margin: 0; }
+  .gs-warn code { color: var(--aux); }
   .gs-param.aux code { color: var(--aux); }
   .gs-example { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: center; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line); }
   .gs-example span { font: 600 9.5px var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
