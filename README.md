@@ -37,6 +37,9 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - **CHANGED**: Stratum usernames may only contain letters, digits, `.`, `_` and `-` (`address.worker`); others are refused at login, so a worker name can never carry markup into the website, API or logs
 - **FIXED**: Finding a solo block reset the round shares and best share of every solo miner, not only the finder; solo hashrate samples were never trimmed from Redis
 - **CHANGED**: `website.adminCenter.enabled` is `false` in the shipped configs; enable it after setting `passwordHash`
+- **NEW**: VargaMesh (VMESH) as a merged-mined aux coin, through the new `getblocktemplate` aux mode for nodes without aux-block RPCs
+- **NEW**: Daemon entries accept `"wallet": "<name>"` (RPCs go to `/wallet/<name>`), for daemons with several wallets loaded
+- **FIXED**: A failing `getbalance` at startup (e.g. error -19, several wallets loaded) silently left a coin's payment processing off; it is now logged
 - **FIXED**: Admin Center pool management failed to load ("value.toFixed is not a function") when a coin reported its difficulty as text
 - **NEW**: `/api/stats` shows merged mining per coin (`merged_with`, `merge_mined_by`, `mergedMining`)
 - **IMPROVED**: Block confirmation counts are updated by each coin's payment processor every `confirmationsInterval` seconds (default 120) for every coin, including aux coins; the standalone `libs/blockConfirmations.js` (hard-coded daemons, S256/BTGS missing) is removed
@@ -98,6 +101,7 @@ SHA256-NOMP comes pre-configured with the following coins:
 | Bitcoin II     | BC2    | SHA256    | 50242-50246 | 101               | 10 min     |
 | SHA256COIN     | S256   | SHA256    | 50272-50276 | 201               | 20 min     |
 | ElevenSeventyFive | ESF | SHA256    | 50282-50286 | 101               | 10 min     |
+| VargaMesh      | VMESH  | SHA256    | merged only | 101               | 2 min      |
 
 All coins support:
 
@@ -747,6 +751,8 @@ If you leave out an aux coin's address, its blocks are still found and submitted
 - **Each aux coin needs its own pool config** (e.g. `pool_configs/sha256coin.json`) with `paymentProcessing.enabled` and `paymentProcessing.soloMining` on, using the same daemon/wallet and pool address as in `auxCoins`. Merged-mined blocks are recorded there as solo blocks of the miner's aux address, and that pool's payment processor pays the finder (minus its `soloFee`) once the block matures. The portal refuses to start if this config is missing.
 - Namecoin-standard coins (S256, Namecoin, …) can share a group: add the coin to `auxCoins` and its name to the group. A coin with `byteOrder: "reversed"` or `slotRule: "modulo"` must be alone in its own group, on its own port(s).
 - **ESF example** (`pool_configs/bitcoinsilver.json`): `auxCoins.esf1175coin` (ElevenSeventyFive, chain ID 1175, `byteOrder: "reversed"`, `slotRule: "modulo"`, `addressParam: "esf"`) in group `esf`, used by port **50227** — solo miners there mine BTCS + ESF with `m=solo,esf=<ESF address>`, while ports 50222–50226 mine BTCS + S256. ESF's own pool config is `pool_configs/esf1175coin.json` (coin file `coins/esf1175coin.json`), which pays the ESF solo blocks. ESF has no `createauxblock`; the pool uses `getauxblock` automatically. ESF accepts merge-mined blocks from its block 31733.
+- **VargaMesh example** (`pool_configs/bitcoinsilver.json`): `auxCoins.vargamesh` (VMESH, chain ID 22093 = `0x564D`, `addressParam: "vmesh"`, `mode: "getblocktemplate"`) shares the `standard` group with S256, so solo miners on ports 50222–50226 mine BTCS + S256 + VMESH with `m=solo,s256=<S256 address>,vmesh=<VMESH address>`. VargaMesh requires AuxPoW from block 1, so it can only be merge-mined: its own pool config `pool_configs/vargamesh.json` has no ports and only records and pays the blocks.
+- `mode` selects how the pool gets aux work: `auxblock` (default) uses the node's `createauxblock`/`getauxblock` and `submitauxblock`; `getblocktemplate` is for nodes without those RPCs (VargaMesh) — the pool builds the aux block from `getblocktemplate` (coinbase paying `address`, witness commitment, the node's `auxpow_childnonce`) and submits header + auxpow + transactions with `submitblock`. The node must report `auxpow: true` and the configured chain ID.
 - With merged mining on, `blockIdentifier` is capped at 30 bytes to keep the coinbase scriptSig within 100 bytes.
 - Every aux block is logged (`[AUX BLOCK FOUND!]`) and listed in Redis under `<coin>:auxBlocks:<auxcoin>`.
 - `/api/stats` shows merged mining per coin: `merged_with` in the YIIMP-style shape pool listing sites read (`{"merged_with": "S256,ESF"}`, or `"0"`), `merge_mined_by` on aux coins (e.g. `["BTCS"]`), and `mergedMining` with each aux coin's symbol, chain ID, ports and password example.

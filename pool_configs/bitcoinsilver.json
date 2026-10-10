@@ -184,10 +184,26 @@
           "user": "rpcuser",
           "password": "YOUR_RPC_PASSWORD"
         }
+      },
+      "vargamesh": {
+        "symbol": "VMESH",
+        "chainId": 22093,
+        "byteOrder": "namecoin",
+        "slotRule": "namecoin",
+        "mode": "getblocktemplate",
+        "addressParam": "vmesh",
+        "address": "YOUR_VMESH_POOL_ADDRESS",
+        "_comment_vmesh": "VargaMesh: chain ID 0x564D, merge-mined only (AuxPoW mandatory). No createauxblock/getauxblock: mode getblocktemplate makes the pool build the VMESH block and submit it with submitblock.",
+        "daemon": {
+          "host": "127.0.0.1",
+          "port": 29667,
+          "user": "rpcuser",
+          "password": "YOUR_RPC_PASSWORD"
+        }
       }
     },
     "groups": {
-      "standard": ["sha256coin"],
+      "standard": ["sha256coin", "vargamesh"],
       "esf": ["esf1175coin"]
     },
     "_comment_groups": "Namecoin-standard coins can share a group. A coin with byteOrder reversed or slotRule modulo (e.g. ESF) must be alone in its own group, on its own port."

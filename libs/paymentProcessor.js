@@ -291,6 +291,18 @@ function SetupForPool(logger, poolOptions, setupFinished) {
       [],
       function (result) {
         if (result.error) {
+          // Without this the coin's payment processing never starts and
+          // nothing says why (e.g. -19: several wallets loaded and no
+          // "wallet" set in paymentProcessing.daemon)
+          logger.error(
+            logSystem,
+            logComponent,
+            "getbalance failed, payment processing NOT started: " +
+              JSON.stringify(result.error) +
+              (result.error && result.error.code === -19
+                ? ' (set "wallet" in paymentProcessing.daemon)'
+                : ""),
+          );
           return callback(true);
         }
         try {

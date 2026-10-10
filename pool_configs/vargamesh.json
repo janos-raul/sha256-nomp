@@ -1,0 +1,65 @@
+{
+  "enabled": true,
+  "coin": "vargamesh.json",
+  "asicboost": true,
+  "blockIdentifier": "sha256-mining.go.ro",
+  "_comment_mergedMining": "VargaMesh (VMESH, chain ID 22093 = 0x564D) can only be merge-mined: AuxPoW is mandatory from block 1, so this pool has no ports. Parent pools merge-mine it for their solo miners (auxCoins.vargamesh in bitcoinsilver.json, mode getblocktemplate); this pool's payment processor pays those VMESH solo blocks to the miners' vmesh= addresses. Keep paymentProcessing.enabled and paymentProcessing.soloMining on, and use the same daemon/wallet and pool address as auxCoins.vargamesh.",
+  "security": {
+    "enabled": true,
+    "rateLimit": {
+      "enabled": true,
+      "window": 60000,
+      "maxConnections": 10,
+      "maxMalformed": 3,
+      "maxFloods": 2
+    },
+    "ban": {
+      "enabled": true,
+      "duration": 600000,
+      "maxStrikes": 3,
+      "permanentDuration": 86400000
+    }
+  },
+  "address": "YOUR_POOL_WALLET_ADDRESS",
+  "rewardRecipients": {
+    "YOUR_FEE_ADDRESS": 0
+  },
+  "paymentProcessing": {
+    "txfee": 0.0004,
+    "minConf": 101,
+    "enabled": true,
+    "soloMining": true,
+    "paymentMode": "prop",
+    "poolFee": 1,
+    "soloFee": 1,
+    "_comment_paymentMode": "prop, pplnt",
+    "paymentInterval": 3600,
+    "minimumPayment": 1,
+    "minimumPayment_solo": 1,
+    "maxBlocksPerPayment": 50,
+    "daemon": {
+      "host": "127.0.0.1",
+      "port": 29667,
+      "user": "rpcuser",
+      "password": "YOUR_RPC_PASSWORD"
+    }
+  },
+  "tlsOptions": {
+    "enabled": false,
+    "serverKey": "",
+    "serverCert": "",
+    "ca": ""
+  },
+  "ports": {},
+  "_comment_ports": "No stratum ports: VMESH blocks without AuxPoW are invalid.",
+  "poolId": "main",
+  "_comment_poolId": "use it for region identification: eu, us, asia or keep default if you have one stratum instance for one coin",
+  "daemons": [
+    {
+      "host": "127.0.0.1",
+      "port": 29667,
+      "user": "rpcuser",
+      "password": "YOUR_RPC_PASSWORD"
+    }
+  ]
+}
