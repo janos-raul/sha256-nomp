@@ -313,30 +313,13 @@ module.exports = function (logger) {
     return coinRegex.test(coin);
   };
 
-  // Get real client IP address (handles proxies, WSL, etc.)
+  // Client IP. Express is set to trust proxy headers only from loopback
+  // (app.set("trust proxy", "loopback") below), so req.ip is the visitor's
+  // address when nginx on this machine forwards the request, and the real
+  // peer address otherwise. Headers sent by anyone else are ignored, so a
+  // client cannot fake its IP to dodge rate limits, bans or the admin lockout.
   var getRealIP = function (req) {
-    // Check various headers in order of reliability
-    var cfIP = req.headers["cf-connecting-ip"]; // Cloudflare
-    var realIP = req.headers["x-real-ip"]; // Nginx/Apache
-    var forwardedFor = req.headers["x-forwarded-for"]; // Standard proxy
-
-    // X-Forwarded-For can be a comma-separated list, take the first (original client)
-    if (forwardedFor) {
-      return forwardedFor.split(",")[0].trim();
-    }
-
-    // Use Cloudflare IP if available
-    if (cfIP) {
-      return cfIP;
-    }
-
-    // Use X-Real-IP if available
-    if (realIP) {
-      return realIP;
-    }
-
-    // Fallback to Express default
-    return req.ip || req.connection.remoteAddress || "unknown";
+    return req.ip || (req.socket && req.socket.remoteAddress) || "unknown";
   };
 
   // Admin password verification with bcrypt support
@@ -706,6 +689,10 @@ module.exports = function (logger) {
   };
 
   var app = express();
+  // Behind a reverse proxy on the same machine (nginx), take the client IP
+  // from X-Forwarded-For; never from other hosts. Also gives the rate
+  // limiters (keyed on req.ip) the real visitor address.
+  app.set("trust proxy", "loopback");
 
   // Security middleware configuration
   // Helmet helps protect from common web vulnerabilities
