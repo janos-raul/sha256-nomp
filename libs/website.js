@@ -75,7 +75,8 @@ module.exports = function (logger) {
 
   var processTemplates = function () {
     // Check if we have stats available
-    if (!portalStats.stats) {
+    // stats.global arrives with the first full stats run; pages read it
+    if (!portalStats.stats || !portalStats.stats.global) {
       logger.warning(
         logSystem,
         "Templates",
