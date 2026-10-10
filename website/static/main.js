@@ -463,8 +463,28 @@ function lookupWorker(address) {
 
     if (!banner || !textElement || !iconElement) return;
 
-    // Set text
-    textElement.textContent = message.text;
+    // Set text; http(s) and www. addresses become links. Built from text
+    // nodes and <a> elements, so the message is never parsed as HTML.
+    textElement.textContent = "";
+    const text = String(message.text || "");
+    const urlRe = /\b(?:https?:\/\/|www\.)[^\s<>"']+/gi;
+    let last = 0;
+    let m;
+    while ((m = urlRe.exec(text))) {
+      // leave trailing punctuation outside the link ("see https://x.org.")
+      const url = m[0].replace(/[.,;:!?)\]]+$/, "");
+      if (!url) continue;
+      textElement.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const a = document.createElement("a");
+      a.href = /^www\./i.test(url) ? "https://" + url : url;
+      a.textContent = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer nofollow";
+      textElement.appendChild(a);
+      last = m.index + url.length;
+      urlRe.lastIndex = last;
+    }
+    textElement.appendChild(document.createTextNode(text.slice(last)));
 
     // Set color class
     const color = message.color || "blue";

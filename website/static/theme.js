@@ -73,6 +73,7 @@
       var clone = child.cloneNode(true);
       clone.setAttribute("data-clone", "1");
       clone.setAttribute("aria-hidden", "true");
+      if (clone.tagName === "A") clone.tabIndex = -1;
       track.appendChild(clone);
     });
     // constant speed: about 40px per second unless given
@@ -363,8 +364,15 @@
   }
 
   function priceItem(c) {
-    var item = document.createElement("div");
+    // each price links to the coin's CoinGecko page
+    var item = document.createElement("a");
     item.className = "net-item price-item";
+    if (typeof c.id === "string" && /^[a-z0-9-]+$/.test(c.id)) {
+      item.href = "https://www.coingecko.com/en/coins/" + c.id;
+      item.target = "_blank";
+      item.rel = "noopener noreferrer";
+      item.title = String(c.name || c.id) + " on CoinGecko";
+    }
     if (typeof c.image === "string" && /^https:\/\/[a-z0-9.-]*coingecko\.com\//.test(c.image)) {
       var img = document.createElement("img");
       img.src = c.image;

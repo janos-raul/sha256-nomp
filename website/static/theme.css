@@ -547,6 +547,20 @@ img {
 }
 .price-item {
   align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+a.price-item:hover .price-name {
+  color: var(--accent);
+}
+.pool-message-text a {
+  color: var(--msg);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+.pool-message-text a:hover {
+  color: var(--text-hi);
 }
 .price-item img {
   width: 14px;
