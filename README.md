@@ -23,7 +23,14 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 - ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
 
-### Recent Updates (v1.5.0)
+### Recent Updates (v1.5.1)
+
+- **NEW**: Coin display names — coin files take an optional `displayName` (e.g. "Bitcoin Silver"), shown on the website and in the API instead of the capitalized pool name
+- **CHANGED**: The ElevenSeventyFive pool ID is now `elevenseventyfive` (`coins/` and `pool_configs/elevenseventyfive.json`, aux coin key in the parent configs). Running pools move their Redis data with `scripts/rename-coin-redis.js`, see [Upgrading](#upgrading-sha256-nomp)
+- **NEW**: Links in the pool message are clickable; prices in the price bar link to the coin's CoinGecko page
+- **FIXED**: With many coins the coin tabs (Pool Stats, Miner Stats) stay on one row that scrolls sideways; network and block values no longer wrap; chart y-axis labels are no longer cut off; the home page block feed no longer stretches the hashrate chart
+
+### v1.5.0
 
 - **NEW**: Merged mining (Namecoin-style AuxPoW) for solo miners — aux coins are defined once in `mergedMining.auxCoins`, grouped in `mergedMining.groups`, and enabled per port with `auxGroup`. Solo miners add one payout address per aux coin to the password (`m=solo,s256=<address>`), checked with that coin's daemon at login. Each aux coin's own pool config pays the finder, minus its solo fee. Pool-mode miners keep plain jobs. See [Merged Mining](#merged-mining-solo-miners)
 - **NEW**: Several Namecoin-standard aux coins in one merged-mining tree; ESF-style coins (reversed byte order, modulo slot, `getauxblock`) in their own group
@@ -1008,6 +1015,8 @@ When updating SHA256-NOMP to the latest code its important to not only `git pull
 the `node-stratum-pool` module, and any config files that may have been changed.
 
 Upgrading from 1.4.x to 1.5.0: Node.js 24+ and Redis 6.2+ are required; usernames with characters other than letters, digits, `.`, `_` and `-` are refused; the admin center ships disabled; merged mining is configured per parent pool (`mergedMining`, see above) and every aux coin needs its own pool config. Redis data from 1.4.x is kept.
+
+Upgrading from 1.5.0 to 1.5.1 with ElevenSeventyFive (ESF) configured: its pool ID changed from `esf1175coin` to `elevenseventyfive`. With the pool stopped and a Redis backup taken, rename `coins/esf1175coin.json` and `pool_configs/esf1175coin.json` to `elevenseventyfive.json` (and their `name` / `coin` fields), rename the aux coin key `esf1175coin` in every parent pool config (`mergedMining.auxCoins` and `groups`), change the ESF daemon's `blocknotify` to `... blocknotify elevenseventyfive %s` and restart it, then run `node scripts/rename-coin-redis.js esf1175coin elevenseventyfive` (dry run) and again with `--apply`. Pending ESF blocks and balances move with the data.
 
 - Inside your SHA256-NOMP directory (where the init.js script is) do `git pull` to get the latest SHA256-NOMP code.
 - Remove the dependencies by deleting the `node_modules` directory with `rm -r node_modules`.
