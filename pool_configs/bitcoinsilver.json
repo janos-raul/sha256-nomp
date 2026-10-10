@@ -170,7 +170,7 @@
           "password": "YOUR_RPC_PASSWORD"
         }
       },
-      "esf1175coin": {
+      "elevenseventyfive": {
         "symbol": "ESF",
         "chainId": 1175,
         "byteOrder": "reversed",
@@ -204,7 +204,7 @@
     },
     "groups": {
       "standard": ["sha256coin", "vargamesh"],
-      "esf": ["esf1175coin"]
+      "esf": ["elevenseventyfive"]
     },
     "_comment_groups": "Namecoin-standard coins can share a group. A coin with byteOrder reversed or slotRule modulo (e.g. ESF) must be alone in its own group, on its own port."
   },

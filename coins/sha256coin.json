@@ -1,5 +1,6 @@
 {
   "name": "sha256coin",
+  "displayName": "SHA256COIN",
   "symbol": "S256",
   "algorithm": "sha256",
   "reward": "POW",

@@ -1,5 +1,6 @@
 {
   "name": "bitcoingold",
+  "displayName": "Bitcoin Gold",
   "symbol": "BTGS",
   "algorithm": "sha256",
   "reward": "POW",

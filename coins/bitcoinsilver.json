@@ -1,5 +1,6 @@
 {
   "name": "bitcoinsilver",
+  "displayName": "Bitcoin Silver",
   "symbol": "BTCS",
   "algorithm": "sha256",
   "reward": "POW",

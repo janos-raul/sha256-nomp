@@ -1,5 +1,6 @@
 {
   "name": "bitcoinii",
+  "displayName": "Bitcoin II",
   "symbol": "BC2",
   "algorithm": "sha256",
   "reward": "POW",

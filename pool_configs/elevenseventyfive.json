@@ -1,9 +1,9 @@
 {
   "enabled": true,
-  "coin": "esf1175coin.json",
+  "coin": "elevenseventyfive.json",
   "asicboost": true,
   "blockIdentifier": "sha256-mining.go.ro",
-  "_comment_mergedMining": "ESF (ElevenSeventyFive, chain ID 1175) is an aux coin other pools merge-mine for their solo miners (see the esf group in bitcoinsilver.json). This pool's payment processor pays those ESF solo blocks to the miners' esf= addresses, so keep paymentProcessing.enabled and paymentProcessing.soloMining on, and use the same daemon/wallet and pool address as auxCoins.esf1175coin there. ESF merged mining starts at ESF block 31733.",
+  "_comment_mergedMining": "ESF (ElevenSeventyFive, chain ID 1175) is an aux coin other pools merge-mine for their solo miners (see the esf group in bitcoinsilver.json). This pool's payment processor pays those ESF solo blocks to the miners' esf= addresses, so keep paymentProcessing.enabled and paymentProcessing.soloMining on, and use the same daemon/wallet and pool address as auxCoins.elevenseventyfive there. ESF merged mining starts at ESF block 31733.",
   "security": {
     "enabled": true,
     "rateLimit": {

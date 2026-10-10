@@ -107,7 +107,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
       return (
         "{algorithm:" + String(auxCoin.algorithm || "sha256").toLowerCase() +
         ",symbol:" + c.symbol.toLowerCase() +
-        ",name:" + String(auxCoin.displayName || auxCoin.name || c.name).toLowerCase() + "}"
+        ",name:" + String(auxCoin.name || c.name).toLowerCase() + "}"
       );
     });
     return {
@@ -1070,7 +1070,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
               var coinStats = {
                 name: coinName,
-                // shown name, e.g. "ElevenSeventyFive" for esf1175coin;
+                // shown name, e.g. "ElevenSeventyFive" for elevenseventyfive;
                 // coin files without displayName show the capitalized pool name
                 displayName:
                   poolConfigs[coinName].coin.displayName ||

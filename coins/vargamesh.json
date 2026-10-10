@@ -1,5 +1,6 @@
 {
   "name": "vargamesh",
+  "displayName": "VargaMesh",
   "symbol": "VMESH",
   "algorithm": "sha256",
   "reward": "POW",
