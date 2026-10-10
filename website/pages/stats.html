@@ -5,7 +5,9 @@
     .ps-pane { display: grid; gap: 12px; }
     .ps-pane[hidden] { display: none; }
     .ps-top { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; }
-    @media (max-width: 1000px) { .ps-top { grid-template-columns: 1fr; } }
+    /* below 1280px the charts move under the stats so the three columns keep their width */
+    @media (max-width: 1280px) { .ps-top { grid-template-columns: 1fr; } .ps-side { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 700px) { .ps-side { grid-template-columns: 1fr; } }
     .ps-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
     @media (max-width: 760px) { .ps-cols { grid-template-columns: 1fr; } }
     .ps-col { min-width: 0; border-left: 1px solid var(--line); }
@@ -14,6 +16,7 @@
     .ps-col h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); font: 600 11px var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi); }
     .ps-col h3 i { color: var(--accent); margin-right: 8px; }
     .ps-col .kv { font-size: 12px; }
+    .ps-col .kv > div:nth-child(even) { overflow-wrap: anywhere; }
     .ps-side { display: grid; gap: 12px; align-content: start; }
     .ps-chart { height: 160px; }
     .ps-donut-wrap { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px; }
@@ -102,7 +105,7 @@
                         <div>Hashrate</div><div id="psHashrate{{=pool}}">{{=p.hashrateString || '0 H/s'}}</div>
                         <div>Average</div><div id="psHashrateAvg{{=pool}}">…</div>
                         {{? p.mergedHashrate !== undefined }}
-                        <div>Merged hash</div><div><span class="cyan" id="psMerged{{=pool}}">{{=p.mergedHashrateString || '0 H/s'}}</span> <span class="sub">(<span id="psMergedMiners{{=pool}}">{{=p.mergedMinerCount || 0}}</span> miners, via {{=(p.merge_mined_by || []).join(', ')}})</span></div>
+                        <div>Merged hash</div><div title="Merge-mined via {{=(p.merge_mined_by || []).join(', ')}}"><span class="cyan" id="psMerged{{=pool}}">{{=p.mergedHashrateString || '0 H/s'}}</span> <span class="sub" id="psMergedMiners{{=pool}}">· {{=p.mergedMinerCount || 0}} {{=p.mergedMinerCount === 1 ? 'miner' : 'miners'}}</span></div>
                         {{?}}
                         <div>Luck</div><div id="psLuck{{=pool}}">{{=luckString(p.luckDays)}}</div>
                         <div>Net share</div><div id="psShare{{=pool}}">{{=share.toFixed(share >= 1 ? 2 : 5)}}%</div>
@@ -361,7 +364,7 @@
             $('#psTabHr' + pool).text(p.hashrate > 0 || !(p.mergedHashrate > 0) ? (p.hashrateString || '0 H/s') : p.mergedHashrateString + ' merged');
             if (p.mergedHashrate !== undefined) {
                 $('#psMerged' + pool).text(p.mergedHashrateString || '0 H/s');
-                $('#psMergedMiners' + pool).text(p.mergedMinerCount || 0);
+                $('#psMergedMiners' + pool).text('· ' + (p.mergedMinerCount || 0) + (p.mergedMinerCount === 1 ? ' miner' : ' miners'));
             }
             $('#psMiners' + pool).text(p.minerCount || 0);
             $('#psWorkers' + pool).text(p.workerCount || 0);

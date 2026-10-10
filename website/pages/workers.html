@@ -173,7 +173,7 @@
                         <div>Solo hash</div><div>{{=poolData.soloHashrateString || '0 H/s'}} <span class="sub">({{=poolData.soloMinerCount || 0}} miners)</span></div>
                         {{?}}
                         {{? poolData.mergedHashrate !== undefined }}
-                        <div>Merged hash</div><div><span class="cyan">{{=poolData.mergedHashrateString || '0 H/s'}}</span> <span class="sub">({{=poolData.mergedMinerCount || 0}} miners, via {{=(poolData.merge_mined_by || []).join(', ')}})</span></div>
+                        <div>Merged hash</div><div title="Merge-mined via {{=(poolData.merge_mined_by || []).join(', ')}}"><span class="cyan">{{=poolData.mergedHashrateString || '0 H/s'}}</span> <span class="sub">· {{=poolData.mergedMinerCount || 0}} {{=poolData.mergedMinerCount === 1 ? 'miner' : 'miners'}}</span></div>
                         {{?}}
                         <div>Payout</div><div>{{=poolData.paymentMode === 'pplnt' ? 'PPLNT' : 'PROP'}} {{=poolData.poolFee || 0}}%{{? poolData.soloMining }} · solo {{=poolData.soloFee || 0}}%{{?}}</div>
                     </div>
