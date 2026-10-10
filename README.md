@@ -21,7 +21,7 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Multiple Payment Modes** - PROP and PPLNT payment systems
 - ✅ **Dual Mining** - Support pool and solo mining simultaneously
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
-- ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF) on the same work, each paid to their own address (v1.5.0)
+- ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
 
 ### Recent Updates (v1.5.0)
 
@@ -38,6 +38,15 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - **FIXED**: Finding a solo block reset the round shares and best share of every solo miner, not only the finder; solo hashrate samples were never trimmed from Redis
 - **CHANGED**: `website.adminCenter.enabled` is `false` in the shipped configs; enable it after setting `passwordHash`
 - **NEW**: VargaMesh (VMESH) as a merged-mined aux coin, through the new `getblocktemplate` aux mode for nodes without aux-block RPCs
+- **NEW**: Merge-mined coins show the hashrate merging them ("merged hashrate", miners listed "via BTCS") on Pool Stats, Miner Stats and the home page; it is kept apart from their own hashrate so global totals do not count the same hashes twice
+- **NEW**: Pool Stats and Miner Stats have one tab per coin; the miner page lists workers as rows and the miner's found blocks on every coin (merge-mined ones included), with confirmation progress; long lists are paginated
+- **NEW**: `/api/stats` also carries `merged` in the shape other pools publish for listing sites (`"[{algorithm:sha256,symbol:vmesh,name:vargamesh}]"`), next to `merged_with`
+- **IMPROVED**: A payment cycle starts within about a minute of a found block, so immature balances show it at once (before: up to `paymentInterval`); the regular schedule continues
+- **IMPROVED**: When an aux chain finds a block, merged jobs go out with `clean_jobs=true` so miners drop work that can no longer win it; stale aux work is no longer submitted; ESF work is refreshed on a new tip or once a minute instead of on every poll
+- **NEW**: Getting Started explains merged-only coins (no ports of their own, e.g. VMESH) and sets up a parent port for them
+- **NEW**: `website.branding.ogImageAlt`, plus `og:site_name` and image alt tags for link previews
+- **FIXED**: The client IP could be faked with an `X-Forwarded-For` header to get around the API rate limit, bans and the admin login lockout; proxy headers are now trusted only from the same machine (a reverse proxy such as nginx)
+- **REMOVED**: The old client-side mining key page (`/key.html`, `mining_key`), which was never served, and unused files (`libs/workerapi.js`, old stats scripts and stylesheets)
 - **NEW**: Daemon entries accept `"wallet": "<name>"` (RPCs go to `/wallet/<name>`), for daemons with several wallets loaded
 - **FIXED**: A failing `getbalance` at startup (e.g. error -19, several wallets loaded) silently left a coin's payment processing off; it is now logged
 - **FIXED**: Admin Center pool management failed to load ("value.toFixed is not a function") when a coin reported its difficulty as text
@@ -110,7 +119,7 @@ All coins support:
 - ✅ Solo and pool mining modes
 - ✅ Variable difficulty per port
 - ✅ Multiple mining ports for different hashrates
-- ✅ Merged mining of S256 for solo miners (all except S256 and ESF themselves); Bitcoin Silver port 50227 merge-mines ESF instead
+- ✅ Merged mining for solo miners: S256 on every coin except S256 and ESF themselves; Bitcoin Silver ports 50222–50226 also merge-mine VMESH, and port 50227 merge-mines ESF (see [Merged Mining](#merged-mining-solo-miners))
 
 ### Community
 
@@ -132,7 +141,7 @@ _Building high-performance SHA256 mining infrastructure_
 
 - Coin daemon(s) (find the coin's repo and build latest version from source or use the already built ones)
 - [Node.js](http://nodejs.org/) v24+ (see `.nvmrc`; [installation instructions](https://nodejs.org/en/download))
-- [Redis](http://redis.io/) key-value store v2.6+ ([follow these instructions](http://redis.io/topics/quickstart))
+- [Redis](http://redis.io/) key-value store v6.2+ ([follow these instructions](http://redis.io/topics/quickstart))
 
 ##### Seriously
 
@@ -261,7 +270,10 @@ Explanation for each field:
     "website": {
         "enabled": true,
         /* If you are using a reverse-proxy like nginx to display the website then set this to
-           127.0.0.1 to not expose the port. */
+           127.0.0.1 to not expose the port, and let the proxy do TLS (tlsOptions.enabled false).
+           The portal trusts X-Forwarded-For only from the same machine, so the proxy should set
+           it to the client address ("proxy_set_header X-Forwarded-For $remote_addr;"), and
+           /api/live_stats needs "proxy_buffering off" (server-sent events). */
         "host": "0.0.0.0",
         "port": 80,
         /* Used for displaying stratum connection data on the Getting Started page. */
@@ -993,7 +1005,9 @@ npm start
 #### Upgrading SHA256-NOMP
 
 When updating SHA256-NOMP to the latest code its important to not only `git pull` the latest from this repo, but to also update
-the `node-stratum-pool` and `node-multi-hashing` modules, and any config files that may have been changed.
+the `node-stratum-pool` module, and any config files that may have been changed.
+
+Upgrading from 1.4.x to 1.5.0: Node.js 24+ and Redis 6.2+ are required; usernames with characters other than letters, digits, `.`, `_` and `-` are refused; the admin center ships disabled; merged mining is configured per parent pool (`mergedMining`, see above) and every aux coin needs its own pool config. Redis data from 1.4.x is kept.
 
 - Inside your SHA256-NOMP directory (where the init.js script is) do `git pull` to get the latest SHA256-NOMP code.
 - Remove the dependencies by deleting the `node_modules` directory with `rm -r node_modules`.
