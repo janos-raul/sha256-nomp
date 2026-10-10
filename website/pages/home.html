@@ -98,18 +98,31 @@
     <article class="panel home-pool" data-pool="{{=pool}}">
       <div class="panel-head">
         <h2><span class="coin-mark{{? isAux }} aux{{?}}">{{=(p.symbol || pool).slice(0, 4)}}</span><span class="home-pool-name">{{=cap(pool)}} Pool</span></h2>
+      </div>
+      <div class="home-pool-hr">
+        <span class="label">Hashrate</span>
         <span class="mono {{? isAux }}cyan{{??}}amber{{?}}" id="statsHashrate{{=pool}}">{{=(p.hashrate > 0 || !(p.mergedHashrate > 0)) ? (p.hashrateString || '0 H/s') : p.mergedHashrateString + ' merged'}}</span>
       </div>
       <div class="kv">
-        <div>Miners</div><div id="statsMiners{{=pool}}">{{=p.minerCount || 0}} <span class="sub">({{=p.poolMinerCount || 0}} pool / {{=p.soloMinerCount || 0}} solo)</span></div>
+        <div>Miners</div><div id="statsMiners{{=pool}}">{{=p.minerCount || 0}} <span class="sub">({{=p.poolMinerCount || 0}} pool / {{=p.soloMinerCount || 0}} solo{{? p.mergedMinerCount }} / +{{=p.mergedMinerCount}} merged{{?}})</span></div>
         <div>Workers</div><div id="statsWorkers{{=pool}}">{{=p.workerCount || 0}} <span class="sub">({{=p.poolWorkerCount || 0}} pool / {{=p.soloWorkerCount || 0}} solo)</span></div>
         <div>Pool / Solo Fee</div><div>{{=p.poolFee || 0}}% / {{=p.soloFee || 0}}%</div>
         <div>Min Payout</div><div>{{=p.minimumPayment || 0}} {{=p.symbol || ''}}</div>
         <div>Network</div><div><span id="statsNetworkDiff_{{=pool}}">{{=diff(ps.networkDiff)}}</span> <span class="sub">· #<span id="statsNetworkBlocks_{{=pool}}">{{=ps.networkBlocks || p.blockheight || 0}}</span></span></div>
         <div>Last block</div><div id="statsLastBlock_{{=pool}}" data-since="{{=p.timesincelast || ''}}">{{? p.lastblock }}#{{=p.lastblock}}{{??}}none yet{{?}}</div>
-        <div>Ports</div><div class="home-ports">{{=ports.join(", ") || "-"}}</div>
+        <div>Ports</div><div class="home-ports">
+          {{ ports.forEach(function (pt) { var grp = cfg.ports[pt].auxGroup; var mmc = (grp && cfg.mergedMining && cfg.mergedMining.enabled && cfg.mergedMining.groups && cfg.mergedMining.groups[grp]) || []; }}
+          <span{{? mmc.length }} title="Solo miners also merge-mine {{=mmc.map(function (c) { return ((cfg.mergedMining.auxCoins || {})[c] || {}).symbol || c; }).join(', ')}}"{{?}}>{{=pt}}</span>
+          {{ }); }}
+          {{? !ports.length }}<span class="none">{{=isAux ? "merged only" : "-"}}</span>{{?}}
+        </div>
         <div>Merged</div><div>
-          {{? merged.length }}{{~merged :m}}<span class="chip aux">+ {{=m}}</span>{{~}}
+          {{? merged.length }}{{~merged :m}}{{
+            var mPorts = ports.filter(function (pt) {
+              var grp = cfg.ports[pt].auxGroup, mm = cfg.mergedMining || {};
+              return grp && (mm.groups && mm.groups[grp] || []).some(function (c) { return (((mm.auxCoins || {})[c] || {}).symbol || c).toUpperCase() === m; });
+            });
+          }}<span class="chip aux" title="Solo miners on {{=mPorts.join(', ')}}">+ {{=m}}{{? mPorts.length && mPorts.length < ports.length && mPorts.length <= 2 }} <span class="mm-ports">:{{=mPorts.join(', :')}}</span>{{?}}</span>{{~}}
           {{?? isAux }}<span class="chip dim">by {{=by.join(", ")}}</span>
           {{??}}<span class="chip dim">none</span>{{?}}
         </div>
@@ -143,13 +156,18 @@
   .home-gstats > div { padding: 12px 14px; border-left: 1px solid var(--line); border-top: 1px solid var(--line); min-width: 0; }
   .home-gstats .v { margin-top: 6px; font: 600 17px/1.1 var(--font-mono); color: var(--text-hi); overflow-wrap: anywhere; }
   .home-gstats .s { margin-top: 5px; font: 500 10.5px var(--font-mono); color: var(--muted); }
-  /* pool card head: hashrate stays on the name's line; a long name is cut with an ellipsis */
-  .home-pool .panel-head { flex-wrap: nowrap; }
+  /* pool cards: name in the head (cut with an ellipsis if long), hashrate on its own line */
+  .home-pools { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; }
+  @media (max-width: 400px) { .home-pools { grid-template-columns: 1fr; } }
   .home-pool .panel-head h2 { min-width: 0; }
   .home-pool-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .home-pool .panel-head > .mono { flex: none; white-space: nowrap; }
-  .home-pools { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
-  .home-ports { white-space: normal; }
+  .home-pool-hr { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .home-pool-hr .mono { font: 600 18px var(--font-mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .home-pool .kv > div:nth-child(even) { padding-left: 8px; }
+  .home-ports { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; }
+  .home-ports span { font: 500 10.5px/1.5 var(--font-mono); padding: 0 4px; border: 1px solid var(--line-hi); border-radius: var(--r); color: var(--text-hi); }
+  .home-ports span.none { border: 0; padding: 0; color: var(--muted); }
+  .mm-ports { opacity: .75; letter-spacing: 0; text-transform: none; }
   .feed { list-style: none; margin: 0; padding: 0; }
   .feed li { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 9px 14px; border-bottom: 1px solid var(--line); }
   .feed li:last-child { border-bottom: 0; }
@@ -189,7 +207,7 @@
         t.pw += p.poolWorkerCount || 0; t.sw += p.soloWorkerCount || 0;
         t.ph += p.poolHashrate || 0; t.sh += p.soloHashrate || 0;
         if (p.blocks) { t.b += (p.blocks.confirmed || 0) + (p.blocks.pending || 0); t.pe += p.blocks.pending || 0; }
-        $("#statsMiners" + pool).html((p.minerCount || 0) + ' <span class="sub">(' + (p.poolMinerCount || 0) + " pool / " + (p.soloMinerCount || 0) + " solo)</span>");
+        $("#statsMiners" + pool).html((p.minerCount || 0) + ' <span class="sub">(' + (p.poolMinerCount || 0) + " pool / " + (p.soloMinerCount || 0) + " solo" + (p.mergedMinerCount ? " / +" + p.mergedMinerCount + " merged" : "") + ")</span>");
         $("#statsWorkers" + pool).html((p.workerCount || 0) + ' <span class="sub">(' + (p.poolWorkerCount || 0) + " pool / " + (p.soloWorkerCount || 0) + " solo)</span>");
         $("#statsHashrate" + pool).text(p.hashrate > 0 || !(p.mergedHashrate > 0) ? (p.hashrateString || "0 H/s") : p.mergedHashrateString + " merged");
         if (ps.networkDiff) $("#statsNetworkDiff_" + pool).text(readableDiff(ps.networkDiff));
