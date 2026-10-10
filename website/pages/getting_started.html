@@ -65,6 +65,9 @@
       });
     });
   });
+  /* a coin without ports of its own can only be merge-mined (e.g. VMESH: AuxPoW mandatory) */
+  coins = coins.filter(function (c) { return c.ports.length || c.mergedBy.length; });
+  var mergedOnly = coins.filter(function (c) { c.mergedOnly = !c.ports.length; return c.mergedOnly; });
 }}
 <div class="gs">
   <!-- Hero + ways to start -->
@@ -97,6 +100,16 @@
   <section class="panel">
     <div class="panel-head"><h2>Select Your Coin</h2><span class="label">Click any coin for connection details</span></div>
     <div class="panel-body"><div class="gs-coins" id="gs-coins"></div></div>
+    {{? mergedOnly.length }}
+    <div class="panel-body gs-mergedonly">
+      <i class="fas fa-link"></i>
+      <p><strong>Merged-only coins: {{=mergedOnly.map(function (c) { return c.symbol; }).join(", ")}}.</strong>
+        {{=mergedOnly.length === 1 ? "This coin has" : "These coins have"}} no mining ports of {{=mergedOnly.length === 1 ? "its" : "their"}} own: every block must be merge-mined (AuxPoW).
+        To earn {{=mergedOnly.map(function (c) { return c.symbol; }).join(" or ")}}, <strong>solo-mine</strong> a parent coin on a merged-mining port and add your address to the password,
+        e.g. <code>m=solo,{{=mergedOnly.map(function (c) { var a = null; coins.forEach(function (p) { p.ports.forEach(function (pt) { pt.aux.forEach(function (x) { if (!a && x.name.toLowerCase() === c.key) a = x; }); }); }); return (a ? a.param : c.key) + "=your-" + c.symbol.toLowerCase() + "-address"; }).join(",")}}</code>.
+        Click {{=mergedOnly.length === 1 ? "the coin" : "a coin"}} above to set that up.</p>
+    </div>
+    {{?}}
   </section>
 
   <!-- Connection builder -->
@@ -246,6 +259,10 @@
   .gs-coins button { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); cursor: pointer; border-radius: var(--r); text-align: left; font: inherit; }
   .gs-coins button:hover { border-color: var(--line-hi); }
   .gs-coins button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .gs-mergedonly { display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid var(--line); font-size: 13px; }
+  .gs-mergedonly i { color: var(--aux); margin-top: 3px; }
+  .gs-mergedonly p { margin: 0; }
+  .gs-mergedonly code { font: 600 11.5px var(--font-mono); color: var(--aux); }
   .gs-coins b { display: block; color: var(--text-hi); font: 600 12px var(--font-ui); }
   .gs-coins small { font: 500 10px var(--font-mono); color: var(--muted); }
   .gs-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
@@ -309,10 +326,31 @@
       var merged = [];
       c.ports.forEach(function (p) { p.aux.forEach(function (a) { if (merged.indexOf(a.symbol) === -1) merged.push(a.symbol); }); });
       var isAux = c.mergedBy.length > 0;
-      var sub = c.symbol + " · " + c.ports.length + " port" + (c.ports.length === 1 ? "" : "s") + (merged.length ? " · + " + merged.join(", ") : isAux ? " · merged by " + c.mergedBy.join(", ") : "");
+      var sub = c.mergedOnly
+        ? c.symbol + " · merged only · via " + c.mergedBy.join(", ")
+        : c.symbol + " · " + c.ports.length + " port" + (c.ports.length === 1 ? "" : "s") + (merged.length ? " · + " + merged.join(", ") : isAux ? " · merged by " + c.mergedBy.join(", ") : "");
       return '<button type="button" data-i="' + i + '"><span class="coin-mark' + (isAux ? " aux" : "") + '">' + esc(c.symbol.slice(0, 4)) + "</span><span><b>" + esc(c.name) + "</b><small>" + esc(sub) + "</small></span></button>";
     }).join("");
-    $id("gs-coin").innerHTML = COINS.map(function (c, i) { return '<option value="' + i + '">' + esc(c.symbol + " · " + c.name) + "</option>"; }).join("");
+    // merged-only coins have no ports: they are not in the dropdown
+    $id("gs-coin").innerHTML = COINS.map(function (c, i) { return c.mergedOnly ? "" : '<option value="' + i + '">' + esc(c.symbol + " · " + c.name) + "</option>"; }).join("");
+    state.coin = Math.max(0, COINS.findIndex(function (c) { return !c.mergedOnly; }));
+
+    // A merged-only coin: open a parent coin's merged port in solo mode and
+    // focus the address field for that coin
+    function selectMergedOnly(c) {
+      for (var i = 0; i < COINS.length; i++) {
+        for (var j = 0; j < COINS[i].ports.length; j++) {
+          var hit = COINS[i].ports[j].aux.filter(function (a) { return a.name.toLowerCase() === c.key; })[0];
+          if (!hit) continue;
+          selectCoin(i);
+          state.port = j; $id("gs-port").value = String(j);
+          renderPortCard(); setMode(true);
+          var input = document.querySelector('#gs-aux input[data-param="' + hit.param + '"]');
+          if (input) input.focus({ preventScroll: true });
+          return;
+        }
+      }
+    }
 
     function coin() { return COINS[state.coin]; }
     function port() { return coin().ports[state.port] || coin().ports[0]; }
@@ -410,7 +448,8 @@
     $id("gs-coins").addEventListener("click", function (e) {
       var b = e.target.closest("button");
       if (!b) return;
-      selectCoin(+b.dataset.i);
+      if (COINS[+b.dataset.i].mergedOnly) selectMergedOnly(COINS[+b.dataset.i]);
+      else selectCoin(+b.dataset.i);
       $id("gs-connect").scrollIntoView({ behavior: "smooth", block: "start" });
     });
     $id("gs-coin").addEventListener("change", function () { selectCoin(+this.value); });
@@ -432,6 +471,6 @@
       });
     });
 
-    selectCoin(0);
+    selectCoin(state.coin);
   })();
 </script>
