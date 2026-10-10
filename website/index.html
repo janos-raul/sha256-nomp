@@ -22,13 +22,16 @@
     <!-- Basic OG tags (Discord/Twitter/Facebook) -->
     <meta property="og:title" content="{{=poolName}}" />
     <meta property="og:description" content="{{=poolName}} - {{=poolTagline}}" />
-    {{? branding.ogImage }}<meta property="og:image" content="{{=branding.ogImage}}" />{{?}}
+    <meta property="og:site_name" content="{{=poolName}}" />
+    {{? branding.ogImage }}<meta property="og:image" content="{{=branding.ogImage}}" />
+    <meta property="og:image:alt" content="{{=branding.ogImageAlt || (poolName + ' - ' + poolTagline)}}" />{{?}}
     {{? branding.url }}<meta property="og:url" content="{{=branding.url}}" />{{?}}
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="{{=poolName}}" />
     <meta name="twitter:description" content="{{=poolName}} - {{=poolTagline}}" />
-    {{? branding.ogImage }}<meta name="twitter:image" content="{{=branding.ogImage}}" />{{?}}
+    {{? branding.ogImage }}<meta name="twitter:image" content="{{=branding.ogImage}}" />
+    <meta name="twitter:image:alt" content="{{=branding.ogImageAlt || (poolName + ' - ' + poolTagline)}}" />{{?}}
 
     <!-- Theme: dark by default, light if the visitor chose it -->
     <script>

@@ -283,6 +283,7 @@ Explanation for each field:
             "heroLogo": "/static/hero.png",     // large image on the home page (default: logo)
             "heroText": "Professional mining pool with low fees, reliable payouts, and 24/7 uptime",
             "ogImage": "https://yourpool.com/static/og.png", // Discord/Twitter preview image
+            "ogImageAlt": "Your pool - solo and merged mining", // alt text for the preview image (default: name - tagline)
             "url": "https://yourpool.com",
             /* CoinGecko coin ids for the price ticker, comma separated */
             "priceCoins": "bitcoin,ethereum,ripple,binancecoin,solana,cardano,tron,litecoin,dogecoin"
