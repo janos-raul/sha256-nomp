@@ -1,548 +1,391 @@
 <style>
-    /* Pool Stats — console theme; markup, template logic and charts unchanged */
-    .stats-container { display: grid; gap: 12px; }
-    .chart-wrapper, .stats-grid > .stat-card, .blocks-section, .pie-chart-section {
-        position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; padding: 0;
-    }
-    .chart-wrapper::before, .chart-wrapper::after { content: ""; position: absolute; width: 8px; height: 8px; border-color: var(--line-hi); border-style: solid; pointer-events: none; background: none; }
-    .chart-wrapper::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; height: 8px; }
-    .chart-wrapper::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
-    .chart-label {
-        display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line);
-        font: 600 11.5px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi); text-align: left;
-    }
-    .chart-label i { color: var(--accent); }
-    .chart-holder { position: relative; height: 260px; padding: 12px 14px; }
-    .chart-holder canvas { width: 100% !important; height: 100% !important; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin: 0; }
-    .stat-card::before, .stat-card::after { display: none; }
-    .stat-list { display: grid; }
-    .stat-list .stat-item > span:first-child { font: 600 10px/1.9 var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
-    .stat-list .stat-item > span:first-child i { display: none; }
-    .luck-indicator { color: var(--accent); }
-    .blocks-section { grid-column: 1 / -1; }
-    .blocks-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--line); }
-    .blocks-title { font: 600 11.5px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi); display: flex; gap: 10px; align-items: center; }
-    .blocks-title i { color: var(--accent); }
-    .blocks-stats { display: flex; gap: 14px; flex-wrap: wrap; font: 500 11px var(--font-mono); color: var(--muted); }
-    .blocks-list { display: grid; }
-    .block-item { padding: 10px 14px; border-bottom: 1px solid var(--line); border-left: 2px solid var(--accent); display: grid; gap: 6px; background: none; }
-    .block-item:last-child { border-bottom: 0; }
-    .block-item.solo-block { border-left-color: var(--aux); }
-    .block-item:hover { background: var(--panel-2); }
-    .block-main { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .block-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .block-height { font: 600 13px var(--font-mono); color: var(--text-hi); }
-    .block-height a { color: var(--text-hi); }
-    .block-height a:hover { color: var(--accent); text-decoration: none; }
-    .block-type { padding: 2px 6px; font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line-hi); border-radius: var(--r); }
-    .block-type.pool { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
-    .block-type.solo { color: var(--aux); border-color: color-mix(in srgb, var(--aux) 55%, transparent); background: var(--aux-soft); }
-    .block-status { font: 600 10.5px var(--font-display); text-transform: uppercase; letter-spacing: 0.12em; }
-    .block-status.pending { color: var(--warn); }
-    .block-status.paid { color: var(--good); }
-    .block-status-stack { display: grid; gap: 4px; justify-items: end; }
-    .block-progress-container { display: flex; align-items: center; gap: 8px; }
-    .block-progress-bar { width: 140px; height: 3px; background: var(--line); border-radius: 0 !important; overflow: hidden; }
-    .block-progress-fill { height: 100%; background: var(--accent); border-radius: 0 !important; }
-    .solo-block .block-progress-fill { background: var(--aux); }
-    .block-details { display: flex; gap: 16px; flex-wrap: wrap; font: 500 11px var(--font-mono); color: var(--muted); }
-    .block-detail a { color: var(--text); }
-    .block-detail a:hover { color: var(--accent); }
-    .pie-chart-section { padding: 12px 14px; }
-    .pie-chart-holder { position: relative; height: 240px; }
+    /* Pool Stats: one tab per pool — pool/network/blocks columns with a small
+       hashrate chart and block-finders donut on the right, blocks table below */
+    .ps { display: grid; gap: 12px; }
+    .ps-pane { display: grid; gap: 12px; }
+    .ps-pane[hidden] { display: none; }
+    .ps-top { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; }
+    @media (max-width: 1000px) { .ps-top { grid-template-columns: 1fr; } }
+    .ps-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @media (max-width: 760px) { .ps-cols { grid-template-columns: 1fr; } }
+    .ps-col { min-width: 0; border-left: 1px solid var(--line); }
+    .ps-col:first-child { border-left: 0; }
+    @media (max-width: 760px) { .ps-col { border-left: 0; border-top: 1px solid var(--line); } .ps-col:first-child { border-top: 0; } }
+    .ps-col h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); font: 600 11px var(--font-display); text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-hi); }
+    .ps-col h3 i { color: var(--accent); margin-right: 8px; }
+    .ps-col .kv { font-size: 12px; }
+    .ps-side { display: grid; gap: 12px; align-content: start; }
+    .ps-chart { height: 160px; }
+    .ps-donut-wrap { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px; }
+    .ps-donut { width: 110px; height: 110px; display: block; }
+    .ps-donut text { font: 600 15px var(--font-mono); fill: var(--text-hi); }
+    .ps-donut .sub { font: 500 8px var(--font-display); letter-spacing: 0.14em; fill: var(--muted); text-transform: uppercase; }
+    .ps-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font: 500 11px var(--font-mono); min-width: 0; }
+    .ps-legend li { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+    .ps-legend i { width: 8px; height: 8px; display: block; }
+    .ps-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+    .ps-legend b { font-weight: 600; color: var(--text-hi); }
+    .ps-empty { padding: 18px 14px; text-align: center; color: var(--muted); font: 500 12px var(--font-mono); }
+    .ps-filters { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+    .ps-seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+    .ps-seg button { background: none; border: 0; border-left: 1px solid var(--line); color: var(--text); padding: 4px 10px; cursor: pointer; font: 600 10px var(--font-display); text-transform: uppercase; letter-spacing: 0.12em; }
+    .ps-seg button:first-child { border-left: 0; }
+    .ps-seg button:hover { color: var(--text-hi); }
+    .ps-seg button.active { background: var(--accent); color: var(--on-accent); }
+    .ps-table { width: 100%; border-collapse: collapse; }
+    .ps-table td { white-space: nowrap; }
+    .ps-wrap { overflow-x: auto; }
+    .ps-finder { display: flex; align-items: center; gap: 6px; }
+    .ps-finder a { color: var(--text-hi); font: 500 12px var(--font-mono); margin-right: 4px; }
+    .ps-finder a:hover { color: var(--accent); text-decoration: none; }
+    .ps-badge { display: inline-flex; padding: 2px 6px; font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line-hi); border-radius: var(--r); white-space: nowrap; }
+    .ps-badge.pool { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+    .ps-badge.solo { color: var(--aux); border-color: color-mix(in srgb, var(--aux) 55%, transparent); background: var(--aux-soft); }
+    .ps-badge.merged { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
+    .ps-muted { color: var(--muted); }
 </style>
 
-{{ function capitalizeFirstLetter(t){return t.charAt(0).toUpperCase()+t.slice(1)} }}
-{{ function readableDate(a) {
-var d = new Date(parseInt(a));
-return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
-} }}
+{{
+    function cap(t) { t = String(t || ''); return t.charAt(0).toUpperCase() + t.slice(1); }
+    function luckString(raw) {
+        var luck = parseFloat(raw);
+        if (isNaN(luck) || !isFinite(luck)) return 'N/A';
+        if (luck < 1) {
+            luck *= 24;
+            if (luck < 1) { luck *= 60; return luck < 0.01 ? '< 1 minute' : luck.toFixed(2) + ' minutes'; }
+            return luck.toFixed(2) + ' hours';
+        }
+        return luck.toFixed(2) + ' days';
+    }
+    function diffString(d) {
+        return it.getReadableDifficultyString ? it.getReadableDifficultyString(d) : String(d);
+    }
+}}
 
-<div class="stats-container">
-    <!-- Charts Section -->
-    <div class="chart-wrapper">
-        <div class="chart-label">
-            <i class="fas fa-chart-line"></i> Pool Historical Hashrate
-        </div>
-        <div class="chart-holder">
-            <canvas id="poolHashrateChart"></canvas>
-        </div>
-    </div>
-
-    <div class="chart-wrapper">
-        <div class="chart-label">
-            <i class="fas fa-cubes"></i> Pending Blocks (Pool + Solo)
-        </div>
-        <div class="chart-holder">
-            <canvas id="poolPendingChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-        {{ for(var pool in it.stats.pools) { }}
-        <!-- Pool Stats Card -->
-        <div class="stat-card">
-            <div class="stat-header">
-                <div class="stat-title">{{=capitalizeFirstLetter(pool)}} Pool</div>
-                <div class="stat-icon">
-                    <i class="fas fa-server"></i>
-                </div>
-            </div>
-            <div class="stat-list">
-                <div class="stat-item">
-                    <span><i class="fas fa-users"></i> Miners</span>
-                    <span class="stat-value" id="statsMiners{{=pool}}">{{=it.stats.pools[pool].minerCount}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-microchip"></i> Workers</span>
-                    <span class="stat-value" id="statsWorkers{{=pool}}">{{=it.stats.pools[pool].workerCount}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-tachometer-alt"></i> Hashrate</span>
-                    <span class="stat-value" id="statsHashrate{{=pool}}">{{=it.stats.pools[pool].hashrateString}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-gauge"></i> Average</span>
-                    <span class="stat-value" id="statsHashrateAvg{{=pool}}">...</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-clock"></i> Luck</span>
-                    <span class="stat-value luck-indicator" id="statsLuckDays{{=pool}}">
-                        {{
-                        var rawLuck = it.stats.pools[pool].luckDays || 0;
-                        var luck = parseFloat(rawLuck);
-                        var timeUnits = [ ' Days', ' Hours', ' Minutes' ];
-                        var _luckTime = 'N/A';
-                        if (!isNaN(luck)) {
-                        if (luck < 1) { luck *=24; if (luck < 1) { luck *=60; _luckTime=luck < 0.01 ? '< 1 Minute' :
-                            luck.toFixed(2) + timeUnits[2]; } else { _luckTime=luck.toFixed(2) + timeUnits[1]; } } else
-                            { _luckTime=luck.toFixed(2) + timeUnits[0]; } } }} {{=_luckTime }} </span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-percentage"></i> Pool Share</span>
-                    <span class="stat-value" id="statsHashPercent{{=pool}}">
-                        {{=(it.stats.pools[pool].hashrate / it.stats.pools[pool].poolStats.networkHash *
-                        100).toFixed(5)}}%
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Network Stats Card -->
-        <div class="stat-card">
-            <div class="stat-header">
-                <div class="stat-title">{{=capitalizeFirstLetter(pool)}} Network</div>
-                <div class="stat-icon">
-                    <i class="fas fa-network-wired"></i>
-                </div>
-            </div>
-            <div class="stat-list">
-                <div class="stat-item">
-                    <span><i class="fas fa-cubes"></i> Height</span>
-                    <span class="stat-value"
-                        id="statsNetworkBlocks{{=pool}}">{{=it.stats.pools[pool].poolStats.networkBlocks}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-tachometer-alt"></i> Network</span>
-                    <span class="stat-value"
-                        id="statsnetworkHash{{=pool}}">{{=it.stats.pools[pool].poolStats.networkHashString}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-unlock"></i> Difficulty</span>
-                    <span class="stat-value" id="statsNetworkDiff{{=pool}}">{{=
-                        it.getReadableDifficultyString(it.stats.pools[pool].poolStats.networkDiff) }}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-signal"></i> Connections</span>
-                    <span class="stat-value"
-                        id="statsNetworkConnections{{=pool}}">{{=it.stats.pools[pool].poolStats.networkConnections}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-code-branch"></i> Version</span>
-                    <span class="stat-value"
-                        id="statsNetworkVersion{{=pool}}">{{=it.stats.pools[pool].poolStats.networkVersion}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-flask"></i> Algorithm</span>
-                    <span class="stat-value">{{=capitalizeFirstLetter(it.stats.pools[pool].algorithm)}}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Block Stats Card -->
-        <div class="stat-card">
-            <div class="stat-header">
-                <div class="stat-title">{{=capitalizeFirstLetter(pool)}} Blocks</div>
-                <div class="stat-icon">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-            </div>
-            <div class="stat-list">
-                <div class="stat-item">
-                    <span><i class="fas fa-check-circle"></i> Total Valid</span>
-                    <span class="stat-value">{{=it.stats.pools[pool].poolStats.validBlocks}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-hourglass-half"></i> Pool Pending</span>
-                    <span class="stat-value">{{=it.stats.pools[pool].poolBlocks.pending}}</span>
-                </div>
-                {{ if (it.stats.pools[pool].soloBlocks) { }}
-                <div class="stat-item">
-                    <span><i class="fas fa-user"></i> Solo Pending</span>
-                    <span class="stat-value">{{=it.stats.pools[pool].soloBlocks.pending || 0}}</span>
-                </div>
-                {{ } }}
-                <div class="stat-item">
-                    <span><i class="fas fa-check"></i> Pool Confirmed</span>
-                    <span class="stat-value">{{=it.stats.pools[pool].poolBlocks.confirmed}}</span>
-                </div>
-                {{ if (it.stats.pools[pool].soloBlocks) { }}
-                <div class="stat-item">
-                    <span><i class="fas fa-user-check"></i> Solo Confirmed</span>
-                    <span class="stat-value">{{=it.stats.pools[pool].soloBlocks.confirmed || 0}}</span>
-                </div>
-                {{ } }}
-                <div class="stat-item">
-                    <span><i class="fas fa-times-circle"></i> Orphaned</span>
-                    <span class="stat-value">{{=it.stats.pools[pool].blocks.orphaned}}</span>
-                </div>
-                <div class="stat-item">
-                    <span><i class="fas fa-money-bill"></i> Total Paid</span>
-                    <span class="stat-value"
-                        id="statsTotalPaid{{=pool}}">{{=(parseFloat(it.stats.pools[pool].poolStats.totalPaid)).toFixed(8)}}</span>
-                </div>
-            </div>
-        </div>
+<div class="ps stats-container">
+    <div class="coin-tabs" role="tablist">
+        {{ for (var pool in it.stats.pools) { var tp = it.stats.pools[pool]; }}
+        <button type="button" class="coin-tab" role="tab" data-pool="{{=pool}}">
+            <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=cap(tp.name)}}
+            <span class="hr" id="psTabHr{{=pool}}">{{=tp.hashrateString || '0 H/s'}}</span>
+        </button>
         {{ } }}
     </div>
 
-    <!-- Blocks Found Section -->
-    {{ for(var pool in it.stats.pools) { }}
-    {{ var blockscomb = new Array; }}
-    <div class="blocks-section">
-        <div class="blocks-header">
-            <div class="blocks-title">
-                <i class="fas fa-cube"></i> {{=capitalizeFirstLetter(pool)}} Blocks Found
-            </div>
-            <div class="blocks-stats">
-                <span>
-                    <i class="fas fa-cubes"></i>
-                    <strong id="statsValidBlocks{{=pool}}">
-                        {{=it.stats.pools[pool].blocks.pending + it.stats.pools[pool].blocks.confirmed}}
-                    </strong> Total
-                </span>
-                <span>
-                    <i class="fas fa-server"></i>
-                    Pool: <strong id="statsPoolBlocks{{=pool}}">
-                        {{=it.stats.pools[pool].poolBlocks.pending + it.stats.pools[pool].poolBlocks.confirmed}}
-                    </strong>
-                </span>
-                {{ if (it.stats.pools[pool].soloBlocks && (it.stats.pools[pool].soloBlocks.pending > 0 ||
-                it.stats.pools[pool].soloBlocks.confirmed > 0)) { }}
-                <span>
-                    <i class="fas fa-user"></i>
-                    Solo: <strong id="statsSoloBlocks{{=pool}}">
-                        {{=it.stats.pools[pool].soloBlocks.pending + it.stats.pools[pool].soloBlocks.confirmed}}
-                    </strong>
-                </span>
-                {{ } }}
-            </div>
-        </div>
-
-        <div class="blocks-list">
-            <!-- Pool Pending Blocks -->
-            {{ for(var b in it.stats.pools[pool].poolPending.blocks) { }}
-            {{ var block = it.stats.pools[pool].poolPending.blocks[b].split(":"); }}
-            <div class="block-item pool-block">
-                <div class="block-main">
-                    <div class="block-info">
-                        <span class="block-height">
-                            <i class="fas fa-cube"></i>
-                            {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL)
-                            { }}
-                            <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">Block
-                                #{{=block[2]}}</a>
-                            {{ } else { }}
-                            Block #{{=block[2]}}
-                            {{ } }}
-                        </span>
-                        <span class="block-type pool">POOL</span>
-                    </div>
-                    <div class="block-status pending">
-                        {{if (it.stats.pools[pool].poolPending.confirms &&
-                        it.stats.pools[pool].poolPending.confirms[block[0]]) { }}
-                        {{ var confirms = parseInt(it.stats.pools[pool].poolPending.confirms[block[0]]); }}
-                        {{ var minConf = parseInt(it.poolsConfigs[pool].paymentProcessing.minConf); }}
-                        {{ if (confirms >= minConf) { }}
-                        <i class="fas fa-check-circle" style="color: var(--success);"></i> Confirmed
-                        {{ } else { }}
-                        {{ var percent = Math.min(100, Math.max(0, (confirms / minConf) * 100)); }}
-                        <div class="block-status-stack">
-                            <div>
-                                <i class="fas fa-spinner fa-spin"></i> {{=confirms}}/{{=minConf}}
-                            </div>
-                            <div class="block-progress-container">
-                                <div class="block-progress-bar">
-                                    <div class="block-progress-fill" style="width: {{=percent}}%;"></div>
-                                </div>
-                                <span style="font-family: 'Courier New', monospace; color: var(--text-muted);">
-                                    {{=Math.round(percent)}}%
-                                </span>
-                            </div>
-                        </div>
-                        {{ } }}
-                        {{ } else { }}
-                        <i class="fas fa-clock"></i> Pending
-                        {{ } }}
+    {{ for (var pool in it.stats.pools) { }}
+    {{
+        var p = it.stats.pools[pool];
+        var ps = p.poolStats || {};
+        var pb = p.poolBlocks || {};
+        var sb = p.soloBlocks || {};
+        var cfg = (it.poolsConfigs && it.poolsConfigs[pool]) || {};
+        var explorer = (cfg.coin && cfg.coin.explorer) || {};
+        var minConf = parseInt((cfg.paymentProcessing || {}).minConf, 10) || 0;
+        var mw = p.merged_with && p.merged_with.merged_with;
+        var mergedWith = (mw && mw !== '0') ? mw.split(',') : [];
+        var mergedBy = p.merge_mined_by || [];
+        var share = ps.networkHash > 0 ? (p.hashrate / ps.networkHash * 100) : 0;
+    }}
+    <section class="ps-pane" role="tabpanel" data-pool="{{=pool}}" data-block-url="{{=explorer.blockURL || ''}}" data-min-conf="{{=minConf}}" hidden>
+        <div class="ps-top">
+            <div class="panel ps-cols">
+                <div class="ps-col">
+                    <h3><i class="fas fa-server"></i>Pool</h3>
+                    <div class="kv">
+                        <div>Miners</div><div><span id="psMiners{{=pool}}">{{=p.minerCount || 0}}</span> <span class="sub">({{=p.poolMinerCount || 0}} pool / {{=p.soloMinerCount || 0}} solo)</span></div>
+                        <div>Workers</div><div id="psWorkers{{=pool}}">{{=p.workerCount || 0}}</div>
+                        <div>Hashrate</div><div id="psHashrate{{=pool}}">{{=p.hashrateString || '0 H/s'}}</div>
+                        <div>Average</div><div id="psHashrateAvg{{=pool}}">…</div>
+                        <div>Luck</div><div id="psLuck{{=pool}}">{{=luckString(p.luckDays)}}</div>
+                        <div>Net share</div><div id="psShare{{=pool}}">{{=share.toFixed(share >= 1 ? 2 : 5)}}%</div>
+                        <div>Fees</div><div>{{=p.poolFee || 0}}% pool{{? p.soloMining }} · {{=p.soloFee || 0}}% solo{{?}}</div>
                     </div>
                 </div>
-                <div class="block-details">
-                    <div class="block-detail">
-                        <i class="fas fa-user"></i>
-                        <span>Found by: <a
-                                href="/workers/{{=block[3].split('.')[0]}}">{{=block[3].split('.')[0]}}</a></span>
-                    </div>
-                    {{if (block[4] != null) { }}
-                    <div class="block-detail">
-                        <i class="fas fa-calendar"></i>
-                        <span>{{=readableDate(block[4])}}</span>
-                    </div>
-                    {{ } }}
-                </div>
-            </div>
-            {{ blockscomb.push(block);}}
-            {{ } }}
-
-            <!-- Pool Confirmed Blocks -->
-            {{ var i=0; for(var b in it.stats.pools[pool].poolConfirmed.blocks) { }}
-            {{ if (i < 8) { i++; }} {{ var block=it.stats.pools[pool].poolConfirmed.blocks[b].split(":"); }} <div
-                class="block-item pool-block">
-                <div class="block-main">
-                    <div class="block-info">
-                        <span class="block-height">
-                            <i class="fas fa-cube"></i>
-                            {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL)
-                            { }}
-                            <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">Block
-                                #{{=block[2]}}</a>
-                            {{ } else { }}
-                            Block #{{=block[2]}}
-                            {{ } }}
-                        </span>
-                        <span class="block-type pool">POOL</span>
-                    </div>
-                    <div class="block-status paid">
-                        <i class="fas fa-check-double"></i> Paid
-                    </div>
-                </div>
-                <div class="block-details">
-                    <div class="block-detail">
-                        <i class="fas fa-user"></i>
-                        <span>Found by: <a
-                                href="/workers/{{=block[3].split('.')[0]}}">{{=block[3].split('.')[0]}}</a></span>
-                    </div>
-                    {{if (block[4] != null) { }}
-                    <div class="block-detail">
-                        <i class="fas fa-calendar"></i>
-                        <span>{{=readableDate(block[4])}}</span>
-                    </div>
-                    {{ } }}
-                </div>
-        </div>
-        {{blockscomb.push(block);}}
-        {{ } }}
-        {{ } }}
-
-        <!-- Solo Pending Blocks -->
-        {{ if (it.stats.pools[pool].soloPending && it.stats.pools[pool].soloPending.blocks.length > 0) { }}
-        {{ for(var b in it.stats.pools[pool].soloPending.blocks) { }}
-        {{ var block = it.stats.pools[pool].soloPending.blocks[b].split(":"); }}
-        <div class="block-item solo-block">
-            <div class="block-main">
-                <div class="block-info">
-                    <span class="block-height">
-                        <i class="fas fa-cube"></i>
-                        {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
-                        <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">Block
-                            #{{=block[2]}}</a>
-                        {{ } else { }}
-                        Block #{{=block[2]}}
-                        {{ } }}
-                    </span>
-                    <span class="block-type solo">SOLO</span>
-                </div>
-                <div class="block-status pending">
-                    {{if (it.stats.pools[pool].poolPending.confirms &&
-                    it.stats.pools[pool].poolPending.confirms[block[0]]) { }}
-                    {{ var confirms = parseInt(it.stats.pools[pool].poolPending.confirms[block[0]]); }}
-                    {{ var minConf = parseInt(it.poolsConfigs[pool].paymentProcessing.minConf); }}
-                    {{ if (confirms >= minConf) { }}
-                    <i class="fas fa-check-circle" style="color: var(--success);"></i> Confirmed
-                    {{ } else { }}
-                    {{ var percent = Math.min(100, Math.max(0, (confirms / minConf) * 100)); }}
-                    <div class="block-status-stack">
-                        <div>
-                            <i class="fas fa-spinner fa-spin"></i> {{=confirms}}/{{=minConf}}
-                        </div>
-                        <div class="block-progress-container">
-                            <div class="block-progress-bar">
-                                <div class="block-progress-fill" style="width: {{=percent}}%;"></div>
-                            </div>
-                            <span style="font-family: 'Courier New', monospace; color: var(--text-muted);">
-                                {{=Math.round(percent)}}%
-                            </span>
+                <div class="ps-col">
+                    <h3><i class="fas fa-network-wired"></i>Network</h3>
+                    <div class="kv">
+                        <div>Height</div><div id="psHeight{{=pool}}">{{=ps.networkBlocks || p.blockheight || 0}}</div>
+                        <div>Hashrate</div><div id="psNetHash{{=pool}}">{{=ps.networkHashString || '0 H/s'}}</div>
+                        <div>Difficulty</div><div id="psDiff{{=pool}}">{{=diffString(ps.networkDiff)}}</div>
+                        <div>Peers</div><div id="psPeers{{=pool}}">{{=ps.networkConnections || 0}}</div>
+                        <div>Version</div><div>{{=ps.networkVersion || '-'}}</div>
+                        <div>Algorithm</div><div>{{=cap(p.algorithm)}}</div>
+                        <div>Merged</div><div>
+                            {{? mergedWith.length }}{{~mergedWith :m}}<span class="chip aux">+ {{=m}}</span> {{~}}
+                            {{?? mergedBy.length }}<span class="chip dim">by {{=mergedBy.join(', ')}}</span>
+                            {{??}}<span class="chip dim">none</span>{{?}}
                         </div>
                     </div>
-                    {{ } }}
-                    {{ } else { }}
-                    <i class="fas fa-clock"></i> Pending
-                    {{ } }}
+                </div>
+                <div class="ps-col">
+                    <h3><i class="fas fa-cubes"></i>Blocks</h3>
+                    <div class="kv">
+                        <div>Pending</div><div><span id="psPending{{=pool}}">{{=(pb.pending || 0) + (sb.pending || 0)}}</span> <span class="sub">({{=pb.pending || 0}} pool / {{=sb.pending || 0}} solo)</span></div>
+                        <div>Confirmed</div><div><span id="psConfirmed{{=pool}}">{{=(pb.confirmed || 0) + (sb.confirmed || 0)}}</span> <span class="sub">({{=pb.confirmed || 0}} pool / {{=sb.confirmed || 0}} solo)</span></div>
+                        <div>Orphaned</div><div>{{=(p.blocks && p.blocks.orphaned) || 0}}</div>
+                        <div>Last block</div><div>{{? p.lastblock }}#{{=p.lastblock}}{{??}}none yet{{?}}</div>
+                        <div>Min. confirms</div><div>{{=minConf || '-'}}</div>
+                        <div>Total paid</div><div><span id="psPaid{{=pool}}">{{=parseFloat(ps.totalPaid || 0).toFixed(4)}}</span> {{=p.symbol || ''}}</div>
+                    </div>
                 </div>
             </div>
-            <div class="block-details">
-                <div class="block-detail">
-                    <i class="fas fa-user"></i>
-                    <span>Found by: <a
-                            href="/workers/{{=block[3].split('.')[0]}}">{{=block[3].split('.')[0]}}</a></span>
+
+            <div class="ps-side">
+                <div class="panel">
+                    <div class="panel-head"><h2>Hashrate</h2><div class="legend"><span class="amber ps-chart-span">history</span></div></div>
+                    <div class="panel-body"><svg class="chart ps-chart" data-pool="{{=pool}}" viewBox="0 0 320 160" preserveAspectRatio="none" role="img" aria-label="{{=p.name}} pool hashrate history"></svg></div>
                 </div>
-                {{if (block[4] != null) { }}
-                <div class="block-detail">
-                    <i class="fas fa-calendar"></i>
-                    <span>{{=readableDate(block[4])}}</span>
+                <div class="panel">
+                    <div class="panel-head"><h2>Block finders</h2><span class="label ps-finders-span"></span></div>
+                    <div class="ps-donut-holder"><div class="ps-empty">Loading…</div></div>
                 </div>
-                {{ } }}
             </div>
         </div>
-        {{ blockscomb.push(block);}}
-        {{ } }}
-        {{ } }}
 
-        <!-- Solo Confirmed Blocks -->
-        {{ if (it.stats.pools[pool].soloConfirmed && it.stats.pools[pool].soloConfirmed.blocks.length > 0) { }}
-        {{ var j=0; for(var b in it.stats.pools[pool].soloConfirmed.blocks) { }}
-        {{ if (j < 8) { j++; }} {{ var block=it.stats.pools[pool].soloConfirmed.blocks[b].split(":"); }} <div
-            class="block-item solo-block">
-            <div class="block-main">
-                <div class="block-info">
-                    <span class="block-height">
-                        <i class="fas fa-cube"></i>
-                        {{ if (it.poolsConfigs[pool].coin.explorer && it.poolsConfigs[pool].coin.explorer.blockURL) { }}
-                        <a href="{{=it.poolsConfigs[pool].coin.explorer.blockURL + block[0]}}" target="_blank">Block
-                            #{{=block[2]}}</a>
-                        {{ } else { }}
-                        Block #{{=block[2]}}
-                        {{ } }}
-                    </span>
-                    <span class="block-type solo">SOLO</span>
-                </div>
-                <div class="block-status paid">
-                    <i class="fas fa-check-double"></i> Paid
+        <div class="panel">
+            <div class="panel-head">
+                <h2>Blocks</h2>
+                <span class="label ps-blocks-count"></span>
+                <div class="ps-filters">
+                    <div class="ps-seg" data-filter="status">
+                        <button type="button" data-v="all" class="active">All</button><button type="button" data-v="pending">Pending</button><button type="button" data-v="confirmed">Confirmed</button>
+                    </div>
+                    <div class="ps-seg" data-filter="type">
+                        <button type="button" data-v="all" class="active">All</button><button type="button" data-v="pool">Pool</button><button type="button" data-v="solo">Solo</button>
+                    </div>
                 </div>
             </div>
-            <div class="block-details">
-                <div class="block-detail">
-                    <i class="fas fa-user"></i>
-                    <span>Found by: <a
-                            href="/workers/{{=block[3].split('.')[0]}}">{{=block[3].split('.')[0]}}</a></span>
-                </div>
-                {{if (block[4] != null) { }}
-                <div class="block-detail">
-                    <i class="fas fa-calendar"></i>
-                    <span>{{=readableDate(block[4])}}</span>
-                </div>
-                {{ } }}
+            <div class="ps-wrap">
+                <table class="ps-table">
+                    <thead><tr><th>Height</th><th>Found</th><th>Finder</th><th>Type</th><th>Status</th></tr></thead>
+                    <tbody><tr><td colspan="5"><div class="ps-empty">Loading blocks…</div></td></tr></tbody>
+                </table>
             </div>
-    </div>
-    {{blockscomb.push(block);}}
+        </div>
+    </section>
     {{ } }}
-    {{ } }}
-    {{ } }}
-</div>
-</div>
-
-<!-- Pie Chart for Block Finders -->
-{{ if (blockscomb.length > 0) { }}
-<div class="pie-chart-section">
-    <div class="chart-label">
-        <i class="fas fa-chart-pie"></i> Top 10 Miners - Last {{=blockscomb.length}} Blocks
-    </div>
-    <div class="pie-chart-holder">
-        <canvas id="blocksPie{{=pool}}"></canvas>
-    </div>
 </div>
 
 <script>
-    var blockscomb{{=pool}} = {{=JSON.stringify(blockscomb)}};
-</script>
-{{ } }}
-{{ } }}
-</div>
+(function () {
+    var BLOCKS_PER_PAGE = 15;
+    var blocksCache = { at: 0, data: null };
 
-<script src="/static/modern-stats.js"></script>
-<script>
-    (function () {
-        function initStatsPage() {
-            // Prevent multiple initializations
-            if (window.statsPageFullyInitialized) {
-                console.log('Stats page already initialized');
+    function esc(t) {
+        return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function hashrate(h) {
+        var units = ['H/s', 'KH/s', 'MH/s', 'GH/s', 'TH/s', 'PH/s', 'EH/s'];
+        var i = 0;
+        h = Number(h) || 0;
+        while (h >= 1000 && i < units.length - 1) { h /= 1000; i++; }
+        return h.toFixed(2) + ' ' + units[i];
+    }
+    function ago(sec) {
+        var d = Math.max(0, Math.floor(Date.now() / 1000 - sec));
+        if (d < 60) return d + 's ago';
+        if (d < 3600) return Math.floor(d / 60) + 'm ago';
+        if (d < 86400) return Math.floor(d / 3600) + 'h ago';
+        return Math.floor(d / 86400) + 'd ago';
+    }
+    function shortAddr(a) { return a.length > 22 ? a.slice(0, 10) + '…' + a.slice(-8) : a; }
+    function pane(pool) { return document.querySelector('.ps-pane[data-pool="' + pool + '"]'); }
+
+    /* ---------- hashrate chart (+ average) ---------- */
+    function loadChart(pool) {
+        var el = pane(pool);
+        var svg = el && el.querySelector('.ps-chart');
+        if (!svg || !window.drawLineChart) return;
+        $.getJSON('/api/pool_stats', function (history) {
+            if (!Array.isArray(history)) return;
+            var pts = history.map(function (h) {
+                var p = h.pools && h.pools[pool];
+                return [h.time * 1000, p ? parseFloat(p.hashrate) || 0 : 0];
+            });
+            var times = pts.map(function (p) { return p[0]; });
+            var span = pts.length > 1 ? (Math.max.apply(null, times) - Math.min.apply(null, times)) / 3600000 : 0;
+            $(el).find('.ps-chart-span').text('last ' + (span >= 1 ? Math.round(span) + 'h' : Math.round(span * 60) + 'm'));
+            var avg = pts.length ? pts.reduce(function (s, p) { return s + p[1]; }, 0) / pts.length : 0;
+            $('#psHashrateAvg' + pool).text(hashrate(avg));
+            window.drawLineChart(svg, [{ data: pts, color: 'var(--accent)' }], {
+                width: 320, height: 160,
+                format: function (v) { return hashrate(v).replace('/s', ''); },
+                empty: 'No history yet'
+            });
+        });
+    }
+
+    /* ---------- blocks: table + finders donut ---------- */
+    function getBlocks(cb) {
+        if (blocksCache.data && Date.now() - blocksCache.at < 30000) return cb(blocksCache.data);
+        $.getJSON('/api/blocks', function (data) {
+            blocksCache = { at: Date.now(), data: data || {} };
+            cb(blocksCache.data);
+        });
+    }
+
+    function drawDonut(el, blocks) {
+        var holder = el.querySelector('.ps-donut-holder');
+        if (!blocks.length) {
+            holder.innerHTML = '<div class="ps-empty">No blocks yet</div>';
+            $(el).find('.ps-finders-span').text('');
+            return;
+        }
+        var counts = {};
+        blocks.forEach(function (b) {
+            var a = String(b.miner || '').split('.')[0] || 'unknown';
+            counts[a] = (counts[a] || 0) + 1;
+        });
+        var rows = Object.keys(counts).map(function (a) { return [a, counts[a]]; }).sort(function (x, y) { return y[1] - x[1]; });
+        if (rows.length > 6) {
+            var rest = rows.slice(5).reduce(function (s, r) { return s + r[1]; }, 0);
+            rows = rows.slice(0, 5).concat([['others', rest]]);
+        }
+        var colors = typeof window.themeChartColors === 'function'
+            ? window.themeChartColors()
+            : ['#f2b33d', '#3fd3ff', '#36d399', '#a78bfa', '#ff9f43', '#f472b6'];
+        var total = blocks.length, r = 40, c = 2 * Math.PI * r, off = 0, arcs = '';
+        rows.forEach(function (row, i) {
+            var len = row[1] / total * c;
+            arcs += '<circle r="' + r + '" cx="55" cy="55" fill="none" stroke="' + colors[i % colors.length] + '" stroke-width="16" stroke-dasharray="' + len.toFixed(2) + ' ' + (c - len).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 55 55)"><title>' + esc(row[0]) + ': ' + row[1] + '</title></circle>';
+            off += len;
+        });
+        holder.innerHTML = '<div class="ps-donut-wrap">' +
+            '<svg class="ps-donut" viewBox="0 0 110 110" role="img" aria-label="Blocks by finder">' + arcs +
+            '<text x="55" y="57" text-anchor="middle">' + total + '</text><text class="sub" x="55" y="70" text-anchor="middle">blocks</text></svg>' +
+            '<ul class="ps-legend">' + rows.map(function (row, i) {
+                return '<li><i style="background:' + colors[i % colors.length] + '"></i><span title="' + esc(row[0]) + '">' + esc(row[0] === 'others' ? 'others' : shortAddr(row[0])) + '</span><b>' + (row[1] / total * 100).toFixed(0) + '%</b></li>';
+            }).join('') + '</ul></div>';
+        $(el).find('.ps-finders-span').text('last ' + total);
+    }
+
+    function renderBlocks(pool) {
+        var el = pane(pool);
+        if (!el) return;
+        getBlocks(function (data) {
+            var blocks = (data && data[pool]) || [];
+            var blockUrl = el.getAttribute('data-block-url');
+            var minConf = el.getAttribute('data-min-conf');
+            drawDonut(el, blocks);
+            var table = el.querySelector('.ps-table');
+            var tbody = table.querySelector('tbody');
+            if (!blocks.length) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="ps-empty"><i class="fas fa-cube"></i> No blocks found yet</div></td></tr>';
+                $(el).find('.ps-blocks-count').text('');
+                if (window.paginateRows) window.paginateRows(table, [], BLOCKS_PER_PAGE);
                 return;
             }
-            window.statsPageFullyInitialized = true;
+            tbody.innerHTML = blocks.map(function (b) {
+                var height = esc(b.height);
+                var heightCell = blockUrl && b.hash
+                    ? '<a href="' + esc(blockUrl + b.hash) + '" target="_blank" rel="noopener">#' + height + '</a>'
+                    : '#' + height;
+                var address = String(b.miner || '').split('.')[0];
+                var worker = String(b.miner || '').split('.').slice(1).join('.');
+                var finder = address
+                    ? '<div class="ps-finder"><a href="/workers/' + esc(address) + '" class="hot-swapper" title="' + esc(address) + '">' + esc(shortAddr(address)) + '</a>' + (worker ? '<span class="ps-muted">' + esc(worker) + '</span>' : '') + '</div>'
+                    : '<span class="ps-muted">-</span>';
+                var type = (b.type === 'solo' ? '<span class="ps-badge solo">Solo</span>' : '<span class="ps-badge pool">Pool</span>')
+                    + (b.mergedBy ? ' <span class="ps-badge merged" title="Merge-mined via ' + esc(b.mergedBy) + '">via ' + esc(b.mergedBy) + '</span>' : '');
+                var status = window.blockStatusHtml ? window.blockStatusHtml(b, minConf) : esc(b.status || 'pending');
+                return '<tr data-status="' + esc(b.status || 'pending') + '" data-type="' + (b.type === 'solo' ? 'solo' : 'pool') + '">' +
+                    '<td>' + heightCell + '</td>' +
+                    '<td class="ps-muted" title="' + esc(new Date(b.time * 1000).toLocaleString()) + '">' + ago(b.time) + '</td>' +
+                    '<td>' + finder + '</td><td>' + type + '</td><td>' + status + '</td></tr>';
+            }).join('');
+            applyFilters(pool);
+        });
+    }
 
-            console.log('Initializing stats page...');
+    function applyFilters(pool) {
+        var el = pane(pool);
+        if (!el) return;
+        var st = $(el).find('[data-filter="status"] .active').attr('data-v');
+        var ty = $(el).find('[data-filter="type"] .active').attr('data-v');
+        var table = el.querySelector('.ps-table');
+        var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr[data-status]'));
+        var shown = rows.filter(function (r) {
+            var ok = (st === 'all' || r.getAttribute('data-status') === st) && (ty === 'all' || r.getAttribute('data-type') === ty);
+            if (!ok) r.style.display = 'none';
+            return ok;
+        });
+        $(el).find('.ps-blocks-count').text(shown.length + (shown.length === rows.length ? '' : ' of ' + rows.length) + ' blocks');
+        if (window.paginateRows) window.paginateRows(table, shown, BLOCKS_PER_PAGE);
+    }
 
-            // (The header is sticky in the theme; no fixed-position fix needed)
+    /* ---------- tabs ---------- */
+    function showTab(pool) {
+        var tabs = document.querySelectorAll('.ps .coin-tab');
+        if (!tabs.length) return;
+        if (!document.querySelector('.ps .coin-tab[data-pool="' + pool + '"]')) pool = tabs[0].getAttribute('data-pool');
+        tabs.forEach(function (t) {
+            var on = t.getAttribute('data-pool') === pool;
+            t.classList.toggle('active', on);
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('.ps-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pool') !== pool; });
+        try { localStorage.setItem('coinTab', pool); } catch (e) {}
+        loadChart(pool);
+        renderBlocks(pool);
+    }
+    function activePool() {
+        var t = document.querySelector('.ps .coin-tab.active');
+        return t && t.getAttribute('data-pool');
+    }
 
-            // Mobile menu functionality
-            if (!window.toggleMenu) {
-                window.toggleMenu = function () {
-                    const nav = document.getElementById('nav');
-                    if (nav) {
-                        nav.classList.toggle('active');
-                        document.body.classList.toggle('menu-open');
-                    }
-                };
+    /* ---------- live values ---------- */
+    function liveUpdate(stats) {
+        if (!stats || !stats.pools) return;
+        Object.keys(stats.pools).forEach(function (pool) {
+            var p = stats.pools[pool], ps = p.poolStats || {};
+            var pb = p.poolBlocks || {}, sb = p.soloBlocks || {};
+            $('#psTabHr' + pool + ', #psHashrate' + pool).text(p.hashrateString || '0 H/s');
+            $('#psMiners' + pool).text(p.minerCount || 0);
+            $('#psWorkers' + pool).text(p.workerCount || 0);
+            $('#psHeight' + pool).text(ps.networkBlocks || 0);
+            $('#psNetHash' + pool).text(ps.networkHashString || '0 H/s');
+            $('#psPeers' + pool).text(ps.networkConnections || 0);
+            $('#psPending' + pool).text((pb.pending || 0) + (sb.pending || 0));
+            $('#psConfirmed' + pool).text((pb.confirmed || 0) + (sb.confirmed || 0));
+            if (ps.totalPaid != null) $('#psPaid' + pool).text(parseFloat(ps.totalPaid || 0).toFixed(4));
+            if (ps.networkHash > 0) {
+                var share = p.hashrate / ps.networkHash * 100;
+                $('#psShare' + pool).text(share.toFixed(share >= 1 ? 2 : 5) + '%');
             }
+        });
+    }
 
-            // Ensure menu toggle is visible and works
-            const menuToggle = document.querySelector('.menu-toggle');
-            if (menuToggle) {
-                // Make sure it's visible on mobile
-                menuToggle.style.display = '';
+    function init() {
+        if (!document.querySelector('.ps')) return;
+        $('.ps .coin-tab').off('click').on('click', function () { showTab(this.getAttribute('data-pool')); });
+        $('.ps-seg button').off('click').on('click', function () {
+            $(this).addClass('active').siblings().removeClass('active');
+            applyFilters($(this).closest('.ps-pane').attr('data-pool'));
+        });
+        var saved = null;
+        try { saved = localStorage.getItem('coinTab'); } catch (e) {}
+        showTab(saved);
 
-                // Clear existing handlers
-                const newToggle = menuToggle.cloneNode(true);
-                menuToggle.parentNode.replaceChild(newToggle, menuToggle);
-
-                // Add click handler
-                newToggle.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.toggleMenu();
-                });
+        // namespaced: this script runs again on every visit (hot-swap)
+        $(document).off('statsUpdate.poolStats').on('statsUpdate.poolStats', function (e, stats) {
+            if (!document.querySelector('.ps')) { $(document).off('statsUpdate.poolStats'); return; }
+            if (document.hidden) return;
+            liveUpdate(stats);
+            var pool = activePool();
+            if (pool && Date.now() - blocksCache.at > 60000) {
+                loadChart(pool);
+                renderBlocks(pool);
             }
+        });
+    }
 
-            // Initialize charts only once
-            if (typeof window.initStatsCharts === 'function') {
-                // Reset the pool stats initialization flag
-                window.poolStatsInitialized = false;
-                window.initStatsCharts();
-            }
-        }
-
-        // Register for hot-swap
-        window.initStatsScripts = function () {
-            window.statsPageFullyInitialized = false;
-            initStatsPage();
-        };
-
-        // Initialize on DOM ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initStatsPage);
-        } else {
-            initStatsPage();
-        }
-    })();
+    window.initStatsScripts = init;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
 </script>

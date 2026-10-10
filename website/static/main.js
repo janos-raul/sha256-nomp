@@ -62,8 +62,6 @@ $(function () {
         $("body").removeClass("menu-open");
 
         // Reset page-specific initialization flags
-        window.statsPageFullyInitialized = false;
-        window.poolStatsInitialized = false;
         window.minerStatsScriptLoaded = false;
 
         // Page-specific initializations

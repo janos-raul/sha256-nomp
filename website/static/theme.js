@@ -169,7 +169,8 @@
   window.drawLineChart = function (svg, sets, options) {
     if (!svg) return;
     options = options || {};
-    var W = 760, H = options.height || 190, L = 52, R = 10, T = 12, B = 22;
+    // width/height should match the svg's viewBox so labels keep their shape
+    var W = options.width || 760, H = options.height || 190, L = 52, R = 10, T = 12, B = 22;
     var all = [];
     sets.forEach(function (s) {
       // the server's history is not always in time order

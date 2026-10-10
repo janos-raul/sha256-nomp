@@ -2,16 +2,6 @@
     /* Miner Stats: one tab per pool — hashrate chart, compact network/pool
        stats with miner lookup on the right, and one combined miners list */
     .ms { display: grid; gap: 12px; }
-    .ms-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-    .ms-tab {
-        display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer;
-        background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); color: var(--text);
-        font: 600 11px var(--font-display); text-transform: uppercase; letter-spacing: 0.12em;
-    }
-    .ms-tab:hover { border-color: var(--line-hi); color: var(--text-hi); }
-    .ms-tab.active { border-color: var(--accent); color: var(--text-hi); box-shadow: var(--glow); }
-    .ms-tab .hr { font: 500 11px var(--font-mono); letter-spacing: 0; text-transform: none; color: var(--muted); }
-    .ms-tab.active .hr { color: var(--accent); }
     .ms-pane { display: grid; gap: 12px; }
     .ms-pane[hidden] { display: none; }
     .ms-top { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; }
@@ -140,9 +130,9 @@
 }}
 
 <div class="ms">
-    <div class="ms-tabs" role="tablist">
+    <div class="coin-tabs" role="tablist">
         {{ for (var pool in it.stats.pools) { var tp = it.stats.pools[pool]; }}
-        <button type="button" class="ms-tab" role="tab" data-pool="{{=pool}}">
+        <button type="button" class="coin-tab" role="tab" data-pool="{{=pool}}">
             <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=capitalizeFirstLetter(tp.name)}}
             <span class="hr">{{=tp.hashrateString || '0 H/s'}}</span>
         </button>
@@ -326,9 +316,9 @@
     }
 
     function msShowTab(pool) {
-        var tabs = document.querySelectorAll('.ms-tab');
+        var tabs = document.querySelectorAll('.coin-tab');
         if (!tabs.length) return;
-        if (!document.querySelector('.ms-tab[data-pool="' + pool + '"]')) pool = tabs[0].getAttribute('data-pool');
+        if (!document.querySelector('.coin-tab[data-pool="' + pool + '"]')) pool = tabs[0].getAttribute('data-pool');
         tabs.forEach(function (t) {
             var on = t.getAttribute('data-pool') === pool;
             t.classList.toggle('active', on);
@@ -337,7 +327,7 @@
         document.querySelectorAll('.ms-pane').forEach(function (p) {
             p.hidden = p.getAttribute('data-pool') !== pool;
         });
-        try { localStorage.setItem('minerStatsTab', pool); } catch (e) {}
+        try { localStorage.setItem('coinTab', pool); } catch (e) {}
         msLoadChart(pool);
         msLoadBlocks(pool);
     }
@@ -354,7 +344,7 @@
 
     // Initialize workers page
     function initWorkersPage() {
-        $('.ms-tab').off('click').on('click', function () {
+        $('.coin-tab').off('click').on('click', function () {
             msShowTab(this.getAttribute('data-pool'));
         });
         $('.lookup-button').off('click').on('click', function () {
@@ -369,7 +359,7 @@
             });
         }
         var saved = null;
-        try { saved = localStorage.getItem('minerStatsTab'); } catch (e) {}
+        try { saved = localStorage.getItem('coinTab'); } catch (e) {}
         msShowTab(saved);
     }
 

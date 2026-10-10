@@ -1081,6 +1081,45 @@ main [class*="panel"] {
   background: var(--aux);
 }
 
+/* ---------- coin tabs (Pool Stats, Miner Stats) ---------- */
+.coin-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.coin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--text);
+  font: 600 11px var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.coin-tab:hover {
+  border-color: var(--line-hi);
+  color: var(--text-hi);
+}
+.coin-tab.active {
+  border-color: var(--accent);
+  color: var(--text-hi);
+  box-shadow: var(--glow);
+}
+.coin-tab .hr {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+.coin-tab.active .hr {
+  color: var(--accent);
+}
+
 /* ---------- table pager (paginateRows in theme.js) ---------- */
 .pager {
   display: flex;
