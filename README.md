@@ -23,7 +23,20 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 - ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
 
-### Recent Updates (v1.5.1)
+### Recent Updates (v1.5.2)
+
+Security release for public pools; requires stratum-pool v1.5.1.
+
+- **SECURITY**: `/api/worker_stats` and `/workers/<address>` only look up full addresses (20–100 letters and digits). A glob such as `addr=*` used to return the summed balances of every miner
+- **SECURITY**: The miner page is rendered per request; it no longer puts the visitor's address and balances into the shared stats served by `/api/stats` and the live stream
+- **SECURITY**: At most 10 live-stats streams per IP and 500 in total
+- **SECURITY**: The CLI listener (`cliPort`) binds to 127.0.0.1 only
+- **SECURITY**: Stratum (stratum-pool v1.5.1): at most 10 `mining.authorize` per connection; a non-string password no longer throws; a blocknotify during pool startup no longer throws
+- **SECURITY**: Admin login checks the password type before bcrypt and compares session tokens in constant time
+- **REMOVED**: Dead routes `/stats/shares` and `/payout/<address>`
+- **CHANGED**: Bad client requests (broken JSON, bad URL encoding) log one warning line instead of an error with a stack trace
+
+### v1.5.1
 
 - **NEW**: Coin display names — coin files take an optional `displayName` (e.g. "Bitcoin Silver"), shown on the website and in the API instead of the capitalized pool name
 - **CHANGED**: The ElevenSeventyFive pool ID is now `elevenseventyfive` (`coins/` and `pool_configs/elevenseventyfive.json`, aux coin key in the parent configs). Running pools move their Redis data with `scripts/rename-coin-redis.js`, see [Upgrading](#upgrading-sha256-nomp)
