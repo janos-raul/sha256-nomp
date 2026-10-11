@@ -1,0 +1,7 @@
+# sha256-nomp: pages are public; API calls, admin and per-miner pages are not
+# worth crawling (miner pages are one per address, an endless URL space)
+User-agent: *
+Disallow: /api/
+Disallow: /admin
+Disallow: /get_page
+Disallow: /workers/

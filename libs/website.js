@@ -940,6 +940,11 @@ module.exports = function (logger) {
   });
 
   app.use(compress());
+  // before "/:page", which would refuse the dot in the name
+  app.get("/robots.txt", function (req, res) {
+    res.type("text/plain");
+    res.sendFile(path.join(__dirname, "..", "website", "static", "robots.txt"));
+  });
   app.get("/workers/:address", minerpage);
   app.get("/:page", route);
   app.get("/", route);
