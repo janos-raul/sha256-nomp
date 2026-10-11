@@ -23,7 +23,17 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 - ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
 
-### Recent Updates (v1.5.2)
+### Recent Updates (v1.5.3)
+
+Requires stratum-pool v1.5.2.
+
+- **FIXED**: Pages stopped updating after PC sleep, a Wi-Fi change, a router idle timeout or a sleeping browser tab: the live stats stream could die without an error and the LIVE badge stayed on. The server now sends a heartbeat on every stream every 20s, the page reconnects after 60s of silence (and at once when the tab, network or a sleeping tab comes back), and the badge shows CONNECTING while the stream is silent
+- **FIXED**: The miner chart bridged missed points with a straight line after such a gap; it now redraws each worker's line from the full history in every update. The home page chart, block feed and ages refresh as soon as the tab is visible again
+- **FIXED**: Home page Global Pool Stats wrapped onto two lines as the hashrate grew; columns are now sized by their content and "pool / solo" values only break at the slash
+- **NEW**: `/robots.txt` (pages may be crawled; `/api/`, `/admin`, `/get_page` and the per-address `/workers/` pages may not)
+- **FIXED** (stratum-pool v1.5.2): Coins whose daemon was not ready at startup (common after a power cut) stayed offline until a manual restart; startup now retries until the daemon is ready
+
+### v1.5.2
 
 Security release for public pools; requires stratum-pool v1.5.1.
 
