@@ -109,7 +109,8 @@
     if (!dot) return;
     var src = window.statsSource;
     var state = !src || typeof EventSource === "undefined" ? "connecting"
-      : src.readyState === EventSource.OPEN ? "live"
+      : src.readyState === EventSource.OPEN && !(window.statsStale && window.statsStale()) ? "live"
+      : src.readyState === EventSource.OPEN ? "connecting"
       : src.readyState === EventSource.CONNECTING ? "connecting" : "offline";
     dot.classList.toggle("connecting", state === "connecting");
     dot.classList.toggle("offline", state === "offline");

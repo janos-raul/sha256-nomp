@@ -9,6 +9,20 @@ module.exports = function (logger, portalConfig, poolConfigs) {
   var MAX_LIVE_PER_IP = 10; // open tabs behind one NAT
   var MAX_LIVE_TOTAL = 500;
 
+  // Heartbeat on every live stream. Keeps routers/NAT from dropping an idle
+  // connection, and lets the page tell a silently dead stream (sleep, Wi-Fi
+  // change, sleeping tab) from a quiet one: main.js reconnects when neither
+  // stats nor a ping arrive for a while. Failed writes drop the connection.
+  setInterval(function () {
+    for (var uid in _this.liveStatConnections) {
+      try {
+        _this.liveStatConnections[uid].write("event: ping\ndata: 1\n\n");
+      } catch (e) {
+        delete _this.liveStatConnections[uid];
+      }
+    }
+  }, 20000);
+
   // API request tracking
   var apiStats = {
     requests: {},

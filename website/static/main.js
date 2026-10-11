@@ -227,8 +227,18 @@ $(function () {
     }
 
     window.statsSource = new EventSource("/api/live_stats");
+    window.statsLastSeen = Date.now();
+
+    window.statsSource.addEventListener("open", function () {
+      window.statsLastSeen = Date.now();
+    });
+    // server heartbeat every 20s (libs/api.js)
+    window.statsSource.addEventListener("ping", function () {
+      window.statsLastSeen = Date.now();
+    });
 
     window.statsSource.addEventListener("message", function (e) {
+      window.statsLastSeen = Date.now();
       // Only process if not hidden
       if (!document.hidden) {
         try {
@@ -256,6 +266,32 @@ $(function () {
       }, 5000);
     };
   }
+
+  // A stream can die without an error event (PC sleep, Wi-Fi change, router
+  // timeout, sleeping tab): it still reads OPEN but nothing arrives, and the
+  // page shows old data until a refresh. Stats come every 30s and a ping
+  // every 20s, so 60s of silence means the stream is dead: reconnect, which
+  // also sends the current stats right away.
+  var STATS_STALE_MS = 60000;
+  window.statsStale = function () {
+    return (
+      !!window.statsSource &&
+      window.statsSource.readyState !== EventSource.CLOSED &&
+      Date.now() - (window.statsLastSeen || 0) > STATS_STALE_MS
+    );
+  };
+  function reconnectIfStale() {
+    if (!document.hidden && window.statsStale()) {
+      console.log("Live stats stream silent, reconnecting...");
+      initializeEventSource();
+    }
+  }
+  setInterval(reconnectIfStale, 15000);
+  // back from sleep / network / a sleeping tab: check now, not on the next tick
+  window.addEventListener("focus", reconnectIfStale);
+  window.addEventListener("online", reconnectIfStale);
+  window.addEventListener("pageshow", reconnectIfStale);
+  document.addEventListener("resume", reconnectIfStale);
 
   // Handle browser back/forward buttons
   window.addEventListener("popstate", function (e) {
