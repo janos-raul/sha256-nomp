@@ -39,8 +39,8 @@
     "maxLength": 46
   },
   "explorer": {
-    "txURL": "",
-    "blockURL": ""
+    "txURL": "https://1175explorer.com/transaction/",
+    "blockURL": "https://1175explorer.com/block-hash/"
   },
   "rpc": {
     "host": "127.0.0.1",
