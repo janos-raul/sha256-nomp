@@ -553,28 +553,17 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     return seconds + "s";
   }
 
-  this.getCoins = function (cback) {
-    _this.stats.coins = redisClients[0].coins;
-    cback();
+  // Miner addresses go into HSCAN MATCH patterns as "<address>*", so a glob
+  // character (* ? [ ]) or a short prefix would match other miners' entries.
+  // Callers validate first; this is the last line of defence.
+  var isLookupAddress = function (a) {
+    return typeof a === "string" && /^[A-Za-z0-9]{20,100}$/.test(a);
   };
-
-  this.getPayout = function (address, cback) {
-    async.waterfall(
-      [
-        function (callback) {
-          _this.getBalanceByAddress(address, function () {
-            callback(null, "test");
-          });
-        },
-      ],
-      function (err, total) {
-        cback(coinsRound(total).toFixed(8));
-      },
-    );
-  };
+  this.isLookupAddress = isLookupAddress;
 
   this.getTotalSharesByAddress = function (address, cback) {
     var a = address.split(".")[0];
+    if (!isLookupAddress(a)) return cback(0);
     var client = redisClients[0].client,
       coins = redisClients[0].coins,
       shares = [];
@@ -660,6 +649,9 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     );
     var fetchStart = Date.now();
     var a = address.split(".")[0];
+    if (!isLookupAddress(a)) {
+      return cback({ totalHeld: 0, totalPaid: 0, totalImmature: 0, balances: [] });
+    }
     var client = redisClients[0].client,
       coins = redisClients[0].coins,
       balances = [];
@@ -851,8 +843,6 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           return;
         }
 
-        _this.stats.balances = balances;
-        _this.stats.address = address;
         var fetchTime = Date.now() - fetchStart;
         logger.debug(
           logSystem,

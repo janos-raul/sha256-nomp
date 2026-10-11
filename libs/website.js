@@ -279,8 +279,12 @@ module.exports = function (logger) {
 
   setInterval(buildUpdatedWebsite, websiteConfig.stats.updateInterval * 1000);
 
+  var hasPage = function (pageId) {
+    return Object.prototype.hasOwnProperty.call(pageProcessed, pageId);
+  };
+
   var getPage = function (pageId) {
-    if (pageId in pageProcessed) {
+    if (hasPage(pageId)) {
       var requestedPage = pageProcessed[pageId];
       return requestedPage;
     }
@@ -288,12 +292,12 @@ module.exports = function (logger) {
 
   // Input validation helper functions
   var validateAddress = function (address) {
-    if (!address) return false;
-    // Allow alphanumeric characters, dots, and dashes (typical crypto address format)
-    var addressRegex = /^[a-zA-Z0-9.-]+$/;
-    // Limit length to prevent DoS
-    if (address.length > 100) return false;
-    return addressRegex.test(address);
+    if (typeof address !== "string" || address.length > 200) return false;
+    // "address" or "address.worker"; the worker part follows the stratum
+    // username rule. The address itself must be a full one (no prefixes).
+    var parts = address.split(".");
+    if (!portalStats.isLookupAddress(parts[0])) return false;
+    return /^[A-Za-z0-9._-]*$/.test(parts.slice(1).join("."));
   };
 
   var validatePageId = function (pageId) {
@@ -303,15 +307,6 @@ module.exports = function (logger) {
     // Limit length
     if (pageId.length > 50) return false;
     return pageIdRegex.test(pageId);
-  };
-
-  var validateCoinName = function (coin) {
-    if (!coin) return false;
-    // Only allow alphanumeric characters
-    var coinRegex = /^[a-zA-Z0-9]+$/;
-    // Limit length
-    if (coin.length > 20) return false;
-    return coinRegex.test(coin);
   };
 
   // Client IP. Express is set to trust proxy headers only from loopback
@@ -392,14 +387,19 @@ module.exports = function (logger) {
   };
 
   var validateSession = function (sessionId, token, ip) {
+    if (typeof sessionId !== "string" || !Object.prototype.hasOwnProperty.call(adminSessions, sessionId)) {
+      return false;
+    }
     var session = adminSessions[sessionId];
 
-    if (!session) {
+    if (!session || typeof token !== "string") {
       return false;
     }
 
-    // Check if token matches
-    if (session.token !== token) {
+    // Check if token matches (constant time)
+    var expected = Buffer.from(session.token);
+    var given = Buffer.from(token);
+    if (expected.length !== given.length || !crypto.timingSafeEqual(expected, given)) {
       logger.warning(logSystem, "Auth", "Invalid session token from IP: " + ip);
       return false;
     }
@@ -463,101 +463,57 @@ module.exports = function (logger) {
   // Clean expired sessions every 5 minutes
   setInterval(cleanExpiredSessions, 5 * 60 * 1000);
 
-  var minerpage = function (req, res, next) {
-    var address = req.params.address || null;
-    requestStats.total++;
-    logger.info(
-      logSystem,
-      "MinerPage",
-      "Miner stats requested for: " + (address || "unknown"),
-    );
-
-    if (address != null) {
-      // Validate address before processing
-      if (!validateAddress(address)) {
-        logger.warning(
-          logSystem,
-          "MinerPage",
-          "Invalid address format from IP: " +
-            getRealIP(req) +
-            " - Address: " +
-            address,
-        );
-        requestStats.errors++;
-        res.status(400).json({ error: "Invalid address format" });
-        return;
-      }
-
-      address = address.split(".")[0];
-      var fetchStart = Date.now();
-
-      portalStats.getBalanceByAddress(address, function (balanceData) {
-        var fetchTime = Date.now() - fetchStart;
-        logger.debug(
-          logSystem,
-          "MinerPage",
-          "Retrieved balance for " + address + " in " + fetchTime + "ms",
-        );
-        // Set the address in stats so it's available in the template
-        portalStats.stats.address = address;
-        processTemplates();
-        res.header("Content-Type", "text/html");
-        res.end(indexesProcessed["miner_stats"]);
-      });
-    } else next();
-  };
-
-  var payout = function (req, res, next) {
-    var address = req.params.address || null;
-    if (address != null) {
-      // Validate address before processing
-      if (!validateAddress(address)) {
-        logger.warning(
-          logSystem,
-          "Payout",
-          "Invalid address format from IP: " +
-            getRealIP(req) +
-            " - Address: " +
-            address,
-        );
-        requestStats.errors++;
-        res.status(400).json({ error: "Invalid address format" });
-        return;
-      }
-
-      portalStats.getPayout(address, function (data) {
-        res.write(data.toString());
-        res.end();
-      });
-    } else next();
-  };
-
-  var shares = function (req, res, next) {
-    portalStats.getCoins(function () {
-      processTemplates();
-      res.end(indexesProcessed["user_shares"]);
+  // Miner stats page for one address. Rendered per request from a copy of
+  // the stats so concurrent visitors never see each other's address (the
+  // shared stats object also goes out to every live-stats client). Balances
+  // are loaded by the page itself from /api/worker_stats.
+  var renderMinerStats = function (address) {
+    var minerStats = Object.assign({}, portalStats.stats, {
+      address: address.split(".")[0],
+    });
+    return pageTemplates["miner_stats"]({
+      poolsConfigs: poolConfigs,
+      stats: minerStats,
+      portalConfig: portalConfig,
+      getReadableDifficultyString: getReadableDifficultyString,
     });
   };
 
-  var usershares = function (req, res, next) {
-    var coin = req.params.coin || null;
-    if (coin != null) {
-      // Validate coin name before processing
-      if (!validateCoinName(coin)) {
+  var minerpage = function (req, res, next) {
+    var address = req.params.address || null;
+    requestStats.total++;
+
+    if (address != null) {
+      if (!validateAddress(address)) {
         logger.warning(
           logSystem,
-          "UserShares",
-          "Invalid coin name from IP: " + getRealIP(req) + " - Coin: " + coin,
+          "MinerPage",
+          "Invalid address format from IP: " +
+            getRealIP(req) +
+            " - Address: " +
+            JSON.stringify(String(address).slice(0, 120)),
         );
         requestStats.errors++;
-        res.status(400).json({ error: "Invalid coin name format" });
+        res.status(400).json({ error: "Invalid address format" });
+        return;
+      }
+      if (!pageTemplates.index || !pageTemplates["miner_stats"] || !portalStats.stats.global) {
+        res.status(503).send("Website is still loading. Please try again in a moment.");
         return;
       }
 
-      portalStats.getCoinTotals(coin, null, function () {
-        processTemplates();
-        res.end(indexesProcessed["user_shares"]);
-      });
+      logger.info(logSystem, "MinerPage", "Miner stats requested for: " + address);
+      res.header("Content-Type", "text/html");
+      res.end(
+        pageTemplates.index({
+          page: renderMinerStats(address),
+          selected: "miner_stats",
+          stats: portalStats.stats,
+          poolConfigs: poolConfigs,
+          portalConfig: portalConfig,
+          getReadableDifficultyString: getReadableDifficultyString,
+        }),
+      );
     } else next();
   };
 
@@ -659,7 +615,7 @@ module.exports = function (logger) {
         `<html lang="${language}">`,
       );
       res.end(pageContent);
-    } else if (pageId in pageProcessed) {
+    } else if (hasPage(pageId)) {
       // Serve the index with the requested page content
       logger.debug(
         logSystem,
@@ -836,31 +792,16 @@ module.exports = function (logger) {
         return;
       }
 
-      // Log the request
+      if (!pageTemplates["miner_stats"] || !portalStats.stats.global) {
+        res.status(503).send("Website is still loading. Please try again in a moment.");
+        return;
+      }
       logger.debug(
         logSystem,
         "GetPage",
         "Miner stats requested via get_page for: " + address,
       );
-
-      // Get balance data for the address
-      portalStats.getBalanceByAddress(
-        address.split(".")[0],
-        function (balanceData) {
-          // Set the address in stats so it's available in the template
-          portalStats.stats.address = address;
-
-          // Process the miner_stats template with the address
-          var minerStatsPage = pageTemplates["miner_stats"]({
-            poolsConfigs: poolConfigs,
-            stats: portalStats.stats,
-            portalConfig: portalConfig,
-            getReadableDifficultyString: getReadableDifficultyString,
-          });
-
-          res.end(minerStatsPage);
-        },
-      );
+      res.end(renderMinerStats(address));
       return;
     }
 
@@ -908,7 +849,13 @@ module.exports = function (logger) {
       return res.status(403).json({ error: "Admin center not enabled" });
     }
 
-    verifyAdminPassword((req.body || {}).password, function (isValid) {
+    var password = (req.body || {}).password;
+    if (typeof password !== "string" || password.length === 0 || password.length > 256) {
+      logger.warning(logSystem, "Admin", "Failed admin login (no password) from IP: " + ip);
+      return res.status(401).json({ error: "Incorrect Password" });
+    }
+
+    verifyAdminPassword(password, function (isValid) {
       if (isValid) {
         var session = createSession(ip);
         logger.info(
@@ -993,9 +940,6 @@ module.exports = function (logger) {
   });
 
   app.use(compress());
-  app.get("/stats/shares/:coin", usershares);
-  app.get("/stats/shares", shares);
-  app.get("/payout/:address", payout);
   app.get("/workers/:address", minerpage);
   app.get("/:page", route);
   app.get("/", route);
@@ -1004,6 +948,30 @@ module.exports = function (logger) {
 
   app.use(function (err, req, res, next) {
     requestStats.errors++;
+
+    // Bad requests from clients (broken JSON body, bad URL encoding, oversized
+    // body) are common scanner noise: one warning line, no stack trace
+    var status = err instanceof URIError ? 400 : err.status || err.statusCode || 500;
+    if (status >= 400 && status < 500) {
+      logger.warning(
+        logSystem,
+        "Server",
+        "Bad request (" +
+          status +
+          ") from IP: " +
+          getRealIP(req) +
+          " - " +
+          req.method +
+          " " +
+          JSON.stringify(String(req.originalUrl || req.url).slice(0, 200)) +
+          " - " +
+          String(err.message).slice(0, 200),
+      );
+      return res.status(status).json({
+        error: "Invalid request",
+        message: "The request could not be processed",
+      });
+    }
 
     // Log full error details for debugging
     logger.error(logSystem, "Server", "Express error: " + err.stack);
@@ -1014,21 +982,8 @@ module.exports = function (logger) {
       message: "An error occurred while processing your request",
     };
 
-    // Handle specific error types
-    if (err instanceof URIError) {
-      logger.warning(
-        logSystem,
-        "Server",
-        "URI decode error from IP: " + getRealIP(req) + " - URL: " + req.url,
-      );
-      errorResponse.error = "Invalid request";
-      errorResponse.message = "The request contains invalid characters";
-      res.status(400).json(errorResponse);
-    } else if (err.status === 400) {
-      res.status(400).json(errorResponse);
-    } else {
-      res.status(500).json(errorResponse);
-    }
+    if (res.headersSent) return;
+    res.status(500).json(errorResponse);
   });
 
   try {

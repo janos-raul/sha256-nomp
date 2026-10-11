@@ -462,10 +462,10 @@ module.exports = function (logger) {
           workerName,
       );
 
-      // Store password for this worker
+      // Solo detection reads the password; it is stored for authorized
+      // workers only (below), so junk logins cannot grow the map
+      password = typeof password === "string" ? password.slice(0, 256) : "";
       if (password) {
-        workerPasswords[workerName] = password;
-
         var passwordLower = password.toLowerCase();
         if (
           passwordLower === "solo" ||
@@ -488,6 +488,7 @@ module.exports = function (logger) {
         var authTime = Date.now() - authStart;
 
         if (authorized) {
+          workerPasswords[workerName] = password;
           logger.success(
             logSystem,
             logComponent,

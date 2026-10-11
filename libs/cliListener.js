@@ -202,7 +202,9 @@ var listener = (module.exports = function listener(port, logger) {
         // Set timeout for idle connections (30 seconds)
         c.setTimeout(30000);
       })
-      .listen(port, "0.0.0.0", function () {
+      // loopback only: the CLI takes blocknotify/reloadpool without auth,
+      // and the daemons and scripts/cli.js all connect from this machine
+      .listen(port, "127.0.0.1", function () {
         emitLog("CLI listening on port " + port);
         if (logger) {
           logger.success(

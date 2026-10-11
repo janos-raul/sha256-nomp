@@ -6,6 +6,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
   var portalStats = (this.stats = new stats(logger, portalConfig, poolConfigs));
 
   this.liveStatConnections = {};
+  var MAX_LIVE_PER_IP = 10; // open tabs behind one NAT
+  var MAX_LIVE_TOTAL = 500;
 
   // API request tracking
   var apiStats = {
@@ -172,8 +174,13 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           address = params.addr || params.address || null;
         }
 
-        // NOW check if we have an address (outside the fallback block)
-        if (address && address.length > 0) {
+        // Only a plain address (plus an optional ".worker") is looked up;
+        // anything else (arrays from addr[]=, globs, short prefixes) is refused
+        if (
+          typeof address === "string" &&
+          address.length <= 200 &&
+          portalStats.isLookupAddress(address.split(".")[0])
+        ) {
           // Initialize these variables here
           var history = {};
           var workers = {};
@@ -354,6 +361,32 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         return;
 
       case "live_stats":
+        // Each stream stays open, so the per-minute API limit alone does not
+        // bound them: cap streams per IP and in total
+        var liveIp = req.ip || req.socket.remoteAddress;
+        var liveTotal = 0;
+        var liveFromIp = 0;
+        for (var liveId in _this.liveStatConnections) {
+          liveTotal++;
+          if (_this.liveStatConnections[liveId].liveIp === liveIp) liveFromIp++;
+        }
+        if (liveFromIp >= MAX_LIVE_PER_IP || liveTotal >= MAX_LIVE_TOTAL) {
+          logger.warning(
+            logSystem,
+            "LiveStats",
+            "Refused live stats stream from " +
+              liveIp +
+              " (" +
+              liveFromIp +
+              " from this IP, " +
+              liveTotal +
+              " total)",
+          );
+          res.status(429).json({ error: "Too many live stats connections" });
+          trackRequest("live_stats", 0, true);
+          return;
+        }
+
         res.writeHead(200, {
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache",
@@ -368,6 +401,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
         );
 
         var uid = Math.random().toString();
+        res.liveIp = liveIp;
         _this.liveStatConnections[uid] = res;
 
         // Log new live connection
