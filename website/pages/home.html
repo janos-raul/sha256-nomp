@@ -307,5 +307,14 @@
       if (!document.getElementById("home-feed")) { clearInterval(window.__homeTimer); $(document).off("statsUpdate.home"); return; }
       refreshLastBlocks(); loadFeed(); loadChart();
     }, 60000);
+    // background tabs throttle the timer: refresh as soon as the tab is back
+    // (one handler only; this script runs again on every visit)
+    document.removeEventListener("visibilitychange", window.__homeVisible);
+    window.__homeVisible = function () {
+      if (document.hidden) return;
+      if (!document.getElementById("home-feed")) { document.removeEventListener("visibilitychange", window.__homeVisible); return; }
+      refreshLastBlocks(); loadFeed(); loadChart();
+    };
+    document.addEventListener("visibilitychange", window.__homeVisible);
   })();
 </script>

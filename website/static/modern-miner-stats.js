@@ -174,6 +174,20 @@ function initChart() {
   });
 }
 
+// Chart points for one worker from the worker_stats history, newest
+// workerHistoryMax only
+function historyPoints(w) {
+  var data = [];
+  for (var wh in statData.history[w]) {
+    data.push({
+      x: statData.history[w][wh].time * 1000,
+      y: statData.history[w][wh].hashrate,
+    });
+  }
+  data.sort(function (a, b) { return a.x - b.x; });
+  return data.length > workerHistoryMax ? data.slice(-workerHistoryMax) : data;
+}
+
 function buildChartData() {
   if (!statData || !statData.history) return;
 
@@ -195,18 +209,7 @@ function buildChartData() {
       worker = worker + " (SOLO)";
     }
 
-    var data = [];
-    for (var wh in statData.history[w]) {
-      data.push({
-        x: statData.history[w][wh].time * 1000,
-        y: statData.history[w][wh].hashrate,
-      });
-    }
-
-    // Keep only last workerHistoryMax points
-    if (data.length > workerHistoryMax) {
-      data = data.slice(-workerHistoryMax);
-    }
+    var data = historyPoints(w);
 
     var color = colors[colorIndex % colors.length];
     datasets.push({
@@ -259,39 +262,11 @@ function updateChartData() {
       break;
     }
 
-    // Get latest history entry
-    var latestEntry = null;
-    var latestTime = 0;
-    for (var wh in statData.history[w]) {
-      if (statData.history[w][wh].time > latestTime) {
-        latestTime = statData.history[w][wh].time;
-        latestEntry = statData.history[w][wh];
-      }
-    }
-
-    if (latestEntry) {
-      // Check if this data point already exists
-      var exists = false;
-      for (var j = 0; j < dataset.data.length; j++) {
-        if (dataset.data[j].x === latestEntry.time * 1000) {
-          exists = true;
-          break;
-        }
-      }
-
-      if (!exists) {
-        // Add new data point
-        dataset.data.push({
-          x: latestEntry.time * 1000,
-          y: latestEntry.hashrate,
-        });
-
-        // Remove old points if exceeding max
-        if (dataset.data.length > workerHistoryMax) {
-          dataset.data.shift();
-        }
-      }
-    }
+    // Take the whole history from the response, not just its newest point:
+    // after a gap (sleeping tab, dropped live stream) the missed points would
+    // otherwise be bridged by a straight line until a page refresh. The
+    // dataset object is kept, so lines hidden via the legend stay hidden.
+    dataset.data = historyPoints(w);
   }
 
   if (needsRebuild) {
