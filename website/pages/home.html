@@ -84,13 +84,13 @@
     </div>
   </section>
 
-  <!-- Chart + block feed -->
+  <!-- Chart, block feed below it (full width, so each block shows all its data) -->
   <section class="grid-12">
-    <div class="panel span-8">
+    <div class="panel span-12">
       <div class="panel-head"><h2>Pool hashrate</h2><div class="legend"><span class="amber" id="home-chart-span">history</span></div></div>
-      <div class="panel-body"><svg class="chart" id="home-chart" viewBox="0 0 760 190" preserveAspectRatio="none" role="img" aria-label="Pool hashrate history"></svg></div>
+      <div class="panel-body"><svg class="chart" id="home-chart" viewBox="0 0 1300 190" preserveAspectRatio="none" role="img" aria-label="Pool hashrate history"></svg></div>
     </div>
-    <div class="panel span-4 home-feed-panel">
+    <div class="panel span-12 home-feed-panel">
       <div class="panel-head"><h2>Latest blocks</h2><a class="label hot-swapper" href="/stats">All blocks</a></div>
       <div class="home-feed-box"><ul class="feed" id="home-feed"><li class="feed-empty">Loading blocks…</li></ul></div>
     </div>
@@ -183,19 +183,22 @@
   .home-ports span.none { border: 0; padding: 0; color: var(--muted); }
   .mm-ports { opacity: .75; letter-spacing: 0; text-transform: none; }
   .feed { list-style: none; margin: 0; padding: 0; }
-  /* the block feed takes the chart's height and scrolls, instead of
-     stretching the chart panel as blocks come in */
-  .home-feed-panel { display: flex; flex-direction: column; }
-  .home-feed-box { position: relative; flex: 1 1 auto; }
-  .home-feed-box .feed { overflow-y: auto; }
-  @media (min-width: 981px) { .home-feed-box .feed { position: absolute; inset: 0; } }
-  @media (max-width: 980px) { .home-feed-box .feed { max-height: 360px; } }
-  .feed li { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 9px 14px; border-bottom: 1px solid var(--line); }
+  /* one row per block: time, coin + height, type, finder, share / net diff,
+     effort, status; phones keep the two-line layout (summary under the coin) */
+  .feed li { display: grid; grid-template-columns: 64px minmax(110px, 1fr) minmax(130px, 1.2fr) minmax(150px, 1.4fr) minmax(140px, 1.2fr) 70px 88px; gap: 12px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--line); }
   .feed li:last-child { border-bottom: 0; }
   .feed li.feed-empty { display: block; color: var(--muted); }
-  .feed .t { font: 500 10.5px var(--font-mono); color: var(--muted); padding-top: 2px; }
+  .feed .t { font: 500 10.5px var(--font-mono); color: var(--muted); }
   .feed .what { font: 500 12px var(--font-ui); color: var(--text-hi); min-width: 0; }
-  .feed .what small { display: block; font: 500 10.5px var(--font-mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .feed .what small { display: none; font: 500 10.5px var(--font-mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .feed .col { font: 500 11px var(--font-mono); color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .feed .col.who { color: var(--text); }
+  .feed .st { justify-self: end; }
+  @media (max-width: 860px) {
+    .feed li { grid-template-columns: 58px minmax(0, 1fr) auto; align-items: start; }
+    .feed .col { display: none; }
+    .feed .what small { display: block; }
+  }
 </style>
 
 <script>
@@ -284,11 +287,17 @@
         var html = all.slice(0, 8).map(function (b) {
           var aux = !!auxCoins[b.coin];
           var status = b.status === "confirmed" ? '<span class="chip ok">paid</span>' : b.status === "pending" ? '<span class="chip amber">maturing</span>' : '<span class="chip dim">' + esc(b.status || "") + "</span>";
+          var kind = esc(b.type || "pool") + (b.mergedBy ? " · merged via " + esc(b.mergedBy) : "");
+          var effort = b.effort > 0 && window.formatEffort
+            ? '<span class="' + window.effortClass(b.effort) + '">' + window.formatEffort(b.effort) + "</span>" : "";
           return '<li><span class="t">' + ago(now - (b.time || now)) + "</span>" +
             '<span class="what">' + '<span class="' + (aux ? "cyan" : "amber") + '">' + esc(symbols[b.coin] || b.coin) + "</span> block " + esc(b.height) +
-            "<small>" + esc(b.type || "pool") + (b.mergedBy ? " · merged via " + esc(b.mergedBy) : "") + " · " + esc(shortMiner(b.miner)) +
-            (b.effort > 0 && window.formatEffort ? ' · <span class="' + window.effortClass(b.effort) + '">' + window.formatEffort(b.effort) + " effort</span>" : "") +
-            "</small></span>" + status + "</li>";
+            "<small>" + kind + " · " + esc(shortMiner(b.miner)) + (effort ? " · " + effort + " effort" : "") + "</small></span>" +
+            '<span class="col">' + kind + "</span>" +
+            '<span class="col who" title="' + esc(b.miner || "") + '">' + esc(shortMiner(b.miner)) + "</span>" +
+            '<span class="col">' + (window.blockDiffHtml ? window.blockDiffHtml(b) : "") + "</span>" +
+            '<span class="col" title="Pool effort">' + (effort || '<span class="muted">—</span>') + "</span>" +
+            '<span class="st">' + status + "</span></li>";
         }).join("");
         $("#home-feed").html(html || '<li class="feed-empty">No blocks found yet.</li>');
       }).fail(function () { $("#home-feed").html('<li class="feed-empty">Blocks could not be loaded.</li>'); });
@@ -305,6 +314,7 @@
         var span = pts.length > 1 ? (pts[pts.length - 1][0] - pts[0][0]) / 3600000 : 0;
         $("#home-chart-span").text("all coins · last " + (span >= 1 ? Math.round(span) + "h" : Math.round(span * 60) + "m"));
         window.drawLineChart(document.getElementById("home-chart"), [{ data: pts, color: "var(--accent)" }], {
+          width: 1300, height: 190, // full-width panel; matches the viewBox
           format: function (v) { return readableHashrate(v).replace("/s", ""); },
           empty: "Hashrate history starts when miners connect"
         });

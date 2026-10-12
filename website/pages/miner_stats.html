@@ -259,7 +259,7 @@
                     + (b.mergedBy ? ' <span class="worker-badge badge-merged" title="Merge-mined via ' + mwEsc(b.mergedBy) + '">via ' + mwEsc(b.mergedBy) + '</span>' : '');
                 var status = window.blockStatusHtml ? window.blockStatusHtml(b, coin.minConf) : mwEsc(b.status || 'pending');
                 return '<tr>' +
-                    '<td><span class="coin-mark">' + mwEsc(String(coin.symbol).slice(0, 4)) + '</span></td>' +
+                    '<td><span class="coin-mark">' + mwEsc(String(coin.symbol)) + '</span></td>' +
                     '<td>' + heightCell + '</td>' +
                     '<td class="mw-muted" title="' + mwEsc(new Date(b.time * 1000).toLocaleString()) + '">' + mwAgo(b.time) + '</td>' +
                     '<td>' + mwEsc(getWorkerNameFromAddress(m.worker || '')) + '</td>' +
