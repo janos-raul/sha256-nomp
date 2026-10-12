@@ -329,7 +329,7 @@
       var sub = c.mergedOnly
         ? c.symbol + " · merged only · via " + c.mergedBy.join(", ")
         : c.symbol + " · " + c.ports.length + " port" + (c.ports.length === 1 ? "" : "s") + (merged.length ? " · + " + merged.join(", ") : isAux ? " · merged by " + c.mergedBy.join(", ") : "");
-      return '<button type="button" data-i="' + i + '"><span class="coin-mark' + (isAux ? " aux" : "") + '">' + esc(c.symbol.slice(0, 4)) + "</span><span><b>" + esc(c.name) + "</b><small>" + esc(sub) + "</small></span></button>";
+      return '<button type="button" data-i="' + i + '"><span class="coin-mark' + (isAux ? " aux" : "") + '">' + esc(c.symbol) + "</span><span><b>" + esc(c.name) + "</b><small>" + esc(sub) + "</small></span></button>";
     }).join("");
     // merged-only coins have no ports: they are not in the dropdown
     $id("gs-coin").innerHTML = COINS.map(function (c, i) { return c.mergedOnly ? "" : '<option value="' + i + '">' + esc(c.symbol + " · " + c.name) + "</option>"; }).join("");

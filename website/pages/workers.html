@@ -136,7 +136,7 @@
     <div class="coin-tabs" role="tablist">
         {{ for (var pool in it.stats.pools) { var tp = it.stats.pools[pool]; }}
         <button type="button" class="coin-tab" role="tab" data-pool="{{=pool}}">
-            <span class="coin-mark">{{=(tp.symbol || pool).slice(0, 4)}}</span>{{=tp.displayName || capitalizeFirstLetter(tp.name)}}
+            <span class="coin-mark">{{=(tp.symbol || pool)}}</span>{{=tp.displayName || capitalizeFirstLetter(tp.name)}}
             <span class="hr">{{=(tp.hashrate > 0 || !(tp.mergedHashrate > 0)) ? (tp.hashrateString || '0 H/s') : tp.mergedHashrateString + ' merged'}}</span>
         </button>
         {{ } }}
