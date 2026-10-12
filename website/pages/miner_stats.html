@@ -118,9 +118,9 @@
         <div class="table-wrap">
             <table class="mw-table">
                 <thead>
-                    <tr><th>Worker</th><th>Hashrate</th><th>Average</th><th>Difficulty</th><th>Round shares</th><th>Best share</th><th>Last share</th><th>Luck</th></tr>
+                    <tr><th>Worker</th><th>Hashrate</th><th>Average</th><th>Difficulty</th><th>Round shares</th><th title="Round shares against the network difficulty: 100% is the expected work for one block. Solo workers each have their own round; pool workers share the pool round.">Effort</th><th>Best share</th><th>Last share</th><th>Luck</th></tr>
                 </thead>
-                <tbody id="workersRows"><tr><td colspan="8"><div class="mw-empty">Loading workers…</div></td></tr></tbody>
+                <tbody id="workersRows"><tr><td colspan="9"><div class="mw-empty">Loading workers…</div></td></tr></tbody>
             </table>
         </div>
     </div>
@@ -142,9 +142,9 @@
         <div class="table-wrap">
             <table class="mw-table" id="foundBlocksTable">
                 <thead>
-                    <tr><th>Coin</th><th>Height</th><th>Found</th><th>Worker</th><th>Type</th><th>Status</th></tr>
+                    <tr><th>Coin</th><th>Height</th><th>Found</th><th>Worker</th><th>Type</th><th title="Winning share difficulty / network difficulty">Share / Net diff</th><th title="The finder's own effort for this block: its round against the network difficulty (pool blocks: the shared pool round). Merged blocks have none.">Effort</th><th>Status</th></tr>
                 </thead>
-                <tbody><tr><td colspan="6"><div class="mw-empty">Loading blocks…</div></td></tr></tbody>
+                <tbody><tr><td colspan="8"><div class="mw-empty">Loading blocks…</div></td></tr></tbody>
             </table>
         </div>
     </div>
@@ -193,7 +193,7 @@
         $('#workersRows').append(
             '<tr id="worker_' + htmlSafeName + '">' +
             '<td><div class="mw-name"><strong>' + mwEsc(displayName) + '</strong>' + badges + '</div></td>' +
-            cell('statsHashrate') + cell('statsHashrateAvg') + cell('statsDiff') + cell('statsShares') +
+            cell('statsHashrate') + cell('statsHashrateAvg') + cell('statsDiff') + cell('statsShares') + cell('statsEffort') +
             cell('statsBestShare') + cell('statsLastShare') + cell('statsLuckDays') +
             '</tr>');
     }
@@ -209,7 +209,7 @@
         });
         $('#workersCount').text(names.length ? names.length + (names.length === 1 ? ' worker' : ' workers') : '');
         if (!names.length) {
-            $('#workersRows').html('<tr><td colspan="8"><div class="mw-empty">No active workers</div></td></tr>');
+            $('#workersRows').html('<tr><td colspan="9"><div class="mw-empty">No active workers</div></td></tr>');
         }
     }
 
@@ -243,7 +243,7 @@
             var tbody = table.querySelector('tbody');
             $('#foundBlocksCount').text(mine.length ? mine.length + (mine.length === 1 ? ' block' : ' blocks') : '');
             if (!mine.length) {
-                tbody.innerHTML = '<tr><td colspan="6"><div class="mw-empty"><i class="fas fa-cube"></i> No blocks found yet</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8"><div class="mw-empty"><i class="fas fa-cube"></i> No blocks found yet</div></td></tr>';
                 if (window.paginateRows) window.paginateRows(table, [], 10);
                 return;
             }
@@ -264,6 +264,10 @@
                     '<td class="mw-muted" title="' + mwEsc(new Date(b.time * 1000).toLocaleString()) + '">' + mwAgo(b.time) + '</td>' +
                     '<td>' + mwEsc(getWorkerNameFromAddress(m.worker || '')) + '</td>' +
                     '<td>' + type + '</td>' +
+                    '<td>' + (window.blockDiffHtml ? window.blockDiffHtml(b) : '—') + '</td>' +
+                    '<td>' + (window.effortHtml
+                        ? window.effortHtml(b.minerEffort, b.effort != null && window.formatEffort ? 'Pool effort: ' + window.formatEffort(b.effort) : '')
+                        : '—') + '</td>' +
                     '<td>' + status + '</td>' +
                     '</tr>';
             }).join('');

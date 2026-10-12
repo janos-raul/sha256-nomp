@@ -254,9 +254,9 @@
             <div class="workers-table-wrapper">
                 <table class="workers-table">
                     <thead>
-                        <tr><th>Height</th><th>Found</th><th>Finder</th><th>Status</th></tr>
+                        <tr><th>Height</th><th>Found</th><th>Finder</th><th title="Winning share difficulty / network difficulty">Share / Net diff</th><th title="Pool effort: work by all miners since the previous pool block">Effort</th><th>Status</th></tr>
                     </thead>
-                    <tbody><tr><td colspan="4"><div class="no-workers">Loading blocks…</div></td></tr></tbody>
+                    <tbody><tr><td colspan="6"><div class="no-workers">Loading blocks…</div></td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -318,7 +318,7 @@
         $.getJSON('/api/blocks', function (data) {
             var blocks = ((data && data[pool]) || []).slice(0, RECENT_BLOCKS);
             if (!blocks.length) {
-                tbody.innerHTML = '<tr><td colspan="4"><div class="no-workers"><i class="fas fa-cube"></i>No blocks found yet</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6"><div class="no-workers"><i class="fas fa-cube"></i>No blocks found yet</div></td></tr>';
                 return;
             }
             tbody.innerHTML = blocks.map(function (b) {
@@ -338,7 +338,9 @@
                 var status = window.blockStatusHtml
                     ? window.blockStatusHtml(b, panel.getAttribute('data-min-conf'))
                     : msEsc(b.status || 'pending');
-                return '<tr><td>' + heightCell + '</td><td class="muted" title="' + msEsc(new Date(b.time * 1000).toLocaleString()) + '">' + msAgo(b.time) + '</td><td>' + finder + '</td><td>' + status + '</td></tr>';
+                var diffCell = window.blockDiffHtml ? window.blockDiffHtml(b) : '<span class="muted">—</span>';
+                var effortCell = window.effortHtml ? window.effortHtml(b.effort) : '<span class="muted">—</span>';
+                return '<tr><td>' + heightCell + '</td><td class="muted" title="' + msEsc(new Date(b.time * 1000).toLocaleString()) + '">' + msAgo(b.time) + '</td><td>' + finder + '</td><td>' + diffCell + '</td><td>' + effortCell + '</td><td>' + status + '</td></tr>';
             }).join('');
         });
     }

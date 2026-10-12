@@ -275,7 +275,12 @@ module.exports = function (logger, poolConfig) {
       );
     }
 
-    connection.multi(redisCommands).exec(function (err) {
+    // network diff of the aux chain, as its payment processor last cached it
+    // (refreshed every ~58 s), for the block's share / network diff display
+    var netDiffReplyIndex = redisCommands.length;
+    redisCommands.push(["hget", auxCoin + ":stats", "networkDiff"]);
+
+    connection.multi(redisCommands).exec(function (err, replies) {
       if (err) {
         perfStats.redisErrors++;
         logger.error(
@@ -287,6 +292,20 @@ module.exports = function (logger, poolConfig) {
         return;
       }
       perfStats.redisWrites++;
+      // Merged blocks have no round of their own: diffs only, no effort
+      if (accepted && auxData.auxHash) {
+        connection.hset(
+          auxCoin + ":blockEffort",
+          auxData.auxHash,
+          JSON.stringify({
+            shareDiff: parseFloat(auxData.shareDiff) || null,
+            netDiff: parseFloat(replies && replies[netDiffReplyIndex]) || null,
+            effort: null,
+            minerEffort: null,
+          }),
+          function () {},
+        );
+      }
       if (paid) {
         logger.info(
           logSystem,
@@ -333,12 +352,26 @@ module.exports = function (logger, poolConfig) {
         formatCompactNumber(shareData.difficulty),
     );
 
+    // Reply positions of the counters a found block reads its effort from
+    var effortReplyIndex = -1;
+    var minerRoundReplyIndex = -1;
+
     if (isValidShare) {
+      // Pool effort: work from every miner (pool + solo) since the pool's
+      // last block of any kind, reset in the same MULTI when a block is found
+      effortReplyIndex = redisCommands.length;
+      redisCommands.push([
+        "incrbyfloat",
+        coin + ":shares:effortCurrent",
+        shareData.difficulty,
+      ]);
+
       if (isSoloMining) {
         // SOLO MINING SHARES
         stats.shares.solo++;
 
         // Solo round shares
+        minerRoundReplyIndex = redisCommands.length;
         redisCommands.push([
           "hincrbyfloat",
           coin + ":shares:roundCurrent:solo",
@@ -809,6 +842,10 @@ module.exports = function (logger, poolConfig) {
 
       // Update general block stats
       redisCommands.push(["hincrby", coin + ":stats", "validBlocks", 1]);
+      // New pool effort round; the total is in this MULTI's incrbyfloat reply
+      if (effortReplyIndex >= 0) {
+        redisCommands.push(["del", coin + ":shares:effortCurrent"]);
+      }
       stats.lastBlock = blockInfo;
 
       // Calculate time since last block
@@ -867,6 +904,10 @@ module.exports = function (logger, poolConfig) {
 
         // Log successful block storage
         if (isValidBlock) {
+          recordBlockEffort(shareData, isSoloMining, dateNow, {
+            pool: replies && effortReplyIndex >= 0 ? replies[effortReplyIndex] : null,
+            miner: replies && minerRoundReplyIndex >= 0 ? replies[minerRoundReplyIndex] : null,
+          });
           logger.success(
             logSystem,
             logComponent,
@@ -884,6 +925,77 @@ module.exports = function (logger, poolConfig) {
       }
     });
   };
+
+  // Block details for the website, keyed by block hash in <coin>:blockEffort
+  // (JSON: shareDiff, netDiff, effort, minerEffort), plus the last 50 pool
+  // efforts in <coin>:effortHistory for the pool's average and chart.
+  // effort = pool effort (all miners since the pool's previous block);
+  // minerEffort = the finder's own round: a solo worker's round, or the
+  // shared round for pool blocks. Both are work / network diff (1 = 100%).
+  function recordBlockEffort(shareData, isSolo, dateNow, totals) {
+    var netDiff = parseFloat(shareData.blockDiff);
+    if (!(netDiff > 0) || !shareData.blockHash) return;
+    var ratio = function (work) {
+      var w = parseFloat(work);
+      return w > 0 ? Math.round((w / netDiff) * 10000) / 10000 : null;
+    };
+    var store = function (minerWork) {
+      var effort = ratio(totals.pool);
+      var details = {
+        shareDiff: parseFloat(shareData.shareDiff) || null,
+        netDiff: netDiff,
+        effort: effort,
+        minerEffort: ratio(minerWork),
+      };
+      var commands = [["hset", coin + ":blockEffort", shareData.blockHash, JSON.stringify(details)]];
+      if (effort !== null) {
+        commands.push(
+          [
+            "lpush",
+            coin + ":effortHistory",
+            JSON.stringify({
+              height: shareData.height,
+              time: (dateNow / 1000) | 0,
+              effort: effort,
+              type: isSolo ? "solo" : "pool",
+            }),
+          ],
+          ["ltrim", coin + ":effortHistory", 0, 49],
+        );
+      }
+      connection.multi(commands).exec(function (err) {
+        if (err) {
+          perfStats.redisErrors++;
+          logger.error(
+            logSystem,
+            logComponent,
+            logSubCat,
+            "Error storing effort for block " + shareData.height + ": " + JSON.stringify(err),
+          );
+          return;
+        }
+        logger.info(
+          logSystem,
+          logComponent,
+          logSubCat,
+          "Block " + shareData.height + " effort: pool " +
+            (effort === null ? "n/a" : (effort * 100).toFixed(1) + "%") +
+            ", finder " +
+            (details.minerEffort === null ? "n/a" : (details.minerEffort * 100).toFixed(1) + "%") +
+            " (share " + formatCompactNumber(details.shareDiff) + " / net " + formatCompactNumber(netDiff) + ")",
+        );
+      });
+    };
+    if (isSolo) return store(totals.miner);
+    // pool blocks: the shared round was just renamed to round<height>
+    connection.hvals(coin + ":shares:round" + shareData.height, function (err, values) {
+      var sum = 0;
+      (err ? [] : values || []).forEach(function (v) {
+        sum += parseFloat(v) || 0;
+      });
+      store(sum);
+    });
+  }
 
   // Helper function to format duration
   function formatDuration(ms) {

@@ -50,6 +50,8 @@
     .ps-badge.solo { color: var(--aux); border-color: color-mix(in srgb, var(--aux) 55%, transparent); background: var(--aux-soft); }
     .ps-badge.merged { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
     .ps-muted { color: var(--muted); }
+    .ps-effort { padding: 8px 14px 4px; border-bottom: 1px solid var(--line); }
+    .ps-effort-chart { height: 110px; }
 </style>
 
 {{
@@ -72,6 +74,13 @@
     function diffString(d) {
         return it.getReadableDifficultyString ? it.getReadableDifficultyString(d) : String(d);
     }
+    /* effort ratio (1 = 100%) as text and colour class, like effortHtml() in theme.js */
+    function effortText(r) {
+        var pct = parseFloat(r) * 100;
+        if (r == null || !isFinite(pct)) return '—';
+        return (pct >= 1000 ? Math.round(pct) : pct.toFixed(pct >= 100 ? 0 : 1)) + '%';
+    }
+    function effortCls(r) { return r == null ? 'muted' : r <= 1 ? 'good' : r <= 2 ? 'amber' : 'bad'; }
 }}
 
 <div class="ps stats-container">
@@ -97,6 +106,8 @@
         var mergedWith = (mw && mw !== '0') ? mw.split(',') : [];
         var mergedBy = p.merge_mined_by || [];
         var share = ps.networkHash > 0 ? (p.hashrate / ps.networkHash * 100) : 0;
+        /* merge-mined-only coins (no ports of their own) have no rounds, so no effort */
+        var hasEffort = Object.keys(cfg.ports || {}).length > 0;
     }}
     <section class="ps-pane" role="tabpanel" data-pool="{{=pool}}" data-block-url="{{=explorer.blockURL || ''}}" data-min-conf="{{=minConf}}" hidden>
         <div class="ps-top">
@@ -112,6 +123,10 @@
                         <div>Merged hash</div><div title="Merge-mined via {{=(p.merge_mined_by || []).join(', ')}}"><span class="cyan" id="psMerged{{=pool}}">{{=p.mergedHashrateString || '0 H/s'}}</span> <span class="sub" id="psMergedMiners{{=pool}}">· {{=p.mergedMinerCount || 0}} {{=p.mergedMinerCount === 1 ? 'miner' : 'miners'}}</span></div>
                         {{?}}
                         <div>Luck</div><div id="psLuck{{=pool}}">{{=luckString(p.luckDays)}}</div>
+                        {{ var ef = p.effort || {}; }}
+                        {{? hasEffort }}
+                        <div title="Work done by all miners since the pool's last block, against the network difficulty. 100% is the expected work for one block.">Effort</div><div><span id="psEffort{{=pool}}" class="effort {{=effortCls(ef.current)}}">{{=effortText(ef.current)}}</span> <span class="sub" id="psEffortAvg{{=pool}}">{{? ef.average10 != null }}· avg {{=ef.averageBlocks}}: {{=effortText(ef.average10)}}{{?}}</span></div>
+                        {{?}}
                         <div>Net share</div><div id="psShare{{=pool}}">{{=share.toFixed(share >= 1 ? 2 : 5)}}%</div>
                         <div>Fees</div><div>{{=p.poolFee || 0}}% pool{{? p.soloMining }} · {{=p.soloFee || 0}}% solo{{?}}</div>
                     </div>
@@ -170,10 +185,16 @@
                     </div>
                 </div>
             </div>
+            {{? hasEffort }}
+            <div class="ps-effort">
+                <div class="label">Pool effort per block <span class="ps-effort-span"></span></div>
+                <svg class="chart ps-effort-chart" viewBox="0 0 760 110" preserveAspectRatio="none" role="img" aria-label="{{=p.name}} pool effort per block"></svg>
+            </div>
+            {{?}}
             <div class="ps-wrap">
                 <table class="ps-table">
-                    <thead><tr><th>Height</th><th>Found</th><th>Finder</th><th>Type</th><th>Status</th></tr></thead>
-                    <tbody><tr><td colspan="5"><div class="ps-empty">Loading blocks…</div></td></tr></tbody>
+                    <thead><tr><th>Height</th><th>Found</th><th>Finder</th><th>Type</th><th title="Winning share difficulty / network difficulty">Share / Net diff</th><th title="Pool effort: work by all miners since the previous pool block. Hover for the finder's own effort.">Effort</th><th>Status</th></tr></thead>
+                    <tbody><tr><td colspan="7"><div class="ps-empty">Loading blocks…</div></td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -206,6 +227,13 @@
         return Math.floor(d / 86400) + 'd ago';
     }
     function shortAddr(a) { return a.length > 22 ? a.slice(0, 10) + '…' + a.slice(-8) : a; }
+    function diffCell(b) { return window.blockDiffHtml ? window.blockDiffHtml(b) : '<span class="ps-muted">—</span>'; }
+    function effortCell(b) {
+        if (!window.effortHtml) return '<span class="ps-muted">—</span>';
+        var title = b.minerEffort != null && window.formatEffort
+            ? 'Finder\'s own effort: ' + window.formatEffort(b.minerEffort) : '';
+        return window.effortHtml(b.effort, title);
+    }
     function pane(pool) { return document.querySelector('.ps-pane[data-pool="' + pool + '"]'); }
 
     /* ---------- hashrate chart (+ average) ---------- */
@@ -284,6 +312,18 @@
         $(el).find('.ps-finders-span').text('last ' + total);
     }
 
+    /* pool effort of the last 50 blocks that have it, oldest on the left */
+    function drawEffort(el, blocks) {
+        var svg = el.querySelector('.ps-effort-chart');
+        if (!svg || !window.drawEffortBars) return;
+        var items = blocks.filter(function (b) { return b.effort > 0; })
+            .sort(function (a, b) { return (b.time || 0) - (a.time || 0); })
+            .slice(0, 50).reverse()
+            .map(function (b) { return { effort: b.effort, label: '#' + b.height + ' · ' + ago(b.time) }; });
+        window.drawEffortBars(svg, items, { width: 760, height: 110, empty: 'Effort is recorded for blocks found from now on' });
+        $(el).find('.ps-effort-span').text(items.length ? '· last ' + items.length : '');
+    }
+
     function renderBlocks(pool) {
         var el = pane(pool);
         if (!el) return;
@@ -295,7 +335,7 @@
             var table = el.querySelector('.ps-table');
             var tbody = table.querySelector('tbody');
             if (!blocks.length) {
-                tbody.innerHTML = '<tr><td colspan="5"><div class="ps-empty"><i class="fas fa-cube"></i> No blocks found yet</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7"><div class="ps-empty"><i class="fas fa-cube"></i> No blocks found yet</div></td></tr>';
                 $(el).find('.ps-blocks-count').text('');
                 if (window.paginateRows) window.paginateRows(table, [], BLOCKS_PER_PAGE);
                 return;
@@ -316,8 +356,9 @@
                 return '<tr data-status="' + esc(b.status || 'pending') + '" data-type="' + (b.type === 'solo' ? 'solo' : 'pool') + '">' +
                     '<td>' + heightCell + '</td>' +
                     '<td class="ps-muted" title="' + esc(new Date(b.time * 1000).toLocaleString()) + '">' + ago(b.time) + '</td>' +
-                    '<td>' + finder + '</td><td>' + type + '</td><td>' + status + '</td></tr>';
+                    '<td>' + finder + '</td><td>' + type + '</td><td>' + diffCell(b) + '</td><td>' + effortCell(b) + '</td><td>' + status + '</td></tr>';
             }).join('');
+            drawEffort(el, blocks);
             applyFilters(pool);
         });
     }
@@ -379,6 +420,12 @@
             $('#psPending' + pool).text((pb.pending || 0) + (sb.pending || 0));
             $('#psConfirmed' + pool).text((pb.confirmed || 0) + (sb.confirmed || 0));
             if (ps.totalPaid != null) $('#psPaid' + pool).text(parseFloat(ps.totalPaid || 0).toFixed(4));
+            if (p.effort && window.formatEffort) {
+                var ef = p.effort;
+                $('#psEffort' + pool).text(ef.current != null ? window.formatEffort(ef.current) : '—')
+                    .attr('class', 'effort ' + (ef.current != null ? window.effortClass(ef.current) : 'muted'));
+                $('#psEffortAvg' + pool).text(ef.average10 != null ? '· avg ' + ef.averageBlocks + ': ' + window.formatEffort(ef.average10) : '');
+            }
             if (ps.networkHash > 0) {
                 var share = p.hashrate / ps.networkHash * 100;
                 $('#psShare' + pool).text(share.toFixed(share >= 1 ? 2 : 5) + '%');

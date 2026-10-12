@@ -290,11 +290,51 @@ module.exports = function (logger, portalConfig, poolConfigs) {
       },
       function (err) {
         markMergedBlocks(allBlocks, function () {
-          cback(allBlocks);
+          markBlockEffort(allBlocks, function () {
+            cback(allBlocks);
+          });
         });
       },
     );
   };
+
+  // Attaches the share diff, network diff and efforts the share processor
+  // stored per block hash in <coin>:blockEffort (block.effortInfo). Blocks
+  // found before that existed have none.
+  function markBlockEffort(allBlocks, done) {
+    var hashesByPool = {};
+    Object.keys(allBlocks).forEach(function (id) {
+      var block = allBlocks[id];
+      (hashesByPool[block.pool] = hashesByPool[block.pool] || []).push(block.data.split(":")[0]);
+    });
+    var pools = Object.keys(hashesByPool);
+    if (!pools.length || !redisStats) return done();
+    redisStats
+      .multi(
+        pools.map(function (pool) {
+          return ["hmget", pool + ":blockEffort"].concat(hashesByPool[pool]);
+        }),
+      )
+      .exec(function (err, replies) {
+        if (err || !replies) return done();
+        var byHash = {};
+        pools.forEach(function (pool, i) {
+          hashesByPool[pool].forEach(function (hash, j) {
+            var raw = replies[i] && replies[i][j];
+            if (!raw) return;
+            try {
+              byHash[pool + ":" + hash] = JSON.parse(raw);
+            } catch (ex) {}
+          });
+        });
+        Object.keys(allBlocks).forEach(function (id) {
+          var block = allBlocks[id];
+          var info = byHash[block.pool + ":" + block.data.split(":")[0]];
+          if (info) block.effortInfo = info;
+        });
+        done();
+      });
+  }
 
   // Flags aux coin blocks that were merge-mined: their hashes are in the
   // parent's <parent>:auxBlocks:<aux> log (last 1000, see shareProcessor).
@@ -904,10 +944,13 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           // drop solo hashrate samples older than the window, like :hashrate above
           // (appended last so the reply indexes above stay the same)
           ["zremrangebyscore", ":hashrate:solo", "-inf", "(" + windowTime], // index 24
+          // pool effort: work since the pool's last block, and the last 10 block efforts
+          ["get", ":shares:effortCurrent"], // index 25
+          ["lrange", ":effortHistory", 0, 9], // index 26
         ];
 
         //var commandsPerCoin = redisCommandTemplates.length;
-        var commandsPerCoin = 25; // Hardcode this to be sure
+        var commandsPerCoin = 27; // Hardcode this to be sure
 
         // ENHANCED: Solo mining data indices
         var soloSharesIndex = 9; // :shares:roundCurrent:solo position
@@ -1166,6 +1209,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 lastShareDiffSolo: replies[i + 21] || {}, // Solo worker last-share diffs
                 bestShareDiffPool: replies[i + 22] || [], // Pool worker best-share diffs (flat zrange withscores)
                 bestShareDiffSolo: replies[i + 23] || [], // Solo worker best-share diffs (flat zrange withscores)
+                effortWork: parseFloat(replies[i + 25]) || 0, // pool effort work since the last block
+                effortHistory: replies[i + 26] || [], // last 10 block efforts (JSON, newest first)
                 maxRoundTime: 0,
                 shareCount: 0,
               };
@@ -1883,6 +1928,42 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             }
           }
 
+          // Effort = work / network difficulty (1 = 100%, the expected work
+          // for one block). Pool effort counts every miner since the pool's
+          // last block; a solo worker's effort is its own round; pool-mode
+          // workers share the pool round.
+          var _netDiff = parseFloat(coinStats.poolStats.networkDiff) || 0;
+          var _effortOf = function (work) {
+            return _netDiff > 0 ? Math.round((work / _netDiff) * 10000) / 10000 : null;
+          };
+          var _sharedRound = 0;
+          for (var worker in coinStats.currentRoundShares) {
+            _sharedRound += parseFloat(coinStats.currentRoundShares[worker]) || 0;
+          }
+          var _recent = [];
+          coinStats.effortHistory.forEach(function (entry) {
+            try {
+              var e = JSON.parse(entry);
+              if (e && e.effort > 0) _recent.push(e.effort);
+            } catch (ex) {}
+          });
+          coinStats.effort = {
+            current: _effortOf(coinStats.effortWork),
+            average10: _recent.length
+              ? Math.round((_recent.reduce(function (a, b) { return a + b; }, 0) / _recent.length) * 10000) / 10000
+              : null,
+            averageBlocks: _recent.length,
+            sharedRound: _effortOf(_sharedRound),
+          };
+          for (var worker in coinStats.soloWorkers) {
+            coinStats.soloWorkers[worker].effort = _effortOf(
+              coinStats.soloWorkers[worker].currRoundShares || 0,
+            );
+          }
+          for (var worker in coinStats.poolWorkers) {
+            coinStats.poolWorkers[worker].effort = coinStats.effort.sharedRound;
+          }
+
           coinStats.shareCount = _shareTotal;
           coinStats.maxRoundTime = _maxTimeShare;
           coinStats.maxRoundTimeString = readableSeconds(_maxTimeShare);
@@ -2164,6 +2245,9 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             shareCount: coinStats.shareCount,
             poolShares: coinStats.poolShares,
             soloShares: coinStats.soloShares,
+
+            // Pool effort: current, average of the last 10 blocks, shared round
+            effort: coinStats.effort,
 
             // Luck stats
             luckDays: coinStats.luckDays,

@@ -157,6 +157,15 @@ img {
 .bad {
   color: var(--bad);
 }
+/* block effort (%) and winning share / network difficulty */
+.effort {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.diff-pair {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 .muted {
   color: var(--muted);
 }

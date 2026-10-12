@@ -397,6 +397,10 @@ function updateWorkerStats() {
     $("#statsDiff" + htmlSafeWorkerName).text(
       getReadableDifficultyString(worker.diff) || "N/A",
     );
+    // round shares against the network difficulty (1 = 100%)
+    $("#statsEffort" + htmlSafeWorkerName).html(
+      window.effortHtml ? window.effortHtml(worker.effort) : "—",
+    );
     var timeAgoText = getTimeAgoString(worker.currRoundTime);
     // If it contains 'm', 'h', or 'd', it's been over a minute (stale)
     var isStale =

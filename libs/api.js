@@ -107,6 +107,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               var poolStat = portalStats.stats.pools[poolName] || {};
               var pendingSet = block.type === "solo" ? poolStat.soloPending : poolStat.poolPending;
               var confirms = pendingSet && pendingSet.confirms ? pendingSet.confirms[parts[0]] : undefined;
+              var info = block.effortInfo || {};
               poolBlocks[poolName].push({
                 height: parseInt(parts[2]),
                 hash: parts[0],
@@ -117,6 +118,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 mergedBy: block.mergedBy || null, // parent coin symbol for merge-mined aux blocks
                 parentWorker: block.mergedFinder || null, // parent-chain worker that merge-mined it
                 confirmations: confirms !== undefined ? parseInt(confirms, 10) : null,
+                // stored when the block was found; null for older blocks
+                shareDiff: info.shareDiff || null, // difficulty of the winning share
+                netDiff: info.netDiff || null, // network difficulty at the time
+                effort: info.effort != null ? info.effort : null, // pool effort (1 = 100%)
+                minerEffort: info.minerEffort != null ? info.minerEffort : null, // finder's own round
               });
             }
 

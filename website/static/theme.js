@@ -7,6 +7,8 @@
   - price bar: prices from the CoinGecko API, built here (no third-party script)
   - paginateRows(): client-side pager for long tables (payments, miners)
   - blockStatusHtml(): block status with confirmations spinner/progress bar
+  - effortHtml(), blockDiffHtml(), drawEffortBars(): block effort and
+    share / network difficulty display
   - drawLineChart(): small SVG line/area chart used by the pages
   - revealCoinTab(): coin tab row scrolls sideways (wheel, fades, active tab in view)
 */
@@ -349,6 +351,77 @@
       (b.type === "solo" ? " solo" : "") + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
       Math.round(pct) + "%</div></div>"
     );
+  };
+
+  /* ---------- block effort / difficulty ----------
+     Effort = work / network difficulty, as a ratio (1 = 100%, the expected
+     work for one block). Under 100% is lucky, over is unlucky. */
+  window.formatDifficulty = function (d) {
+    d = parseFloat(d);
+    if (!isFinite(d) || d <= 0) return "-";
+    var units = ["", "K", "M", "G", "T", "P", "E"];
+    var i = 0;
+    while (d >= 1000 && i < units.length - 1) { d /= 1000; i++; }
+    return (d < 0.01 ? d.toExponential(2) : d.toFixed(d >= 100 ? 0 : d >= 10 ? 1 : 2)) + (units[i] ? " " + units[i] : "");
+  };
+  window.effortClass = function (ratio) {
+    return ratio <= 1 ? "good" : ratio <= 2 ? "amber" : "bad";
+  };
+  window.formatEffort = function (ratio) {
+    var pct = parseFloat(ratio) * 100;
+    if (!isFinite(pct)) return "—";
+    return (pct >= 1000 ? Math.round(pct) : pct.toFixed(pct >= 100 ? 0 : 1)) + "%";
+  };
+  window.effortHtml = function (ratio, title) {
+    if (ratio == null || !isFinite(parseFloat(ratio))) return '<span class="muted">—</span>';
+    return '<span class="effort ' + window.effortClass(parseFloat(ratio)) + '"' +
+      (title ? ' title="' + title + '"' : "") + ">" + window.formatEffort(ratio) + "</span>";
+  };
+  // winning share diff / network diff of an /api/blocks entry
+  window.blockDiffHtml = function (b) {
+    if (!b || !(b.netDiff > 0)) return '<span class="muted">—</span>';
+    return '<span class="diff-pair" title="Winning share difficulty / network difficulty">' +
+      '<span class="hi">' + window.formatDifficulty(b.shareDiff) + "</span>" +
+      '<span class="muted"> / ' + window.formatDifficulty(b.netDiff) + "</span></span>";
+  };
+
+  // Effort per block as bars, oldest left, with a dashed 100% line.
+  // items: [{ effort: ratio, label: "#123 · 2h ago" }]
+  window.drawEffortBars = function (svg, items, options) {
+    if (!svg) return;
+    options = options || {};
+    var W = options.width || 760, H = options.height || 120, L = 40, R = 8, T = 8, B = 8;
+    items = (items || []).filter(function (it) { return it && it.effort > 0; });
+    if (!items.length) {
+      svg.innerHTML = '<text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' + (options.empty || "No effort data yet") + "</text>";
+      return;
+    }
+    var esc = function (t) {
+      return String(t).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    };
+    // scale to the largest bar, at least 200%, and cap at 600% (taller bars are clipped)
+    var vmax = Math.min(6, Math.max(2, Math.max.apply(null, items.map(function (it) { return it.effort; })) * 1.1));
+    var Y = function (v) { return T + (H - T - B) * (1 - Math.min(v, vmax) / vmax); };
+    var slot = (W - L - R) / items.length;
+    var bw = Math.max(1, Math.min(18, slot * 0.7));
+    var colors = { good: "var(--good)", amber: "var(--accent)", bad: "var(--bad)" };
+    var g = "";
+    [0, 1, vmax].forEach(function (v) {
+      var y = Y(v);
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="' +
+        (v === 1 ? "var(--muted)" : "var(--line)") + '" stroke-width="1"' + (v === 1 ? ' stroke-dasharray="4 3"' : "") + "/>";
+      g += '<text x="' + (L - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + Math.round(v * 100) + "%</text>";
+    });
+    items.forEach(function (it, i) {
+      var x = L + slot * i + (slot - bw) / 2;
+      var y = Y(it.effort);
+      g += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' +
+        Math.max(1, Y(0) - y).toFixed(1) + '" fill="' + colors[window.effortClass(it.effort)] + '" fill-opacity="0.85">' +
+        "<title>" + esc((it.label ? it.label + " · " : "") + window.formatEffort(it.effort)) + "</title></rect>";
+    });
+    svg.innerHTML = g;
   };
 
   /* ---------- price bar ----------

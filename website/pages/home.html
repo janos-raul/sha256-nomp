@@ -15,6 +15,13 @@
     if (d > 0 && d < 0.01) return d.toExponential(2);
     return it.getReadableDifficultyString(d || 0);
   }
+  /* effort ratio (1 = 100%) as text and colour class, like effortHtml() in theme.js */
+  function effortText(r) {
+    var pct = parseFloat(r) * 100;
+    if (r == null || !isFinite(pct)) return "—";
+    return (pct >= 1000 ? Math.round(pct) : pct.toFixed(pct >= 100 ? 0 : 1)) + "%";
+  }
+  function effortCls(r) { return r == null ? "muted" : r <= 1 ? "good" : r <= 2 ? "amber" : "bad"; }
   var pools = it.stats.pools || {};
   var tot = { poolMiners: 0, soloMiners: 0, poolWorkers: 0, soloWorkers: 0, poolHr: 0, soloHr: 0, blocks: 0, pending: 0 };
   var mergedSymbols = {};
@@ -110,6 +117,9 @@
         <div>Min Payout</div><div>{{=p.minimumPayment || 0}} {{=p.symbol || ''}}</div>
         <div>Network</div><div><span id="statsNetworkDiff_{{=pool}}">{{=diff(ps.networkDiff)}}</span> <span class="sub">· #<span id="statsNetworkBlocks_{{=pool}}">{{=ps.networkBlocks || p.blockheight || 0}}</span></span></div>
         <div>Last block</div><div id="statsLastBlock_{{=pool}}" data-since="{{=p.timesincelast || ''}}">{{? p.lastblock }}#{{=p.lastblock}}{{??}}none yet{{?}}</div>
+        {{? ports.length }}{{ var ef = p.effort || {}; }}
+        <div title="Work by all miners since the pool's last block, against the network difficulty. 100% is the expected work for one block.">Effort</div><div><span id="statsEffort_{{=pool}}" class="effort {{=effortCls(ef.current)}}">{{=effortText(ef.current)}}</span> <span class="sub" id="statsEffortAvg_{{=pool}}">{{? ef.average10 != null }}· avg {{=ef.averageBlocks}}: {{=effortText(ef.average10)}}{{?}}</span></div>
+        {{?}}
         <div>Ports</div><div class="home-ports">
           {{ ports.forEach(function (pt) { var grp = cfg.ports[pt].auxGroup; var mmc = (grp && cfg.mergedMining && cfg.mergedMining.enabled && cfg.mergedMining.groups && cfg.mergedMining.groups[grp]) || []; }}
           <span{{? mmc.length }} title="Solo miners also merge-mine {{=mmc.map(function (c) { return ((cfg.mergedMining.auxCoins || {})[c] || {}).symbol || c; }).join(', ')}}"{{?}}>{{=pt}}</span>
@@ -227,6 +237,11 @@
         $("#statsHashrate" + pool).text(p.hashrate > 0 || !(p.mergedHashrate > 0) ? (p.hashrateString || "0 H/s") : p.mergedHashrateString + " merged");
         if (ps.networkDiff) $("#statsNetworkDiff_" + pool).text(readableDiff(ps.networkDiff));
         if (ps.networkBlocks) $("#statsNetworkBlocks_" + pool).text(ps.networkBlocks);
+        if (p.effort && window.formatEffort) {
+          $("#statsEffort_" + pool).text(p.effort.current != null ? window.formatEffort(p.effort.current) : "—")
+            .attr("class", "effort " + (p.effort.current != null ? window.effortClass(p.effort.current) : "muted"));
+          $("#statsEffortAvg_" + pool).text(p.effort.average10 != null ? "· avg " + p.effort.averageBlocks + ": " + window.formatEffort(p.effort.average10) : "");
+        }
         var lb = document.getElementById("statsLastBlock_" + pool);
         if (lb) {
           lb.setAttribute("data-since", p.timesincelast === undefined || p.timesincelast === null ? "" : p.timesincelast);
@@ -271,7 +286,9 @@
           var status = b.status === "confirmed" ? '<span class="chip ok">paid</span>' : b.status === "pending" ? '<span class="chip amber">maturing</span>' : '<span class="chip dim">' + esc(b.status || "") + "</span>";
           return '<li><span class="t">' + ago(now - (b.time || now)) + "</span>" +
             '<span class="what">' + '<span class="' + (aux ? "cyan" : "amber") + '">' + esc(symbols[b.coin] || b.coin) + "</span> block " + esc(b.height) +
-            "<small>" + esc(b.type || "pool") + (b.mergedBy ? " · merged via " + esc(b.mergedBy) : "") + " · " + esc(shortMiner(b.miner)) + "</small></span>" + status + "</li>";
+            "<small>" + esc(b.type || "pool") + (b.mergedBy ? " · merged via " + esc(b.mergedBy) : "") + " · " + esc(shortMiner(b.miner)) +
+            (b.effort > 0 && window.formatEffort ? ' · <span class="' + window.effortClass(b.effort) + '">' + window.formatEffort(b.effort) + " effort</span>" : "") +
+            "</small></span>" + status + "</li>";
         }).join("");
         $("#home-feed").html(html || '<li class="feed-empty">No blocks found yet.</li>');
       }).fail(function () { $("#home-feed").html('<li class="feed-empty">Blocks could not be loaded.</li>'); });
