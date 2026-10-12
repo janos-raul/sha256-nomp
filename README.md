@@ -23,7 +23,18 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 - ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
 
-### Recent Updates (v1.5.3)
+### Recent Updates (v1.5.4)
+
+Requires stratum-pool v1.5.3.
+
+- **NEW**: Block effort. Every found block records its winning share difficulty, the network difficulty, the pool effort (work by all miners, pool and solo, since the pool's previous block, against the network difficulty) and the finder's own effort (a solo worker's round, or the shared round for pool blocks). Merge-mined blocks record the two difficulties only
+- **NEW**: Pool Stats: Effort row (current effort and the average of the last 10 blocks), an effort-per-block bar chart with a 100% line, and Share / Net diff and Effort columns in the blocks table. Home pool cards show the effort too; the miner page shows each worker's current effort and the effort of each block it found
+- **CHANGED**: Home page: the latest blocks list sits full width below the hashrate chart, one row per block with type, finder, difficulties, effort and status
+- **FIXED**: Coin badges show the whole symbol (VMESH, not VMES)
+- **FIXED** (stratum-pool v1.5.3): With merged mining, frequent aux updates kept the 50 s job refresh from firing, so blocks carried the previous block's timestamp
+- **NEW**: ESF explorer links (1175explorer.com); Bitcoin Cash II in the price banner
+
+### v1.5.3
 
 Requires stratum-pool v1.5.2.
 
