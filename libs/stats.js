@@ -899,9 +899,10 @@ module.exports = function (logger, portalConfig, poolConfigs) {
     );
   };
 
+  var lastActiveCounts = {};
+
   this.getGlobalStats = function (callback) {
     var statsStart = Date.now();
-    logger.debug(logSystem, "Global", "Starting global stats collection...");
 
     var statGatherTime = (Date.now() / 1000) | 0;
 
@@ -988,15 +989,6 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             );
             callback(err);
           } else {
-            logger.debug(
-              logSystem,
-              "Global",
-              "Retrieved stats for " +
-                client.coins.length +
-                " coins (" +
-                replies.length +
-                " replies)",
-            );
             //console.log('=== DEBUG: Processing coins ===');
             //console.log('Coins to process:', client.coins);
             //console.log('Total replies length:', replies.length);
@@ -1247,14 +1239,6 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     );
                   }
                 }
-                if (validPayments > 0) {
-                  logger.debug(
-                    logSystem,
-                    coinName,
-                    "Processed " + validPayments + " payment records",
-                  );
-                }
-
                 // Sort payments by time (newest first)
                 coinStats.payments.sort(function (a, b) {
                   return (b.time || 0) - (a.time || 0);
@@ -2110,18 +2094,20 @@ module.exports = function (logger, portalConfig, poolConfigs) {
             coinStats.luckMinute = "Infinity";
           }
 
-          logger.debug(
-            logSystem,
-            coin,
+          // Logged only when the counts change, not every stats cycle
+          var activeCounts =
             "Active counts - Pool miners: " +
-              coinStats.poolMinerCount +
-              ", Solo miners: " +
-              coinStats.soloMinerCount +
-              ", Pool workers: " +
-              coinStats.poolWorkerCount +
-              ", Solo workers: " +
-              coinStats.soloWorkerCount,
-          );
+            coinStats.poolMinerCount +
+            ", Solo miners: " +
+            coinStats.soloMinerCount +
+            ", Pool workers: " +
+            coinStats.poolWorkerCount +
+            ", Solo workers: " +
+            coinStats.soloWorkerCount;
+          if (lastActiveCounts[coin] !== activeCounts) {
+            lastActiveCounts[coin] = activeCounts;
+            logger.debug(logSystem, coin, activeCounts);
+          }
 
           // Calculate miner hashrates and clean up inactive miners
           var inactiveMiners = [];
@@ -2430,13 +2416,6 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 logSystem,
                 "Historics",
                 "Error saving stats history: " + JSON.stringify(err),
-              );
-            } else {
-              logger.debug(
-                logSystem,
-                "Historics",
-                "Stats history saved, retained from " +
-                  new Date(retentionTime * 1000).toISOString(),
               );
             }
           });

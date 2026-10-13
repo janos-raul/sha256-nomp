@@ -775,14 +775,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                   logComponent,
                   "Found " + results[3].length + " pending solo blocks",
                 );
-                results[3].forEach(function (r) {
-                  var details = r.split(":");
-                  logger.debug(
-                    logSystem,
-                    logComponent,
-                    "Solo block height=" + details[2] + " by " + details[3],
-                  );
-                });
               }
               // build workers object from :balances
               // build workers object from :balances (pool miners)
@@ -843,21 +835,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 logComponent,
                 "Solo blocks found: " + soloRounds.length,
               );
-              if (soloRounds.length > 0) {
-                soloRounds.forEach(function (r) {
-                  logger.debug(
-                    logSystem,
-                    logComponent,
-                    "Solo block: height=" +
-                      r.height +
-                      ", txHash=" +
-                      r.txHash.substring(0, 16) +
-                      "..." +
-                      ", minedby=" +
-                      r.minedby,
-                  );
-                });
-              }
 
               // combine all rounds
               var allRounds = rounds.concat(soloRounds);
@@ -1050,15 +1027,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
             logComponent,
             "Getting transaction details for " + rounds.length + " blocks",
           );
-          rounds.forEach(function (r) {
-            if (r.isSolo) {
-              logger.debug(
-                logSystem,
-                logComponent,
-                "Fetching tx for solo block " + r.height + ": " + r.txHash,
-              );
-            }
-          });
           // get pending block tx details
           var batchRPCcommand = rounds.map(function (r) {
             return ["gettransaction", [r.txHash]];
@@ -1091,41 +1059,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                 return;
               }
               var round = rounds[i];
-              // Debug log for solo blocks
-              if (round.isSolo) {
-                logger.debug(
-                  logSystem,
-                  logComponent,
-                  "Processing solo block " + round.height + ":",
-                );
-                logger.debug(
-                  logSystem,
-                  logComponent,
-                  "  - Has error: " +
-                    (tx.error ? "YES - " + JSON.stringify(tx.error) : "NO"),
-                );
-                logger.debug(
-                  logSystem,
-                  logComponent,
-                  "  - Has result: " + (tx.result ? "YES" : "NO"),
-                );
-                if (tx.result) {
-                  logger.debug(
-                    logSystem,
-                    logComponent,
-                    "  - Has details: " +
-                      (tx.result.details
-                        ? "YES, count=" + tx.result.details.length
-                        : "NO"),
-                  );
-                  logger.debug(
-                    logSystem,
-                    logComponent,
-                    "  - Confirmations: " + tx.result.confirmations,
-                  );
-                }
-              }
-
               // update confirmations for round
               //round.confirmations = parseInt((tx.result.confirmations || 0));
               // look for transaction errors
@@ -1202,20 +1135,7 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                   return;
                 }
 
-                logger.debug(
-                  logSystem,
-                  logComponent,
-                  "Block " + round.height + " raw reward: " + rawAmount,
-                );
                 round.reward = parseFloat(rawAmount); // Don't use coinsRound here yet
-                logger.debug(
-                  logSystem,
-                  logComponent,
-                  "Block " +
-                    round.height +
-                    " processed reward: " +
-                    round.reward,
-                );
               }
             });
 
@@ -1609,20 +1529,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                                 blockReward - soloFeeAmount - txFeeSatoshi;
                               var soloMinerAddress = round.minedby;
 
-                              logger.debug(
-                                logSystem,
-                                logComponent,
-                                "Solo immature block " +
-                                  round.height +
-                                  " for " +
-                                  soloMinerAddress +
-                                  ". Confirmations: " +
-                                  round.confirmations +
-                                  ", Solo fee: " +
-                                  effectiveSoloFeePercent +
-                                  "%",
-                              );
-
                               if (soloWorkers[soloMinerAddress]) {
                                 soloWorkers[soloMinerAddress].immature =
                                   (soloWorkers[soloMinerAddress].immature ||
@@ -1691,37 +1597,40 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 
                               var rewardPerShare = reward / totalShares;
 
-                              // Log fee calculation and distribution
-                              logger.debug(
-                                logSystem,
-                                logComponent,
-                                "PROP: Block " +
-                                  round.height +
-                                  " - " +
-                                  "Block reward: " +
-                                  satoshisToCoins(blockReward) +
-                                  ", TX fee: " +
-                                  satoshisToCoins(txFeeSatoshi) +
-                                  ", Pool fee (" +
-                                  poolFeePercent +
-                                  "%): " +
-                                  satoshisToCoins(poolFeeAmount) +
-                                  ", Distributable: " +
-                                  satoshisToCoins(reward),
-                              );
+                              // Log fee calculation and distribution once,
+                              // when the block matures (immature repeats)
+                              if (round.category !== "immature") {
+                                logger.debug(
+                                  logSystem,
+                                  logComponent,
+                                  "PROP: Block " +
+                                    round.height +
+                                    " - " +
+                                    "Block reward: " +
+                                    satoshisToCoins(blockReward) +
+                                    ", TX fee: " +
+                                    satoshisToCoins(txFeeSatoshi) +
+                                    ", Pool fee (" +
+                                    poolFeePercent +
+                                    "%): " +
+                                    satoshisToCoins(poolFeeAmount) +
+                                    ", Distributable: " +
+                                    satoshisToCoins(reward),
+                                );
 
-                              logger.debug(
-                                logSystem,
-                                logComponent,
-                                "PROP: Block " +
-                                  round.height +
-                                  ", Total shares: " +
-                                  totalShares +
-                                  ", Reward per share: " +
-                                  (isNaN(rewardPerShare)
-                                    ? "ERROR"
-                                    : rewardPerShare.toFixed(8)),
-                              );
+                                logger.debug(
+                                  logSystem,
+                                  logComponent,
+                                  "PROP: Block " +
+                                    round.height +
+                                    ", Total shares: " +
+                                    totalShares +
+                                    ", Reward per share: " +
+                                    (isNaN(rewardPerShare)
+                                      ? "ERROR"
+                                      : rewardPerShare.toFixed(8)),
+                                );
+                              }
 
                               // Distribute reward proportionally based on shares in this round only
                               for (var workerAddress in workerShares) {
@@ -1751,18 +1660,22 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                         rounds.forEach(function (round, i) {
                           var workerShares = allWorkerShares[i];
 
-                          logger.debug(
-                            logSystem,
-                            logComponent,
-                            "Processing block " +
-                              round.height +
-                              ", isSolo=" +
-                              round.isSolo +
-                              ", category=" +
-                              round.category +
-                              ", minedby=" +
-                              round.minedby,
-                          );
+                          // Immature blocks repeat every cycle until they
+                          // mature; the cycle summary already counts them
+                          if (round.category !== "immature") {
+                            logger.debug(
+                              logSystem,
+                              logComponent,
+                              "Processing block " +
+                                round.height +
+                                ", isSolo=" +
+                                round.isSolo +
+                                ", category=" +
+                                round.category +
+                                ", minedby=" +
+                                round.minedby,
+                            );
+                          }
 
                           if (!workerShares) {
                             err = true;
@@ -1817,12 +1730,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
 
                           if (round.isSolo) {
                             // SOLO MINING LOGIC
-                            logger.debug(
-                              logSystem,
-                              logComponent,
-                              "Calling processSoloRound for block " +
-                                round.height,
-                            );
                             processSoloRound(
                               round,
                               workerShares,
@@ -1832,12 +1739,6 @@ function SetupForPool(logger, poolOptions, setupFinished) {
                           } else {
                             // POOL MINING LOGIC (PROP or PPLNT)
                             if (propEnabled) {
-                              logger.debug(
-                                logSystem,
-                                logComponent,
-                                "Calling processPropRound for block " +
-                                  round.height,
-                              );
                               processPropRound(
                                 round,
                                 workerShares,

@@ -121,11 +121,6 @@ module.exports = function (logger) {
         "Slow template processing: " + processTime + "ms",
       );
     }
-    logger.debug(
-      logSystem,
-      "Templates",
-      "Website templates updated (" + processTime + "ms)",
-    );
   };
 
   var readPageFiles = function (files) {

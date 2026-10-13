@@ -148,15 +148,18 @@ module.exports = function (logger) {
         })[0];
 
         if (poolTarget) {
-          logger.info(
-            "PoolWorker",
-            "BlockNotify",
-            logSubCat,
-            "Processing block notification for " +
-              poolTarget +
-              " - Hash: " +
-              message.hash,
-          );
+          // Every thread gets the notify; one log line is enough
+          if (forkId === "0") {
+            logger.info(
+              "PoolWorker",
+              "BlockNotify",
+              logSubCat,
+              "Processing block notification for " +
+                poolTarget +
+                " - Hash: " +
+                message.hash,
+            );
+          }
           pools[poolTarget].processBlockNotify(
             message.hash,
             "blocknotify script",
