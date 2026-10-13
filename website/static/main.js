@@ -1,4 +1,14 @@
 $(function () {
+  function setActiveNav(page) {
+    var pageId = page && page.startsWith("workers/") ? "workers" : page;
+    $(".nav-item").removeClass("active");
+    if (page === "" || page === "home") {
+      $('a[href="/"]').addClass("active");
+    } else {
+      $('a[href="/' + pageId + '"]').addClass("active");
+    }
+  }
+
   // Make hotSwap available globally
   window.hotSwap = function (page, pushState) {
     // Parse the page to handle special routes like workers/address
@@ -20,15 +30,7 @@ $(function () {
       history.pushState(null, null, url);
     }
 
-    // Update active nav state
-    $(".nav-item").removeClass("active");
-    if (page === "" || page === "home") {
-      $('a[href="/"]').addClass("active");
-    } else if (pageId === "workers") {
-      $('a[href="/workers"]').addClass("active");
-    } else {
-      $('a[href="/' + pageId + '"]').addClass("active");
-    }
+    setActiveNav(page);
 
     // Close mobile menu if open
     $("#nav").removeClass("active").css("display", "");
@@ -64,39 +66,9 @@ $(function () {
         // Reset page-specific initialization flags
         window.minerStatsScriptLoaded = false;
 
-        // Page-specific initializations
-        switch (pageId) {
-          case "stats":
-            if (typeof window.initStatsScripts === "function") {
-              window.initStatsScripts();
-            }
-            break;
-
-          case "payments":
-            if (typeof window.initPaymentsScripts === "function") {
-              window.initPaymentsScripts();
-            }
-            break;
-
-          case "workers":
-            if (typeof window.initWorkerScripts === "function") {
-              window.initWorkerScripts();
-            }
-            break;
-
-          case "":
-          case "home":
-            if (typeof initLiveStats === "function") {
-              initLiveStats();
-            }
-            break;
-
-          default:
-            if (typeof initPageScripts === "function") {
-              initPageScripts();
-            }
-            break;
-        }
+        // Each page's inline script initializes itself when $("main").html()
+        // runs it; calling the init hooks here again fetched every API twice
+        // and tripped the 30/min API limit after a few clicks.
 
         // Re-apply language translations to new content
         const currentLang = localStorage.getItem("preferredLanguage") || "en";
@@ -326,11 +298,9 @@ $(function () {
   setupMenuHandlers();
   initializeEventSource();
 
-  // Load initial page based on URL
-  var initialPage = location.pathname.slice(1);
-  if (initialPage && initialPage !== "") {
-    window.hotSwap(initialPage, false);
-  }
+  // The server already rendered the requested page (and its script ran):
+  // only mark the nav item; loading it again doubled every API call.
+  setActiveNav(location.pathname.slice(1));
 });
 
 // Helper functions for stats formatting (globally available)
