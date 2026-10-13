@@ -55,7 +55,6 @@ module.exports = function (logger) {
   var pageTemplates = {};
 
   var pageProcessed = {};
-  var indexesProcessed = {};
 
   function getReadableDifficultyString(difficulty) {
     difficulty = parseFloat(difficulty);
@@ -93,14 +92,6 @@ module.exports = function (logger) {
         pageProcessed[pageName] = pageTemplates[pageName]({
           poolsConfigs: poolConfigs,
           stats: portalStats.stats,
-          portalConfig: portalConfig,
-          getReadableDifficultyString: getReadableDifficultyString,
-        });
-        indexesProcessed[pageName] = pageTemplates.index({
-          page: pageProcessed[pageName],
-          selected: pageName,
-          stats: portalStats.stats,
-          poolConfigs: poolConfigs,
           portalConfig: portalConfig,
           getReadableDifficultyString: getReadableDifficultyString,
         });
@@ -751,16 +742,10 @@ module.exports = function (logger) {
   // Apply general rate limiter to all routes
   app.use(generalLimiter);
 
-  // gzip every response (/api/pool_stats is ~1.5 MB of JSON, ~20 KB
-  // gzipped) except the live stats stream, which must not be buffered.
-  app.use(
-    compress({
-      filter: function (req, res) {
-        if (req.path === "/api/live_stats") return false;
-        return compress.filter(req, res);
-      },
-    }),
-  );
+  // gzip every response: /api/pool_stats is ~1.5 MB of JSON (~20 KB
+  // gzipped) and each live stats message ~270 KB. The live stream stays
+  // live because every write to it is followed by res.flush().
+  app.use(compress());
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));

@@ -16,12 +16,27 @@ module.exports = function (logger, portalConfig, poolConfigs) {
   setInterval(function () {
     for (var uid in _this.liveStatConnections) {
       try {
-        _this.liveStatConnections[uid].write("event: ping\ndata: 1\n\n");
+        var conn = _this.liveStatConnections[uid];
+        conn.write("event: ping\ndata: 1\n\n");
+        // the stream is gzipped: push the ping out now, not on the next write
+        if (typeof conn.flush === "function") conn.flush();
       } catch (e) {
         delete _this.liveStatConnections[uid];
       }
     }
   }, 20000);
+
+  // /api/pool_stats is the whole hashrate history (~1.5 MB of JSON); it only
+  // changes on a stats update, so serialize it once per change, not per request
+  var poolHistoryCache = { key: null, json: "[]" };
+  function poolHistoryJson() {
+    var h = portalStats.statPoolHistory || [];
+    var key = h.length ? h.length + ":" + h[0].time + ":" + h[h.length - 1].time : "0";
+    if (poolHistoryCache.key !== key) {
+      poolHistoryCache = { key: key, json: JSON.stringify(h) };
+    }
+    return poolHistoryCache.json;
+  }
 
   // API request tracking
   var apiStats = {
@@ -72,7 +87,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
       case "pool_stats":
         res.header("Content-Type", "application/json");
-        res.end(JSON.stringify(portalStats.statPoolHistory));
+        res.end(poolHistoryJson());
 
         // Log and track
         var duration = Date.now() - requestStart;
