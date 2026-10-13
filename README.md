@@ -23,7 +23,15 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 - ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
 
-### Recent Updates (v1.5.5)
+### Recent Updates (v1.5.6)
+
+Requires stratum-pool v1.5.4 (unchanged).
+
+- **FIXED**: "Too many requests" while browsing. Every page click loaded the blocks and hashrate history two or three times, so a few clicks hit the 30/min API limit
+- **FIXED**: Charts appeared about a second late. Response compression was set up after the routes and never ran; the hashrate history (`/api/pool_stats`, ~1.5 MB of JSON) now goes out gzip/brotli compressed (~20 KB), and so does the live stats stream (~4x smaller)
+- **CHANGED**: The hashrate history is serialized once per stats update instead of on every request, and the website no longer renders full pages nobody reads on each update
+
+### v1.5.5
 
 Requires stratum-pool v1.5.4.
 
