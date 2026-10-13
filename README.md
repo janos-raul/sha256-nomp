@@ -23,7 +23,14 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 - ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
 
-### Recent Updates (v1.5.4)
+### Recent Updates (v1.5.5)
+
+Requires stratum-pool v1.5.4.
+
+- **CHANGED**: Leaner logs, about 80% less in `all.log`. Each pool message is written once instead of twice (stratum-pool v1.5.4), and lines every cluster thread repeats (job rebroadcasts, new aux blocks, block notifications) come from the first thread only. Per-cycle stats and template lines are gone, active miner counts are logged when they change, and immature blocks are no longer re-listed every payment cycle (the cycle summary counts them; each block is detailed once when it matures). Warnings, errors, blocks and payments are unchanged, and the category logs stay complete
+- **TIP**: Under systemd, `"logToConsole": false` in `config.json` keeps the pool's output out of the journal (it duplicates `logs/all.log`); crashes still reach the journal. For coin daemons, `printtoconsole=0` in their conf does the same for `debug.log`
+
+### v1.5.4
 
 Requires stratum-pool v1.5.3.
 
