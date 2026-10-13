@@ -528,8 +528,10 @@ $(document).ready(function () {
           wc++;
         }
 
+        // a worker joined or left: rebuild the table (a new worker used to
+        // wait until its first history point reached the chart)
         if (_workerCount != wc) {
-          if (_workerCount > wc && typeof rebuildWorkerDisplay === "function") {
+          if (typeof rebuildWorkerDisplay === "function") {
             rebuildWorkerDisplay();
             rebuilt = true;
           }

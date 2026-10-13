@@ -166,7 +166,7 @@
             </div>
 
             <div class="ms-side">
-                <div class="panel">
+                <div class="panel ms-net">
                     <div class="panel-head"><h2>Network</h2><span class="label">#{{=ps.networkBlocks || poolData.blockheight || 0}}</span></div>
                     <div class="kv">
                         <div>Network hash</div><div>{{=ps.networkHashString || '0 H/s'}}</div>
@@ -191,7 +191,7 @@
             </div>
         </div>
 
-        <div class="panel">
+        <div class="panel ms-miners">
             <div class="panel-head">
                 <h2>Miners</h2>
                 <span class="label">{{=miners.length}} active</span>
@@ -373,6 +373,43 @@
         }
     }
 
+    function msPaginate(table, page) {
+        if (window.paginateRows) window.paginateRows(table, table.querySelectorAll('tbody tr'), 10, page);
+    }
+
+    // The page is rendered on the server; on each live stats update fetch the
+    // fresh render and swap in the miners table, network panel and tab
+    // hashrates, so new miners show up without a reload. Chart and blocks
+    // panels keep their own refresh.
+    var msRefreshedAt = Date.now();
+    function msRefresh() {
+        msRefreshedAt = Date.now();
+        $.get('/get_page', { id: 'workers' }, function (html) {
+            if (!document.querySelector('.ms-pane')) return;
+            var fresh = new DOMParser().parseFromString(html, 'text/html');
+            document.querySelectorAll('.ms-pane').forEach(function (pane) {
+                var pool = pane.getAttribute('data-pool');
+                var next = fresh.querySelector('.ms-pane[data-pool="' + pool + '"]');
+                if (!next) return;
+                ['.ms-net', '.ms-miners'].forEach(function (sel) {
+                    var cur = pane.querySelector(sel), rep = next.querySelector(sel);
+                    if (!cur || !rep) return;
+                    var oldTable = cur.querySelector('.workers-table');
+                    var page = oldTable ? parseInt(oldTable.dataset.page, 10) || 0 : 0;
+                    rep = document.importNode(rep, true);
+                    cur.replaceWith(rep);
+                    var table = rep.querySelector('.workers-table');
+                    if (table) msPaginate(table, page);
+                });
+            });
+            fresh.querySelectorAll('.coin-tab').forEach(function (t) {
+                var cur = document.querySelector('.coin-tab[data-pool="' + t.getAttribute('data-pool') + '"] .hr');
+                var hr = t.querySelector('.hr');
+                if (cur && hr) cur.textContent = hr.textContent;
+            });
+        }, 'html');
+    }
+
     // Initialize workers page
     function initWorkersPage() {
         $('.coin-tab').off('click').on('click', function () {
@@ -384,11 +421,16 @@
         $('.lookup-input').off('keydown').on('keydown', function (e) {
             if (e.key === 'Enter') { e.preventDefault(); msLookup(this); }
         });
-        if (window.paginateRows) {
-            document.querySelectorAll('.ms-pane .workers-table').forEach(function (table) {
-                window.paginateRows(table, table.querySelectorAll('tbody tr'), 10);
-            });
-        }
+        document.querySelectorAll('.ms-pane .workers-table').forEach(function (table) {
+            msPaginate(table, 0);
+        });
+        // namespaced: this script runs again on every visit (hot-swap)
+        $(document).off('statsUpdate.workers').on('statsUpdate.workers', function () {
+            if (!document.querySelector('.ms-pane')) { $(document).off('statsUpdate.workers'); return; }
+            // stats arrive every 30 s; skip hidden tabs and bursts (reconnects)
+            if (document.hidden || Date.now() - msRefreshedAt < 20000) return;
+            msRefresh();
+        });
         var saved = null;
         try { saved = localStorage.getItem('coinTab'); } catch (e) {}
         msShowTab(saved);

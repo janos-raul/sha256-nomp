@@ -270,7 +270,9 @@
   /* ---------- table pager ----------
      Shows `perPage` of `rows` at a time with a pager bar inserted after
      `anchor`. Calling it again on the same anchor replaces the old pager. */
-  window.paginateRows = function (anchor, rows, perPage) {
+  // startPage: page to open on (0-based); the current page is kept in
+  // anchor.dataset.page so a re-render can restore it
+  window.paginateRows = function (anchor, rows, perPage, startPage) {
     if (!anchor) return;
     var next = anchor.nextElementSibling;
     if (next && next.classList.contains("pager")) next.remove();
@@ -300,6 +302,7 @@
     }
     function show(page) {
       page = Math.max(0, Math.min(pages - 1, page));
+      anchor.dataset.page = page;
       var from = page * perPage;
       var to = Math.min(rows.length, from + perPage);
       rows.forEach(function (r, i) { r.style.display = i >= from && i < to ? "" : "none"; });
@@ -322,7 +325,7 @@
       }
       button('<i class="fas fa-chevron-right"></i>', "Next", page + 1).disabled = page === pages - 1;
     }
-    show(0);
+    show(startPage || 0);
   };
 
   /* ---------- block status ----------
