@@ -751,6 +751,17 @@ module.exports = function (logger) {
   // Apply general rate limiter to all routes
   app.use(generalLimiter);
 
+  // gzip every response (/api/pool_stats is ~1.5 MB of JSON, ~20 KB
+  // gzipped) except the live stats stream, which must not be buffered.
+  app.use(
+    compress({
+      filter: function (req, res) {
+        if (req.path === "/api/live_stats") return false;
+        return compress.filter(req, res);
+      },
+    }),
+  );
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -934,7 +945,6 @@ module.exports = function (logger) {
     }
   });
 
-  app.use(compress());
   // before "/:page", which would refuse the dot in the name
   app.get("/robots.txt", function (req, res) {
     res.type("text/plain");
