@@ -226,6 +226,9 @@ module.exports = function (logger, poolConfig) {
   // coin's own keys, exactly as its own pool records one, so the aux coin's
   // payment processor pays the finder (minus its solo fee). Without an
   // address the reward stays in the pool wallet.
+  // Shared with workerConns.js (same Redis as this pool's shares)
+  this.redis = connection;
+
   this.handleAuxBlock = function (accepted, auxData) {
     var auxCoin = auxData.coin;
     var logKey = coin + ":auxBlocks:" + auxCoin;

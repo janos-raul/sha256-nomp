@@ -425,7 +425,46 @@ function updateWorkerStats() {
         ? getReadableDifficultyString(worker.bestShareDiff)
         : "—",
     );
+    var conn = worker.conn;
+    $("#statsConnShares" + htmlSafeWorkerName)
+      .html(conn ? connSharesHtml(conn) : "—")
+      .attr("title", conn ? connSharesTitle(conn) : null);
+    $("#statsPing" + htmlSafeWorkerName).text(
+      conn && typeof conn.rtt === "number"
+        ? (conn.rtt < 10 ? conn.rtt.toFixed(1) : Math.round(conn.rtt)) + " ms"
+        : "—",
+    );
   }
+}
+
+// Shares since the worker connected (worker_stats conn): accepted / stale / rejected
+function connSharesHtml(conn) {
+  var n = function (v) {
+    return Number(v || 0).toLocaleString("en-US");
+  };
+  return (
+    n(conn.accepted) +
+    " / " +
+    '<span class="' + (conn.stale ? "conn-stale" : "") + '">' + n(conn.stale) + "</span>" +
+    " / " +
+    '<span class="' + (conn.rejected ? "conn-rejected" : "") + '">' + n(conn.rejected) + "</span>"
+  );
+}
+
+function connSharesTitle(conn) {
+  var total = (conn.accepted || 0) + (conn.stale || 0) + (conn.rejected || 0);
+  var pct = function (v) {
+    return total ? ((100 * (v || 0)) / total).toFixed(2) + "%" : "0%";
+  };
+  var mins = Math.max(0, Math.floor((Date.now() - conn.since) / 60000));
+  var age = mins < 60 ? mins + "m" : Math.floor(mins / 60) + "h " + (mins % 60) + "m";
+  return (
+    "Connected " + age + " ago" +
+    (conn.connections > 1 ? " (" + conn.connections + " connections)" : "") +
+    ": accepted " + pct(conn.accepted) +
+    ", stale " + pct(conn.stale) +
+    ", rejected " + pct(conn.rejected)
+  );
 }
 
 // =====================

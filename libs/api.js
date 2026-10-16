@@ -297,7 +297,13 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 for (var w in portalStats.stats.pools[pool].poolWorkers) {
                   if (w.startsWith(address)) {
                     workerCount++;
-                    workers[w] = portalStats.stats.pools[pool].poolWorkers[w];
+                    // a copy: the fields added here are this miner's only,
+                    // not for the shared stats every client gets
+                    workers[w] = Object.assign(
+                      {},
+                      portalStats.stats.pools[pool].poolWorkers[w],
+                      { conn: portalStats.getWorkerConn(pool, w, false) },
+                    );
                     for (var b in balances.balances) {
                       if (w == balances.balances[b].worker) {
                         workers[w].paid = balances.balances[b].paid;
@@ -321,7 +327,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     if (w.startsWith(address)) {
                       isSoloMiner = true;
                       soloWorkerCount++;
-                      workers[w] = portalStats.stats.pools[pool].soloWorkers[w];
+                      workers[w] = Object.assign(
+                        {},
+                        portalStats.stats.pools[pool].soloWorkers[w],
+                        { conn: portalStats.getWorkerConn(pool, w, true) },
+                      );
                       workers[w].isSolo = true; // Mark as solo worker
 
                       // Check for solo balances

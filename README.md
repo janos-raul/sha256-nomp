@@ -23,6 +23,14 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 - ✅ **Admin Center** - Web-based administration panel with secure bcrypt authentication
 - ✅ **Merged Mining for Solo Miners** - Solo miners merge-mine aux coins (e.g. S256, ESF, VMESH) on the same work, each paid to their own address (v1.5.0)
 
+### Unreleased
+
+Requires the stratum-pool main branch (aux blocknotify, per-connection share counts).
+
+- **NEW**: Miner page worker table shows **Shares A / S / R** (accepted / stale / rejected since the worker connected; percentages in the tooltip) and **Ping** (the network round trip of the worker's connection, measured by the kernel with `ss -ti`, so miners need no ping support). Only the miner's own `/api/worker_stats` has these (`conn` per worker); `/api/stats` doesn't
+- **FIXED**: Merged miners kept hashing on an old aux tip for up to `auxPollInterval` (5 s) after the aux chain moved, and aux blocks found then were orphaned ("inconclusive"). An aux coin's `blocknotify` now makes every parent pool that merge-mines it fetch new aux work at once
+- **CHANGED**: `/api/worker_stats` returns copies of the worker objects instead of adding the miner's balances to the shared stats
+
 ### Recent Updates (v1.5.6)
 
 Requires stratum-pool v1.5.4 (unchanged).

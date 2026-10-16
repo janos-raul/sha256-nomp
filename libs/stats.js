@@ -138,6 +138,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
   this.statPoolHistory = [];
 
   this.stats = {};
+
+  // coin -> "p|<worker>" / "s|<worker>" (pool / solo) -> live connection
+  // stats of that worker (workerConns.js): shares since connect and ping.
+  // Kept out of this.stats, which /api/stats publishes for every worker;
+  // only the miner's own worker_stats shows them.
+  var workerConns = {};
+  this.getWorkerConn = function (coin, worker, isSolo) {
+    return (workerConns[coin] || {})[(isSolo ? "s|" : "p|") + worker] || null;
+  };
   this.statsString = "";
 
   setupStatsRedis();
@@ -948,10 +957,11 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           // pool effort: work since the pool's last block, and the last 10 block efforts
           ["get", ":shares:effortCurrent"], // index 25
           ["lrange", ":effortHistory", 0, 9], // index 26
+          ["hgetall", ":workerConns"], // index 27: live connections (workerConns.js)
         ];
 
         //var commandsPerCoin = redisCommandTemplates.length;
-        var commandsPerCoin = 27; // Hardcode this to be sure
+        var commandsPerCoin = 28; // Hardcode this to be sure
 
         // ENHANCED: Solo mining data indices
         var soloSharesIndex = 9; // :shares:roundCurrent:solo position
@@ -1203,6 +1213,7 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 bestShareDiffSolo: replies[i + 23] || [], // Solo worker best-share diffs (flat zrange withscores)
                 effortWork: parseFloat(replies[i + 25]) || 0, // pool effort work since the last block
                 effortHistory: replies[i + 26] || [], // last 10 block efforts (JSON, newest first)
+                workerConns: replies[i + 27] || {}, // live connections, see workerConns below
                 maxRoundTime: 0,
                 shareCount: 0,
               };
@@ -1874,6 +1885,42 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               coinStats.workers[worker].lastShareDiff = lastDiff;
             }
           }
+
+          // Live connections per worker: shares since connect summed over
+          // the worker's connections, earliest connect, average ping. Entries
+          // a thread stopped refreshing (restart, crash) are skipped.
+          var _conns = {};
+          var _connCutoff = Date.now() - 120000;
+          Object.keys(coinStats.workerConns).forEach(function (field) {
+            var e;
+            try {
+              e = JSON.parse(coinStats.workerConns[field]);
+            } catch (ex) {
+              return;
+            }
+            if (!e || !e.w || !(e.t >= _connCutoff)) return;
+            var key = (e.solo ? "s|" : "p|") + e.w;
+            var c = (_conns[key] = _conns[key] || {
+              connections: 0, since: e.since, accepted: 0, stale: 0, rejected: 0, rtt: null, _rttSum: 0, _rttN: 0,
+            });
+            c.connections++;
+            c.since = Math.min(c.since, e.since);
+            c.accepted += e.a || 0;
+            c.stale += e.s || 0;
+            c.rejected += e.r || 0;
+            if (typeof e.rtt === "number") {
+              c._rttSum += e.rtt;
+              c._rttN++;
+            }
+          });
+          Object.keys(_conns).forEach(function (key) {
+            var c = _conns[key];
+            c.rtt = c._rttN ? Math.round((c._rttSum / c._rttN) * 10) / 10 : null;
+            delete c._rttSum;
+            delete c._rttN;
+          });
+          workerConns[coinStats.name] = _conns;
+          delete coinStats.workerConns;
 
           // ZRANGE WITHSCORES returns a flat [member, score, member, score, ...]
           // array — convert to worker -> bestDiff maps before merging

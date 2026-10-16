@@ -335,15 +335,30 @@ source.onmessage = function(event) {
                     </div>
                     <div class="code-block">
                         <pre>{
-  "address": "bs1q8dnz4q52czdusl8hy04fw3jryj2kc3earck3y2",
-  "stats": {
-    "hashrate": 987654321,
-    "shares": 1234,
-    "invalidShares": 5,
-    "workers": ["worker1", "worker2"],
-    ...
-  }
-}</pre>
+  "miner": "bs1q8dnz4q52czdusl8hy04fw3jryj2kc3earck3y2",
+  "isSoloMiner": true,
+  "totalHash": 987654321,
+  "workers": {
+    "bs1q8dnz4q52czdusl8hy04fw3jryj2kc3earck3y2.rig1": {
+      "hashrate": 987654321,
+      "diff": 650000,
+      "isSolo": true,
+      "conn": {
+        "connections": 1,
+        "since": 1792100000000,
+        "accepted": 11703,
+        "stale": 5,
+        "rejected": 0,
+        "rtt": 41.2
+      },
+      ...
+    }
+  },
+  "history": { ... },
+  ...
+}
+// conn: the worker's live connections (null when not connected):
+// shares since it connected and the network round trip in ms (rtt)</pre>
                     </div>
                 </div>
             </div>

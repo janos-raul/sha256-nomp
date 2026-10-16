@@ -43,6 +43,8 @@
     .worker-badge.badge-merged { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
     .last-share-time.stale { color: var(--warn); }
     .last-share-diff { color: var(--muted); margin-left: 6px; }
+    .conn-stale { color: var(--warn); }
+    .conn-rejected { color: var(--bad); }
     .mw-empty { padding: 22px 14px; text-align: center; color: var(--muted); font: 500 12px var(--font-mono); }
     .mw-muted { color: var(--muted); }
 </style>
@@ -118,9 +120,9 @@
         <div class="table-wrap">
             <table class="mw-table">
                 <thead>
-                    <tr><th>Worker</th><th>Hashrate</th><th>Average</th><th>Difficulty</th><th>Round shares</th><th title="Round shares against the network difficulty: 100% is the expected work for one block. Solo workers each have their own round; pool workers share the pool round.">Effort</th><th>Best share</th><th>Last share</th><th>Luck</th></tr>
+                    <tr><th>Worker</th><th>Hashrate</th><th>Average</th><th>Difficulty</th><th>Round shares</th><th title="Round shares against the network difficulty: 100% is the expected work for one block. Solo workers each have their own round; pool workers share the pool round.">Effort</th><th>Best share</th><th>Last share</th><th title="Shares since the worker connected: accepted / stale (sent on a job that ended with a new block) / rejected (duplicate, low difficulty, bad data)">Shares A / S / R</th><th title="Network round trip between the worker and the pool, measured on its connection">Ping</th><th>Luck</th></tr>
                 </thead>
-                <tbody id="workersRows"><tr><td colspan="9"><div class="mw-empty">Loading workers…</div></td></tr></tbody>
+                <tbody id="workersRows"><tr><td colspan="11"><div class="mw-empty">Loading workers…</div></td></tr></tbody>
             </table>
         </div>
     </div>
@@ -194,7 +196,7 @@
             '<tr id="worker_' + htmlSafeName + '">' +
             '<td><div class="mw-name"><strong>' + mwEsc(displayName) + '</strong>' + badges + '</div></td>' +
             cell('statsHashrate') + cell('statsHashrateAvg') + cell('statsDiff') + cell('statsShares') + cell('statsEffort') +
-            cell('statsBestShare') + cell('statsLastShare') + cell('statsLuckDays') +
+            cell('statsBestShare') + cell('statsLastShare') + cell('statsConnShares') + cell('statsPing') + cell('statsLuckDays') +
             '</tr>');
     }
 
@@ -209,7 +211,7 @@
         });
         $('#workersCount').text(names.length ? names.length + (names.length === 1 ? ' worker' : ' workers') : '');
         if (!names.length) {
-            $('#workersRows').html('<tr><td colspan="9"><div class="mw-empty">No active workers</div></td></tr>');
+            $('#workersRows').html('<tr><td colspan="11"><div class="mw-empty">No active workers</div></td></tr>');
         }
     }
 

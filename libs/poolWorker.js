@@ -2,6 +2,7 @@ var Stratum = require("stratum-pool");
 var redis = require("./redisCompat.js"); // node-redis 6 with the v3 callback API
 
 var ShareProcessor = require("./shareProcessor.js");
+var WorkerConns = require("./workerConns.js");
 
 module.exports = function (logger) {
   var _this = this;
@@ -827,6 +828,7 @@ module.exports = function (logger) {
 
     pool.start();
     pools[poolOptions.coin.name] = pool;
+    WorkerConns(logger, poolOptions, pool, shareProcessor.redis);
 
     logger.success(
       logSystem,
