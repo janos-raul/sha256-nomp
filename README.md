@@ -25,7 +25,7 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 
 ### What's New
 
-Latest release: **v1.5.6**. Release notes for every version are in the [Changelog](CHANGELOG.md); see [Upgrading](guides/upgrading.md) before updating a running pool.
+Latest release: **v1.5.7**. Release notes for every version are in the [Changelog](CHANGELOG.md); see [Upgrading](guides/upgrading.md) before updating a running pool.
 
 ### Supported Coins
 
