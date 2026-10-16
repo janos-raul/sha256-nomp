@@ -147,6 +147,15 @@ module.exports = function (logger) {
           return p.toLowerCase() === messageCoin;
         })[0];
 
+        // Parent pools that merge-mine this coin fetch its new aux work now
+        // rather than at their next aux poll
+        var mergedBy = Object.keys(pools).filter(function (p) {
+          return (
+            typeof pools[p].processAuxBlockNotify === "function" &&
+            pools[p].processAuxBlockNotify(messageCoin, message.hash)
+          );
+        });
+
         if (poolTarget) {
           // Every thread gets the notify; one log line is enough
           if (forkId === "0") {
@@ -164,7 +173,7 @@ module.exports = function (logger) {
             message.hash,
             "blocknotify script",
           );
-        } else {
+        } else if (!mergedBy.length) {
           logger.warning(
             "PoolWorker",
             "BlockNotify",

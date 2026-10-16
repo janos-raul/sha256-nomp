@@ -816,6 +816,7 @@ If you leave out an aux coin's address, its blocks are still found and submitted
 }
 ```
 
+- `auxPollInterval` (ms) is how often each parent pool asks the aux nodes for new work. Point each aux node's `blocknotify` at the portal like a parent coin's (`blocknotify=/usr/bin/node /path/to/sha256-nomp/scripts/cli.js blocknotify <aux pool name> %s`): every parent pool that merge-mines that coin then fetches the new aux work at once and sends it with `clean_jobs`, so miners don't keep hashing (up to `auxPollInterval`) on an aux tip that is already gone; blocks found on it are orphaned ("inconclusive"). The poll stays as a fallback.
 - `enabled: false` turns merged mining off on every port; a port without `auxGroup` mines the parent coin only.
 - **Each aux coin needs its own pool config** (e.g. `pool_configs/sha256coin.json`) with `paymentProcessing.enabled` and `paymentProcessing.soloMining` on, using the same daemon/wallet and pool address as in `auxCoins`. Merged-mined blocks are recorded there as solo blocks of the miner's aux address, and that pool's payment processor pays the finder (minus its `soloFee`) once the block matures. The portal refuses to start if this config is missing.
 - Namecoin-standard coins (S256, Namecoin, …) can share a group: add the coin to `auxCoins` and its name to the group. A coin with `byteOrder: "reversed"` or `slotRule: "modulo"` must be alone in its own group, on its own port(s).
