@@ -2,6 +2,15 @@
 
 All notable changes to SHA256-NOMP, newest first. Each release names the [stratum-pool](https://github.com/janos-raul/node-stratum-pool) version it needs (`package.json` pins it by tag).
 
+## v1.5.8
+
+Requires stratum-pool v1.5.5 (unchanged).
+
+### Fixed
+
+- A worker that mines solo and pool under the same name (e.g. a rig that reconnects without `m=solo`) had its shares counted in the mode of whichever connection logged in last on that thread: solo or pool now comes from each share's own connection
+- The miner page showed only one row for such a name, and one chart line holding both modes' hashrate. The solo side is now its own row (Solo badge) and chart line; `/api/worker_stats` keys it `<address>.<worker>|solo` when the name is also used in pool mode. Each row's average hashrate counts only its own chart line
+
 ## v1.5.7
 
 Requires stratum-pool v1.5.5.

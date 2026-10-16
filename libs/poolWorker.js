@@ -596,8 +596,15 @@ module.exports = function (logger) {
       if (data.worker != undefined)
         data.worker = data.worker.replace(/:/g, "-");
 
-      // DETECT SOLO MINING FROM STORED PASSWORD
-      var isSoloMining = isSoloWorker(data.worker);
+      // Solo or pool comes from the share's own connection (stratum-pool
+      // sets it from that connection's password). The password stored by
+      // worker name is only a fallback: two connections with the same
+      // name, one with m=solo and one without, share that entry, and the
+      // last login decided the mode for both
+      var isSoloMining =
+        typeof data.isSoloMining === "boolean"
+          ? data.isSoloMining
+          : isSoloWorker(data.worker);
 
       // ADD SOLO FLAG TO DATA BEFORE PASSING TO HANDLER
       data.isSoloMining = isSoloMining;

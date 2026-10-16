@@ -242,6 +242,30 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               var workerCount = 0;
               var soloWorkerCount = 0;
 
+              // A worker name used in both pool and solo mode (e.g. a rig
+              // that reconnected without m=solo) would share one key and
+              // one history line; its solo side gets "<name>|solo" instead
+              // ("|" can't occur in a username)
+              var poolNames = {};
+              var soloNames = {};
+              var collectNames = function (pools) {
+                for (var p in pools) {
+                  for (var n in pools[p].poolWorkers || {}) {
+                    if (n.startsWith(address)) poolNames[n] = true;
+                  }
+                  for (var n in pools[p].soloWorkers || {}) {
+                    if (n.startsWith(address)) soloNames[n] = true;
+                  }
+                }
+              };
+              portalStats.statHistory.forEach(function (h) {
+                collectNames(h.pools);
+              });
+              collectNames(portalStats.stats.pools);
+              var soloKey = function (n) {
+                return poolNames[n] ? n + "|solo" : n;
+              };
+
               // Check history for both regular and solo workers
               for (var h in portalStats.statHistory) {
                 for (var pool in portalStats.statHistory[h].pools) {
@@ -271,14 +295,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     for (var w in portalStats.statHistory[h].pools[pool]
                       .soloWorkers) {
                       if (w.startsWith(address)) {
-                        if (history[w] == null) {
-                          history[w] = [];
+                        var hk = soloKey(w);
+                        if (history[hk] == null) {
+                          history[hk] = [];
                         }
                         if (
                           portalStats.statHistory[h].pools[pool].soloWorkers[w]
                             .hashrate
                         ) {
-                          history[w].push({
+                          history[hk].push({
                             time: portalStats.statHistory[h].time,
                             hashrate:
                               portalStats.statHistory[h].pools[pool]
@@ -327,24 +352,25 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                     if (w.startsWith(address)) {
                       isSoloMiner = true;
                       soloWorkerCount++;
-                      workers[w] = Object.assign(
+                      var sk = soloKey(w);
+                      workers[sk] = Object.assign(
                         {},
                         portalStats.stats.pools[pool].soloWorkers[w],
                         { conn: portalStats.getWorkerConn(pool, w, true) },
                       );
-                      workers[w].isSolo = true; // Mark as solo worker
+                      workers[sk].isSolo = true; // Mark as solo worker
 
                       // Check for solo balances
                       for (var b in balances.balances) {
                         if (w == balances.balances[b].worker) {
-                          workers[w].paid = balances.balances[b].paid;
-                          workers[w].balance = balances.balances[b].balance;
-                          workers[w].immature = balances.balances[b].immature;
+                          workers[sk].paid = balances.balances[b].paid;
+                          workers[sk].balance = balances.balances[b].balance;
+                          workers[sk].immature = balances.balances[b].immature;
                         }
                       }
-                      workers[w].balance = workers[w].balance || 0;
-                      workers[w].paid = workers[w].paid || 0;
-                      workers[w].immature = workers[w].immature || 0;
+                      workers[sk].balance = workers[sk].balance || 0;
+                      workers[sk].paid = workers[sk].paid || 0;
+                      workers[sk].immature = workers[sk].immature || 0;
                       totalHash +=
                         portalStats.stats.pools[pool].soloWorkers[w].hashrate ||
                         0;

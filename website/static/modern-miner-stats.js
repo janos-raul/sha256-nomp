@@ -61,6 +61,8 @@ function getReadableLuckTime(lucktime) {
 }
 
 function getWorkerNameFromAddress(w) {
+  // worker_stats keys the solo side of a name also used in pool mode "<name>|solo"
+  w = String(w).replace(/\|solo$/, "");
   var worker = w;
   // Check if there's a dot in the address (indicating a worker name)
   if (w.indexOf(".") > -1) {
@@ -203,7 +205,8 @@ function buildChartData() {
   for (var w in statData.history) {
     var worker = getWorkerNameFromAddress(w);
     var isSolo =
-      statData.workers && statData.workers[w] && statData.workers[w].isSolo;
+      /\|solo$/.test(w) ||
+      (statData.workers && statData.workers[w] && statData.workers[w].isSolo);
 
     if (isSolo) {
       worker = worker + " (SOLO)";
@@ -242,7 +245,8 @@ function updateChartData() {
   for (var w in statData.history) {
     var worker = getWorkerNameFromAddress(w);
     var isSolo =
-      statData.workers && statData.workers[w] && statData.workers[w].isSolo;
+      /\|solo$/.test(w) ||
+      (statData.workers && statData.workers[w] && statData.workers[w].isSolo);
 
     if (isSolo) {
       worker = worker + " (SOLO)";
@@ -294,12 +298,8 @@ function calculateAverageHashrate(worker) {
     for (var i = 0; i < workerHashrateChart.data.datasets.length; i++) {
       var dataset = workerHashrateChart.data.datasets[i];
 
-      // Check if this dataset matches the worker we're looking for
-      if (
-        worker == null ||
-        dataset.label === worker ||
-        dataset.label === worker + " (SOLO)"
-      ) {
+      // worker is a chart label ("rig1" or "rig1 (SOLO)"); null = all workers
+      if (worker == null || dataset.label === worker) {
         // Add all data points from this dataset
         for (var j = 0; j < dataset.data.length; j++) {
           totalSum += parseFloat(dataset.data[j].y);
@@ -377,7 +377,9 @@ function updateWorkerStats() {
       getReadableHashRateString(worker.hashrate),
     );
     $("#statsHashrateAvg" + htmlSafeWorkerName).text(
-      getReadableHashRateString(calculateAverageHashrate(saneWorkerName)),
+      getReadableHashRateString(
+        calculateAverageHashrate(isSolo ? saneWorkerName + " (SOLO)" : saneWorkerName),
+      ),
     );
     $("#statsLuckDays" + htmlSafeWorkerName).text(
       getReadableLuckTime(worker.luckDays),

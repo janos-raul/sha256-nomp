@@ -1,6 +1,6 @@
 {
   "name": "sha256-nomp",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "description": "SHA256 (Bitcoin) mining pool with solo mining and ASICBoost support, based on NOMP",
   "keywords": [
     "stratum",
