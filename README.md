@@ -231,4 +231,6 @@ Donations for development are greatly appreciated!
 
 ## License
 
-Released under the MIT License. See LICENSE file.
+Released under the GNU General Public License v2. See the [LICENSE](LICENSE) file.
+
+http://www.gnu.org/licenses/gpl-2.0.html
