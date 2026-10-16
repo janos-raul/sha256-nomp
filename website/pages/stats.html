@@ -122,7 +122,7 @@
                         {{? p.mergedHashrate !== undefined }}
                         <div>Merged hash</div><div title="Merge-mined via {{=(p.merge_mined_by || []).join(', ')}}"><span class="cyan" id="psMerged{{=pool}}">{{=p.mergedHashrateString || '0 H/s'}}</span> <span class="sub" id="psMergedMiners{{=pool}}">· {{=p.mergedMinerCount || 0}} {{=p.mergedMinerCount === 1 ? 'miner' : 'miners'}}</span></div>
                         {{?}}
-                        <div>Luck</div><div id="psLuck{{=pool}}">{{=luckString(p.luckDays)}}</div>
+                        <div title="Expected time to find a block at the current hashrate: network difficulty x 2^32 / hashrate">Luck</div><div id="psLuck{{=pool}}">{{=luckString(p.luckDays)}}</div>
                         {{ var ef = p.effort || {}; }}
                         {{? hasEffort }}
                         <div title="Work done by all miners since the pool's last block, against the network difficulty. 100% is the expected work for one block.">Effort</div><div><span id="psEffort{{=pool}}" class="effort {{=effortCls(ef.current)}}">{{=effortText(ef.current)}}</span> <span class="sub" id="psEffortAvg{{=pool}}">{{? ef.average10 != null }}· avg {{=ef.averageBlocks}}: {{=effortText(ef.average10)}}{{?}}</span></div>

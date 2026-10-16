@@ -2,6 +2,18 @@
 
 All notable changes to SHA256-NOMP, newest first. Each release names the [stratum-pool](https://github.com/janos-raul/node-stratum-pool) version it needs (`package.json` pins it by tag).
 
+## v1.5.9
+
+Requires stratum-pool v1.5.5 (unchanged).
+
+### Fixed
+
+- "Luck" (the expected time to find a block at the current hashrate, `luckDays`/`luckHours`/`luckMinute` in the API) is now network difficulty x 2^32 / hashrate. It was network hashrate / hashrate x the coin's `blockTime`, which rests on the daemon's hashrate estimate: on a chain whose blocks come much slower than its target it read far too short (S256: 11 minutes shown, 4.2 hours real). The old formula remains the fallback when a daemon reports no difficulty
+
+### Changed
+
+- The Luck labels on Pool Stats, Miner Stats and the miner page explain the value in a tooltip
+
 ## v1.5.8
 
 Requires stratum-pool v1.5.5 (unchanged).

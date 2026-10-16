@@ -69,7 +69,7 @@
                 </div>
                 <div class="chart-stat">
                     <i class="fas fa-clock"></i>
-                    <span>Luck:</span>
+                    <span title="Expected time to find a block at the current hashrate: network difficulty x 2^32 / hashrate">Luck:</span>
                     <strong id="statsLuckDays">...</strong>
                 </div>
             </div>
@@ -120,7 +120,7 @@
         <div class="table-wrap">
             <table class="mw-table">
                 <thead>
-                    <tr><th>Worker</th><th>Hashrate</th><th>Average</th><th>Difficulty</th><th>Round shares</th><th title="Round shares against the network difficulty: 100% is the expected work for one block. Solo workers each have their own round; pool workers share the pool round.">Effort</th><th>Best share</th><th>Last share</th><th title="Shares since the worker connected: accepted / stale (sent on a job that ended with a new block) / rejected (duplicate, low difficulty, bad data)">Shares A / S / R</th><th title="Network round trip between the worker and the pool, measured on its connection">Ping</th><th>Luck</th></tr>
+                    <tr><th>Worker</th><th>Hashrate</th><th>Average</th><th>Difficulty</th><th>Round shares</th><th title="Round shares against the network difficulty: 100% is the expected work for one block. Solo workers each have their own round; pool workers share the pool round.">Effort</th><th>Best share</th><th>Last share</th><th title="Shares since the worker connected: accepted / stale (sent on a job that ended with a new block) / rejected (duplicate, low difficulty, bad data)">Shares A / S / R</th><th title="Network round trip between the worker and the pool, measured on its connection">Ping</th><th title="Expected time to find a block at the current hashrate: network difficulty x 2^32 / hashrate">Luck</th></tr>
                 </thead>
                 <tbody id="workersRows"><tr><td colspan="11"><div class="mw-empty">Loading workers…</div></td></tr></tbody>
             </table>

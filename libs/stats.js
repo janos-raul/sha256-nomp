@@ -1661,6 +1661,18 @@ module.exports = function (logger, portalConfig, poolConfigs) {
 
           var _blocktime = coinStats.blockTime || 90;
           var _networkHashRate = parseFloat(coinStats.poolStats.networkHash);
+          // "Luck" (luckDays/Hours/Minute) is the expected time to find a
+          // block at a hashrate: network difficulty x 2^32 hashes / hashrate.
+          // It used to be network hashrate / hashrate x blockTime, which rests
+          // on the daemon's hashrate estimate and the configured block time:
+          // on a chain whose blocks come slower than its target (S256 at
+          // 2026-10-16) it read 24x too short. That stays as the fallback
+          // when the daemon reports no difficulty.
+          var _netDiffForLuck = parseFloat(coinStats.poolStats.networkDiff) || 0;
+          var _expectedSeconds = function (rate) {
+            if (_netDiffForLuck > 0) return (_netDiffForLuck * 4294967296) / rate;
+            return (_networkHashRate / rate) * _blocktime;
+          };
 
           // Count pool miners (addresses in miners that are not in soloWorkers)
           var poolMinerCount = 0;
@@ -1689,15 +1701,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               (shareMultiplier * coinStats.soloWorkers[worker].shares) /
               portalConfig.website.stats.hashrateWindow;
             coinStats.soloWorkers[worker].luckDays = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               (24 * 60 * 60)
             ).toFixed(3);
             coinStats.soloWorkers[worker].luckHours = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               (60 * 60)
             ).toFixed(3);
             coinStats.soloWorkers[worker].luckMinute = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               60
             ).toFixed(3);
             coinStats.soloWorkers[worker].hashrate = _workerRate;
@@ -2006,15 +2018,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               (shareMultiplier * coinStats.workers[worker].shares) /
               portalConfig.website.stats.hashrateWindow;
             coinStats.workers[worker].luckDays = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               (24 * 60 * 60)
             ).toFixed(3);
             coinStats.workers[worker].luckHours = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               (60 * 60)
             ).toFixed(3);
             coinStats.workers[worker].luckMinute = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               60
             ).toFixed(3);
             coinStats.workers[worker].hashrate = _workerRate;
@@ -2042,15 +2054,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               (shareMultiplier * coinStats.poolWorkers[worker].shares) /
               portalConfig.website.stats.hashrateWindow;
             coinStats.poolWorkers[worker].luckDays = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               (24 * 60 * 60)
             ).toFixed(3);
             coinStats.poolWorkers[worker].luckHours = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               (60 * 60)
             ).toFixed(3);
             coinStats.poolWorkers[worker].luckMinute = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               60
             ).toFixed(3);
             coinStats.poolWorkers[worker].hashrate = _workerRate;
@@ -2124,15 +2136,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
           // Calculate luck using combined hashrate
           if (coinStats.hashrate > 0) {
             coinStats.luckDays = (
-              ((_networkHashRate / coinStats.hashrate) * _blocktime) /
+              _expectedSeconds(coinStats.hashrate) /
               (24 * 60 * 60)
             ).toFixed(3);
             coinStats.luckHours = (
-              ((_networkHashRate / coinStats.hashrate) * _blocktime) /
+              _expectedSeconds(coinStats.hashrate) /
               (60 * 60)
             ).toFixed(3);
             coinStats.luckMinute = (
-              ((_networkHashRate / coinStats.hashrate) * _blocktime) /
+              _expectedSeconds(coinStats.hashrate) /
               60
             ).toFixed(3);
           } else {
@@ -2163,15 +2175,15 @@ module.exports = function (logger, portalConfig, poolConfigs) {
               (shareMultiplier * coinStats.miners[miner].shares) /
               portalConfig.website.stats.hashrateWindow;
             coinStats.miners[miner].luckDays = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               (24 * 60 * 60)
             ).toFixed(3);
             coinStats.miners[miner].luckHours = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               (60 * 60)
             ).toFixed(3);
             coinStats.miners[miner].luckMinute = (
-              ((_networkHashRate / _workerRate) * _blocktime) /
+              _expectedSeconds(_workerRate) /
               60
             ).toFixed(3);
             coinStats.miners[miner].hashrate = _workerRate;
