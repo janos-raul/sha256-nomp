@@ -25,7 +25,7 @@ Usage of this software requires abilities with sysadmin, database admin, coin da
 
 ### What's New
 
-Latest release: **v1.5.9**. Release notes for every version are in the [Changelog](CHANGELOG.md); see [Upgrading](guides/upgrading.md) before updating a running pool.
+Latest release: **v1.6.0**. Release notes for every version are in the [Changelog](CHANGELOG.md); see [Upgrading](guides/upgrading.md) before updating a running pool.
 
 ### Supported Coins
 
@@ -49,7 +49,7 @@ All coins support:
 - ✅ Solo and pool mining modes
 - ✅ Variable difficulty per port
 - ✅ Multiple mining ports for different hashrates
-- ✅ Merged mining for solo miners: S256 on every coin except S256 and ESF themselves; Bitcoin Silver ports 50222–50226 also merge-mine VMESH, and port 50227 merge-mines ESF (see [Merged Mining](guides/merged-mining.md))
+- ✅ Merged mining for solo miners: S256 on every coin except S256 itself (since S256's AuxPoW fork at block 17,500); Bitcoin Silver ports 50222–50226 also merge-mine VMESH, and port 50227 merge-mines ESF (see [Merged Mining](guides/merged-mining.md))
 
 ### Community
 

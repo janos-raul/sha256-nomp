@@ -13,7 +13,7 @@ Password: m=solo,s256=YOUR_S256_ADDRESS
 
 If you leave out an aux coin's address, its blocks are still found and submitted, but the reward stays in the pool wallet.
 
-**For operators** — in the parent coin's pool config (all pool configs except `sha256coin.json` ship with S256 merged mining enabled):
+**For operators** — in the parent coin's pool config (the example configs for BTC, BTCS, BTG, BC2 and Mytherra ship with S256 merged mining enabled):
 
 ```json
 "mergedMining": {
@@ -39,6 +39,7 @@ If you leave out an aux coin's address, its blocks are still found and submitted
 }
 ```
 
+- **S256** accepts merge-mined blocks from its block 17,500 (its AuxPoW hard fork). The S256 node must run S256 Core v3.0.1 or later: 3.0.0 used a different auxpow format and chain ID, and older versions are stuck on the pre-fork chain. S256 (chain ID 598) and VMESH (22093) share the `standard` group in a 2-slot tree.
 - `auxPollInterval` (ms) is how often each parent pool asks the aux nodes for new work. Point each aux node's `blocknotify` at the portal like a parent coin's (`blocknotify=/usr/bin/node /path/to/sha256-nomp/scripts/cli.js blocknotify <aux pool name> %s`): every parent pool that merge-mines that coin then fetches the new aux work at once and sends it with `clean_jobs`, so miners don't keep hashing (up to `auxPollInterval`) on an aux tip that is already gone; blocks found on it are orphaned ("inconclusive"). The poll stays as a fallback.
 - `enabled: false` turns merged mining off on every port; a port without `auxGroup` mines the parent coin only.
 - **Each aux coin needs its own pool config** (e.g. `pool_configs/sha256coin.json`) with `paymentProcessing.enabled` and `paymentProcessing.soloMining` on, using the same daemon/wallet and pool address as in `auxCoins`. Merged-mined blocks are recorded there as solo blocks of the miner's aux address, and that pool's payment processor pays the finder (minus its `soloFee`) once the block matures. The portal refuses to start if this config is missing.

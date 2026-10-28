@@ -14,6 +14,10 @@ the `node-stratum-pool` module, and any config files that may have been changed.
 
 Node.js 24+ and Redis 6.2+ are required; usernames with characters other than letters, digits, `.`, `_` and `-` are refused; the admin center ships disabled; merged mining is configured per parent pool (`mergedMining`, see [Merged Mining](merged-mining.md)) and every aux coin needs its own pool config. Redis data from 1.4.x is kept.
 
+## From 1.5.x to 1.6.0 (S256 merged mining live)
+
+No code or config format changes. S256 passed its AuxPoW fork at block 17,500, so S256 can now be merge-mined. `pool_configs/` is never overwritten by an update: to merge-mine S256 on a running pool, add `auxCoins.sha256coin` to each parent pool config and put `sha256coin` in its `standard` group (see [Merged Mining](merged-mining.md)), check that `pool_configs/sha256coin.json` has `paymentProcessing.soloMining` on, then restart the portal. The S256 node must run S256 Core v3.0.1 or later.
+
 ## From 1.5.0 to 1.5.1 (ElevenSeventyFive)
 
 With ElevenSeventyFive (ESF) configured, its pool ID changed from `esf1175coin` to `elevenseventyfive`. With the pool stopped and a Redis backup taken, rename `coins/esf1175coin.json` and `pool_configs/esf1175coin.json` to `elevenseventyfive.json` (and their `name` / `coin` fields), rename the aux coin key `esf1175coin` in every parent pool config (`mergedMining.auxCoins` and `groups`), change the ESF daemon's `blocknotify` to `... blocknotify elevenseventyfive %s` and restart it, then run `node scripts/rename-coin-redis.js esf1175coin elevenseventyfive` (dry run) and again with `--apply`. Pending ESF blocks and balances move with the data.

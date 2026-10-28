@@ -2,6 +2,15 @@
 
 All notable changes to SHA256-NOMP, newest first. Each release names the [stratum-pool](https://github.com/janos-raul/node-stratum-pool) version it needs (`package.json` pins it by tag).
 
+## v1.6.0
+
+Requires stratum-pool v1.5.5 (unchanged).
+
+### Changed
+
+- S256 merged mining is live: S256 passed its AuxPoW hard fork at block 17,500. The guides and README say so, and say that the S256 node must run S256 Core v3.0.1 or later. Live pools add S256 to their parent pool configs by hand ([Upgrading](guides/upgrading.md#from-15x-to-160-s256-merged-mining-live)); this release ships no config changes
+- The merged-mining guide no longer says that every example config except `sha256coin.json` merge-mines S256: the BTC, BTCS, BTG, BC2 and Mytherra examples do
+
 ## v1.5.9
 
 Requires stratum-pool v1.5.5 (unchanged).
