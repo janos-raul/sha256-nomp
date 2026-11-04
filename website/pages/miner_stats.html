@@ -40,6 +40,8 @@
     .worker-badge { flex: none; padding: 2px 6px; font: 600 9.5px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line-hi); border-radius: var(--r); white-space: nowrap; }
     .worker-badge.badge-pool { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
     .worker-badge.badge-solo { color: var(--aux); border-color: color-mix(in srgb, var(--aux) 55%, transparent); background: var(--aux-soft); }
+    .worker-badge.badge-warn { color: var(--warn, #f2b33d); border-color: color-mix(in srgb, var(--warn, #f2b33d) 55%, transparent); }
+    .mw-warning { margin: 0 0 12px; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--warn, #f2b33d) 55%, transparent); border-radius: 6px; color: var(--warn, #f2b33d); font: 500 12px var(--font-mono); line-height: 1.6; }
     .worker-badge.badge-merged { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
     .last-share-time.stale { color: var(--warn); }
     .last-share-diff { color: var(--muted); margin-left: 6px; }
@@ -117,6 +119,7 @@
             <h3 class="section-title"><i class="fas fa-server"></i> Workers</h3>
             <span class="label" id="workersCount"></span>
         </div>
+        <div id="mergedWarning" class="mw-warning" style="display:none"></div>
         <div class="table-wrap">
             <table class="mw-table">
                 <thead>
@@ -191,6 +194,9 @@
         if (workerObj && workerObj.merged) {
             badges += '<span class="worker-badge badge-merged" title="Merge-mining ' + mwEsc(String(workerObj.merged).split('+').join(', ')) + '">+ ' + mwEsc(String(workerObj.merged).split('+').join(' + ')) + '</span>';
         }
+        if (workerObj && workerObj.mergedMissing) {
+            badges += '<span class="worker-badge badge-warn" title="No payout address set for ' + mwEsc(mwMissingSyms(workerObj.mergedMissing).join(', ')) + ': blocks found on it are not paid to you">no ' + mwEsc(mwMissingSyms(workerObj.mergedMissing).join(' + ')) + ' address</span>';
+        }
         var cell = function (id) { return '<td id="' + id + htmlSafeName + '">…</td>'; };
         $('#workersRows').append(
             '<tr id="worker_' + htmlSafeName + '">' +
@@ -198,6 +204,11 @@
             cell('statsHashrate') + cell('statsHashrateAvg') + cell('statsDiff') + cell('statsShares') + cell('statsEffort') +
             cell('statsBestShare') + cell('statsLastShare') + cell('statsConnShares') + cell('statsPing') + cell('statsLuckDays') +
             '</tr>');
+    }
+
+    // "VMESH=vmesh+ESF=esf" -> ["VMESH","ESF"]
+    function mwMissingSyms(m) {
+        return String(m).split('+').map(function (x) { return x.split('=')[0]; });
     }
 
     function rebuildWorkerDisplay() {
@@ -209,6 +220,19 @@
             var htmlSafeWorkerName = (isSolo ? 'solo_' : '') + w.split('.').join('_').replace(/[^\w\s\-]/gi, '');
             addWorkerToDisplay(getWorkerNameFromAddress(w), htmlSafeWorkerName, worker, isSolo);
         });
+        var missing = {};
+        names.forEach(function (w) {
+            var m = window.statData.workers[w].mergedMissing;
+            if (m) String(m).split('+').forEach(function (x) { var p = x.split('='); missing[p[0]] = p[1] || p[0].toLowerCase(); });
+        });
+        var syms = Object.keys(missing);
+        if (syms.length) {
+            $('#mergedWarning').html('<i class="fas fa-triangle-exclamation"></i> Merge-mining without a payout address: ' + syms.map(mwEsc).join(', ') +
+                ' blocks found by your hashrate are <strong>not paid to you</strong> and are kept by the pool. Add the address to the worker password, e.g. <code>m=solo,' +
+                syms.map(function (sym) { return mwEsc(missing[sym]) + '=&lt;' + mwEsc(sym) + ' address&gt;'; }).join(',') + '</code>').show();
+        } else {
+            $('#mergedWarning').hide();
+        }
         $('#workersCount').text(names.length ? names.length + (names.length === 1 ? ' worker' : ' workers') : '');
         if (!names.length) {
             $('#workersRows').html('<tr><td colspan="11"><div class="mw-empty">No active workers</div></td></tr>');

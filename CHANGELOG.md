@@ -2,6 +2,14 @@
 
 All notable changes to SHA256-NOMP, newest first. Each release names the [stratum-pool](https://github.com/janos-raul/node-stratum-pool) version it needs (`package.json` pins it by tag).
 
+## [Unreleased]
+
+Requires stratum-pool v1.5.5 (unchanged).
+
+### Added
+
+- The miner page warns a solo miner who merge-mines without a payout address for an aux coin (VMESH, ESF, ...): a "no VMESH address" badge on the worker row and a banner saying the pool keeps those aux blocks, with the exact password to add (`m=solo,vmesh=<VMESH address>`, from the coin's `addressParam`). Works for any aux coin in the pool config. The share processor records the missing coins as a 5th field of the `hashrate:solo` entries; the API exposes it as `mergedMissing` on solo workers
+
 ## v1.6.0
 
 Requires stratum-pool v1.5.5 (unchanged).

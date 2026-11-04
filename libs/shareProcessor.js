@@ -44,6 +44,23 @@ module.exports = function (logger, poolConfig) {
     return out;
   })();
 
+  // Aux coin names per port, to tell which ones a miner gave no payout address for
+  var auxNamesByPort = (function () {
+    var out = {};
+    var mm = poolConfig.mergedMining;
+    if (!mm || mm.enabled !== true || !mm.groups || !mm.auxCoins) return out;
+    Object.keys(poolConfig.ports || {}).forEach(function (port) {
+      var members = mm.groups[poolConfig.ports[port].auxGroup] || [];
+      if (members.length) {
+        out[port] = members.map(function (aux) {
+          var cfg = mm.auxCoins[aux] || {};
+          return { name: aux, symbol: (cfg.symbol || aux).toUpperCase(), param: String(cfg.addressParam || aux).toLowerCase() };
+        });
+      }
+    });
+    return out;
+  })();
+
   var logSystem = "ShareProcessor";
   var logComponent = coin;
   var logSubCat = "Thread " + (parseInt(forkId) + 1);
@@ -418,6 +435,14 @@ module.exports = function (logger, poolConfig) {
         // Solo hashrate tracking (4th field: merged aux coins, if any)
         var hashrateData = [shareData.difficulty, shareData.worker, dateNow];
         if (auxSymbolsByPort[shareData.port]) hashrateData.push(auxSymbolsByPort[shareData.port]);
+        // 5th field: aux coins the miner gave no address for (their blocks stay with the pool)
+        if (auxNamesByPort[shareData.port]) {
+          var given = (shareData.clientContext && shareData.clientContext.auxAddresses) || {};
+          var missing = auxNamesByPort[shareData.port]
+            .filter(function (aux) { return !given[aux.name]; })
+            .map(function (aux) { return aux.symbol + "=" + aux.param; });
+          if (missing.length) hashrateData.push(missing.join("+"));
+        }
         redisCommands.push([
           "zadd",
           coin + ":hashrate:solo",

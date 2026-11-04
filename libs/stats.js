@@ -1540,6 +1540,8 @@ module.exports = function (logger, portalConfig, poolConfigs) {
                 }
                 // aux coins this worker merge-mines ("S256+ESF"), from the share's port
                 if (parts[3]) coinStats.soloWorkers[worker].merged = parts[3];
+                // aux coins it gave no payout address for ("VMESH=vmesh+ESF=esf": symbol=password parameter)
+                if (parts[4]) coinStats.soloWorkers[worker].mergedMissing = parts[4];
 
                 // Add/update combined workers
                 if (worker in coinStats.workers) {
