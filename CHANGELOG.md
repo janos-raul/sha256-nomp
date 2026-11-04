@@ -2,7 +2,7 @@
 
 All notable changes to SHA256-NOMP, newest first. Each release names the [stratum-pool](https://github.com/janos-raul/node-stratum-pool) version it needs (`package.json` pins it by tag).
 
-## [Unreleased]
+## v1.6.1
 
 Requires stratum-pool v1.5.5 (unchanged).
 
