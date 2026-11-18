@@ -2,6 +2,18 @@
 
 All notable changes to SHA256-NOMP, newest first. Each release names the [stratum-pool](https://github.com/janos-raul/node-stratum-pool) version it needs (`package.json` pins it by tag).
 
+## v1.6.3
+
+Requires stratum-pool v1.5.7.
+
+### Fixed
+
+- Miners that log in with the CashAddr prefix in front of the address (`bitcoincashii:q….worker`, `bitcoincash:q….worker`) were refused because `:` is not allowed in a username. stratum-pool v1.5.7 drops the prefix, so both forms are the same miner (stats and payouts use the short `q…` form)
+
+### Changed
+
+- The Getting Started page explains that the prefix is optional, and its login generator strips a pasted prefix
+
 ## v1.6.2
 
 Requires stratum-pool v1.5.6.

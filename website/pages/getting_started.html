@@ -231,6 +231,10 @@
         <li><code>tt=</code>, <code>rt=</code> and <code>vp=</code> are always kept within the allowed range, so they can't be misconfigured into something harmful. At worst your difficulty adjusts less smoothly.</li>
         <li><code>d=</code> sets where your difficulty starts; <code>md=</code> is a floor that VarDiff never goes below.</li>
       </ul>
+      <div class="gs-warn">
+        <i class="fas fa-info-circle"></i>
+        <p><strong>Bitcoin Cash style addresses: the prefix is optional.</strong> You can log in with <code>bitcoincashii:q…</code> (or <code>bitcoincash:q…</code>) in front of the address, the pool drops it, so <code>bitcoincashii:qyouraddress.worker1</code> and <code>qyouraddress.worker1</code> are the same miner. The short form is what your stats and payouts show.</p>
+      </div>
       {{? anyMerged }}
       <div class="gs-warn">
         <i class="fas fa-exclamation-triangle"></i>
@@ -397,7 +401,7 @@
       $id("gs-addr-hint").textContent = c.prefix ? c.symbol + " addresses start with " + c.prefix : "";
       $id("gs-o-algo").textContent = String(c.algo).toUpperCase();
       $id("gs-o-url").textContent = "stratum+tcp://" + HOST + ":" + p.port;
-      var addr = $id("gs-addr").value.trim() || "your-wallet";
+      var addr = $id("gs-addr").value.trim().replace(/^[A-Za-z]{2,30}:(?=[A-Za-z0-9])/, "") || "your-wallet";
       var worker = $id("gs-worker").value.trim();
       $id("gs-o-user").textContent = addr + (worker ? "." + worker : "");
       var parts = [], html = [];
